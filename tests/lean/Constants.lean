@@ -197,6 +197,7 @@ def use_v (T : Type _) (N : Std.Usize) : Result Std.Usize := do
   ok (V.LEN T N)
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [constants::X0]
     Source: 'tests/src/constants.rs', lines 7:0-7:22

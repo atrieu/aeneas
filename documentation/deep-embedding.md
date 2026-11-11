@@ -41,6 +41,8 @@ aeneas -backend lean -deep [other options] crate.llbc
   hand-written entry point must import `Crate.Deep` explicitly.
 - `-deep` is only available for the Lean backend and is incompatible with
   `-decreases-clauses`, `-use-fuel` and `-borrow-check`.
+- The deep output sets `maxRecDepth` to at least 10000 (deep terms nest deeper than the
+  shallow definitions); `-max-recdepth` raises it further.
 - With `-emit-json`, the function and global entries of `translation.json` carry the
   names of the deep term and of the theorem (`deep_term`, `deep_theorem`).
 
@@ -64,7 +66,7 @@ For every type extracted as an inductive, a **deep eliminator**
 `T.deepElim : Aeneas.Deep.Elim (T params) [[fields of variant 0], [fields of variant 1], …]`
 is generated, defined as `fun x alts => T.casesOn x alts.1 alts.2.1 …`. It is what the
 `match` nodes use. The library provides the eliminators of the builtin types (`Option`,
-`Prod`, `ControlFlow`, `Bool`).
+`Ordering`, `Prod`, `ControlFlow`, `Bool`).
 
 Opaque functions and types, builtin definitions (mapped to the standard library models)
 and trait declarations/implementations have no deep term.
@@ -157,9 +159,17 @@ hand-written counterparts of the generated terms.
 ## Limitations: the escape hatch
 
 Constructs the printer does not handle are printed through `Expr.shallow`: the whole
-sub-expression is printed shallowly, as a function of the environment
-(`(.shallow (fun | x ::ₕ y ::ₕ .nil => …))`). The theorem still holds; only the
-precision of the deep term is lost locally. This is currently the case for:
+sub-expression is printed shallowly, as a function of the environment:
+
+```lean
+(.shallow (fun «deep env» =>
+  let x := Aeneas.Deep.Var.get .zero «deep env»
+  let y := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+  (BODY)))
+```
+
+The theorem still holds; only the precision of the deep term is lost locally. This is
+currently the case for:
 
 - **Matches with a default branch** (`| _ => …`). Lean compiles them to an auxiliary
   `_sparseCasesOn` definition built on `T.rec` with a non-constant motive, which is not
@@ -169,19 +179,31 @@ precision of the deep term is lost locally. This is currently the case for:
   the underlying bit-vector with `Eq.ndrec_symm` casts.
 - Nested patterns, and non-monadic `let` bindings of a comparison (which bind a `Prop` in
   the shallow code).
-- Matches on builtin types other than `Option`.
+- Matches on builtin types other than `Option` and `Ordering`.
+- Bodies with more than 500 let-bindings (the whole body is escaped). The deep term of a
+  let-chain is quadratic in its length, because every node carries its context, and
+  chains of several hundred bindings exceed the elaboration budget. In practice only
+  precomputed tables reach this size.
 
-Everything else is deep, including struct patterns (`let ⟨ a, b ⟩ := …`, printed as
-single-branch matches), tuples, closures, loops, trait method calls, struct
-construction and update, and globals.
+Everything else is deep, including struct patterns (`let ⟨ a, b ⟩ := …` on structures
+and single-variant enums, printed as single-branch matches), tuples, closures, loops,
+trait method calls, struct construction and update, and globals.
+
+**Large closed terms.** A sub-expression without free variables and with more than 64
+nodes is printed as a single shallow leaf (`.lit` when it is constant data,
+`(.other "closed")` otherwise) rather than as a deep term: its denotation is the term
+itself, so nothing is lost for the theorem, and the deep structure of constant data such
+as precomputed tables is of no interest while elaborating it is expensive.
 
 ## Performance
 
 The kernel check of a theorem is linear in the size of the body. The deep term itself is
 quadratic in the nesting depth, because every node carries its context as an implicit
 argument. On the test suite the deep sections cost at most about a second per module
-(the Loops module goes from 3.5 s to 4.4 s); functions with hundreds of monadic binds
-would be noticeably slower. The mode is opt-in per test for this reason.
+(the Loops module goes from 3.5 s to 4.4 s). On curve25519-dalek (1,046 functions,
+65,000 lines of shallow code), the deep file holds 1,912 theorems and builds in 95 s,
+against 46 s for the shallow definitions; the longest function body that is fully deep
+has 260 monadic binds. The mode is opt-in per test for this reason.
 
 ## Implementation notes
 

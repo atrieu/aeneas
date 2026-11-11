@@ -29,16 +29,17 @@ def match_u32 (x : Std.U32) : Result Std.U32 := do
   | _ => ok 2#u32
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [switch_test::match_u32]:
     Source: 'tests/src/switch_test.rs', lines 5:0-11:1 -/
 def match_u32.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.shallow (fun
-    | x ::ₕ .nil =>
-      (match x with
-       | 0#uscalar => ok 0#u32
-       | 1#uscalar => ok 1#u32
-       | _ => ok 2#u32)))
+  (.shallow (fun «deep env» =>
+    let x := Aeneas.Deep.Var.get .zero «deep env»
+    (match x with
+     | 0#uscalar => ok 0#u32
+     | 1#uscalar => ok 1#u32
+     | _ => ok 2#u32)))
 
 theorem match_u32.deep_eq (x : Std.U32) :
   match_u32 x =

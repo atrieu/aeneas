@@ -644,6 +644,7 @@ def use_foo2
   ok (Foo.FOO T TraitInst)
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [traits::BoolTrait::ret_true]:
     Source: 'tests/src/traits.rs', lines 9:4-11:5

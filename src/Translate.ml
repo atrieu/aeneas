@@ -1323,6 +1323,11 @@ type extract_file_info = {
           of the file *)
 }
 
+(** The [maxRecDepth] to use for the deep terms: they nest deeper than the
+    shallow definitions (the deep term of a large constant table, for instance,
+    is a deeply nested application), so we use at least 10000. *)
+let deep_max_recdepth () : int = Stdlib.max !Config.max_recdepth 10000
+
 let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
     : unit =
   (* Open the file and create the formatter *)
@@ -1437,7 +1442,8 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
         "\n\
          /- You can set the `maxRecDepth` value with the `-max-recdepth` CLI \
          option -/\n";
-      Printf.fprintf out "set_option maxRecDepth %d\n" !Config.max_recdepth;
+      Printf.fprintf out "set_option maxRecDepth %d\n"
+        (if config.extract_deep then deep_max_recdepth () else !Config.max_recdepth);
       (* Declare the definitions as being noncomputable if needs be *)
       if fi.noncomputable then
         Printf.fprintf out
@@ -1489,6 +1495,11 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
     in
     Format.pp_print_break fmt 0 0;
     Format.pp_print_string fmt "/-! ## Deep embedding of the function bodies -/";
+    Format.pp_print_break fmt 0 0;
+    (* The deep terms nest deeper than the shallow definitions (large constant
+       tables in particular): raise the recursion depth *)
+    Format.pp_print_string fmt
+      (Printf.sprintf "set_option maxRecDepth %d" (deep_max_recdepth ()));
     Format.pp_print_break fmt 0 0;
     extract_definitions fmt deep_config ctx);
 

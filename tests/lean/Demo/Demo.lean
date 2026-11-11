@@ -194,6 +194,7 @@ def mod_add (a : Std.U32) (b : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.wrapping_add res q)
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [demo::choose]:
     Source: 'tests/src/demo.rs', lines 9:0-15:1

@@ -303,6 +303,7 @@ def map_fn_pointer (x : alloc.vec.Vec Std.U8) : Result Unit := do
   ok ()
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [closures::call_fn_no_state::{impl core::ops::function::Fn<(u32,), u32> for closures::call_fn_no_state::{closure}}::call]:
     Source: 'tests/src/closures.rs', lines 5:15-5:40 -/

@@ -251,4 +251,8 @@ end Expr
 @[reducible] def ControlFlow.deepElim {α β : Type} : Elim (ControlFlow α β) [[α], [β]] :=
   fun x alts => ControlFlow.casesOn x alts.1 alts.2.1
 
+/-- `core::cmp::Ordering` is translated to Lean's `Ordering` (`lt`, `eq`, `gt`, in this order) -/
+@[reducible] def Ordering.deepElim : Elim Ordering [[], [], []] :=
+  fun x alts => Ordering.casesOn x alts.1 alts.2.1 alts.2.2.1
+
 end Aeneas.Deep

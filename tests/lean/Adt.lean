@@ -47,6 +47,7 @@ def BigStruct :=
   BigStructName × BigStructName
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- Deep eliminator for [adt::Struct]
     Source: 'tests/src/adt.rs', lines 4:0-6:1 -/

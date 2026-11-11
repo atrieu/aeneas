@@ -502,3 +502,34 @@ Open items, out of scope of this plan:
   target to keep them in CI.
 - The spike's `Tests.lean` could grow into a proper regression suite for the contracts
   (one hand-written theorem per construct).
+
+## 9. Realistic trial: curve25519-dalek (2026-11-10)
+
+The Beneficial-AI-Foundation `curve25519-dalek-fork` extracts the crate with the Aeneas
+release pinned at exactly this tree's base commit, with `-split-files -emit-json` over four
+target configurations. Re-running its pipeline with the local binaries plus `-deep`:
+
+- the shallow `Funs.lean` and `Types.lean` are byte-identical to the committed ones;
+- `Deep.lean` (1,912 theorems for 1,046 functions and the globals, 17 eliminators) builds
+  in 95 s against 46 s for `Funs.lean`, with the fork's Lean project pointed at the local
+  Aeneas library.
+
+Three rounds were needed, each fixing a real gap:
+
+1. 55 escape hatches at first: 40 matches on `core::cmp::Ordering` (no library
+   eliminator: added `Ordering.deepElim`), 12 `let ⟨ x ⟩ := e` on single-variant *enums*
+   (the planner only accepted structures), 3 literal matches on `Nat` (hard limit).
+2. Two kernel rejections: the `fun | x ::ₕ … ::ₕ .nil =>` escape hatch on an environment
+   of 14 variables made Lean generate a matcher the kernel rejects. The escape hatch now
+   binds the variables with `let x := Var.get … «deep env»` lines, which involve no
+   matcher. And the two basepoint-table constants exceeded `maxRecDepth 2048`; the deep
+   output now uses at least 10000.
+3. The same two constants (chains of 768 monadic binds) then exceeded the heartbeat
+   budget while elaborating their deep terms. Two rules were added: closed sub-terms
+   larger than 64 nodes become single shallow leaves, and bodies with more than 500
+   let-bindings are escaped as a whole. The largest fully deep body has 260 binds.
+
+Final count: 5 escape hatches out of 1,912 (3 literal matches, the 2 tables), 9 closed
+leaves, no `sorry`. The reproduction script is the fork's `scripts/aeneas-translate.sh`
+with the local `charon`/`aeneas` and `-deep` added, and `lakefile.toml` pointing the
+`aeneas` requirement at `backends/lean` by path.

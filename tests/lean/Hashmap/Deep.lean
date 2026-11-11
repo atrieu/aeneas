@@ -17,7 +17,7 @@ set_option linter.internalConstructors false
 set_option maxHeartbeats 1000000
 
 /- You can set the `maxRecDepth` value with the `-max-recdepth` CLI option -/
-set_option maxRecDepth 2048
+set_option maxRecDepth 10000
 
 namespace hashmap
 
@@ -781,11 +781,16 @@ def HashMap.get_mut_in_list_loop.deep {T : Type _} :
                      (some t : Option T))) (.var (.succ .zero)))
              (.lam .var
                (.let_
-                 (.shallow (fun
-                   | o ::ₕ ckey ::ₕ cvalue ::ₕ tl ::ₕ ls ::ₕ key ::ₕ .nil =>
-                     (match o with
-                      | some t => t
-                      | _ => cvalue))) .var
+                 (.shallow (fun «deep env» =>
+                   let o := Aeneas.Deep.Var.get .zero «deep env»
+                   let ckey := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+                   let cvalue := Aeneas.Deep.Var.get (.succ (.succ .zero)) «deep env»
+                   let tl := Aeneas.Deep.Var.get (.succ (.succ (.succ .zero))) «deep env»
+                   let ls := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ .zero)))) «deep env»
+                   let key := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ (.succ .zero))))) «deep env»
+                   (match o with
+                    | some t => t
+                    | _ => cvalue))) .var
                (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
                                    (fun (i : Std.Usize) (t1 : T) (a : AList T)
                                      => (AList.Cons i t1 a : AList T)))

@@ -1265,6 +1265,7 @@ def single_break (d : Slice Std.U8) : Result Unit := do
   single_break_loop d
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [loops::iter]: loop body 0:
     Source: 'tests/src/loops.rs', lines 7:4-9:5

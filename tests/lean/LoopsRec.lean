@@ -1031,6 +1031,7 @@ def as_radix_minimized : Result Unit := do
   as_radix_minimized_loop scalar 0#usize
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [loops_rec::iter]: loop 0:
     Source: 'tests/src/loops-rec.rs', lines 9:4-11:5

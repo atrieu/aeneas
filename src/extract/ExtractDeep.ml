@@ -48,16 +48,20 @@ let denv_index (span : Meta.span) (env : denv) (id : fvar_id) : int =
   in
   find 0 env
 
-(** Print a de Bruijn variable: [(.var (.succ (.succ .zero)))] *)
-let extract_deep_var (fmt : F.formatter) (i : int) : unit =
-  F.pp_print_string fmt "(.var ";
+(** Print a de Bruijn index: [.zero], [(.succ (.succ .zero))], ... *)
+let extract_var_index (fmt : F.formatter) (i : int) : unit =
   for _ = 1 to i do
     F.pp_print_string fmt "(.succ "
   done;
   F.pp_print_string fmt ".zero";
   for _ = 1 to i do
     F.pp_print_string fmt ")"
-  done;
+  done
+
+(** Print a de Bruijn variable: [(.var (.succ (.succ .zero)))] *)
+let extract_deep_var (fmt : F.formatter) (i : int) : unit =
+  F.pp_print_string fmt "(.var ";
+  extract_var_index fmt i;
   F.pp_print_string fmt ")"
 
 (** Escape a string so that it can be printed between double quotes *)
@@ -152,32 +156,37 @@ let qualif_tag (ctx : extraction_ctx) (q : qualif) : string =
   | LoopOp -> "(.other \"loop\")"
 
 (** Print the escape hatch: the whole expression is printed shallowly, as a
-    function of the environment:
+    function of the environment.
+
+    We bind the variables of the environment with let-bindings rather than with
+    a pattern-matching lambda ([fun | x ::ₕ y ::ₕ .nil => ...]): pattern
+    matching on long [HList]s makes Lean generate matchers which the kernel
+    rejects (observed with 14 variables). The name of the environment is quoted
+    so that it can't clash with a variable name coming from Rust.
     {[
-      (.shallow (fun | x ::ₕ y ::ₕ .nil => SHALLOW))
+      (.shallow (fun «deep env» =>
+        let x := Aeneas.Deep.Var.get .zero «deep env»
+        let y := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+        (BODY)))
     ]} *)
 let extract_deep_escape (span : Meta.span) (ctx : extraction_ctx) (env : denv)
     (fmt : F.formatter) (e : texpr) : unit =
-  (* The right-hand side of the alternative must start at a column greater than
-     or equal to the column of the [|]: we use vertical boxes to control the
-     layout precisely:
-     {[
-       (.shallow (fun
-         | x ::ₕ y ::ₕ .nil =>
-           (BODY)))
-     ]} *)
+  let env_name = "«deep env»" in
   F.pp_open_vbox fmt ctx.indent_incr;
-  F.pp_print_string fmt "(.shallow (fun";
-  F.pp_print_cut fmt ();
-  F.pp_open_vbox fmt ctx.indent_incr;
-  let vars = List.map (fun id -> ctx_get_var span id ctx ^ " ::ₕ ") env in
-  F.pp_print_string fmt ("| " ^ String.concat "" vars ^ ".nil =>");
+  F.pp_print_string fmt ("(.shallow (fun " ^ env_name ^ " =>");
+  List.iteri
+    (fun i id ->
+      F.pp_print_cut fmt ();
+      F.pp_print_string fmt
+        ("let " ^ ctx_get_var span id ctx ^ " := " ^ deep_prefix ^ "Var.get ");
+      extract_var_index fmt i;
+      F.pp_print_string fmt (" " ^ env_name))
+    env;
   F.pp_print_cut fmt ();
   F.pp_open_hovbox fmt ctx.indent_incr;
   F.pp_print_string fmt "(";
   extract_texpr span ctx fmt ~inside:false ~inside_do:false e;
   F.pp_print_string fmt ")";
-  F.pp_close_box fmt ();
   F.pp_close_box fmt ();
   F.pp_print_string fmt "))";
   F.pp_close_box fmt ()
@@ -210,7 +219,7 @@ type deep_adt_info = {
 
 (** The builtin types for which the Lean library provides a deep eliminator
     ([Aeneas.Deep.<Name>.deepElim]), identified by their extraction name. *)
-let builtin_deep_elims = [ "Option" ]
+let builtin_deep_elims = [ "Option"; "Ordering" ]
 
 (** Do we generate a deep eliminator for this type declaration?
 
@@ -310,10 +319,16 @@ let plan_deep_struct_pat (span : Meta.span) (ctx : extraction_ctx)
     (fresh : unit -> fvar_id) (pat : tpat) : (deep_adt_info * fvar list) option
     =
   match pat.pat with
-  | PAdt { variant_id = None; fields } when not (type_is_tuple_like ctx pat.ty)
-    -> (
+  | PAdt { variant_id; fields } when not (type_is_tuple_like ctx pat.ty) -> (
+      (* Structures, but also enumerations with a single variant: the shallow
+         printer prints [let ⟨ x, y ⟩ := e] for both, and the elaboration is
+         the same ([casesOn]) *)
       match deep_adt_info span ctx pat.ty with
-      | Some info when type_decl_num_variants info.decl = 1 ->
+      | Some info
+        when type_decl_num_variants info.decl = 1
+             && Option.fold ~none:true
+                  ~some:(fun vid -> VariantId.to_int vid = 0)
+                  variant_id ->
           let fields =
             List.map (tpat_replace_ignored_vars_with_free_vars fresh) fields
           in
@@ -326,6 +341,77 @@ let plan_deep_struct_pat (span : Meta.span) (ctx : extraction_ctx)
       | _ -> None)
   | _ -> None
 
+(** Is the expression closed data: literals and constructor applications
+    (including array literals and structure values) without free variables? We
+    use this to choose the tag of the leaves standing for closed terms. *)
+let rec is_closed_data (e : texpr) : bool =
+  match e.e with
+  | Const _ -> true
+  | Meta (_, e) -> is_closed_data e
+  | Qualif { id = AdtCons _; _ } -> true
+  | App _ -> (
+      let app, args = destruct_apps e in
+      match app.e with
+      | Qualif { id = AdtCons _; _ } -> List.for_all is_closed_data args
+      | _ -> false)
+  | StructUpdate { init; updates; _ } ->
+      Option.fold ~none:true ~some:is_closed_data init
+      && List.for_all (fun (_, v) -> is_closed_data v) updates
+  | _ -> false
+
+(** The number of nodes of an expression *)
+let rec texpr_num_nodes (e : texpr) : int =
+  match e.e with
+  | FVar _ | BVar _ | CVar _ | Const _ | Qualif _ | EError _ -> 1
+  | Meta (_, e) -> texpr_num_nodes e
+  | App (f, a) -> 1 + texpr_num_nodes f + texpr_num_nodes a
+  | Lambda (_, b) -> 1 + texpr_num_nodes b
+  | Let (_, _, e1, e2) -> 1 + texpr_num_nodes e1 + texpr_num_nodes e2
+  | Switch (s, If (t, e)) ->
+      1 + texpr_num_nodes s + texpr_num_nodes t + texpr_num_nodes e
+  | Switch (s, Match brs) ->
+      1 + texpr_num_nodes s
+      + List.fold_left
+          (fun n (br : match_branch) -> n + texpr_num_nodes br.branch)
+          0 brs
+  | StructUpdate { init; updates; _ } ->
+      1
+      + Option.fold ~none:0 ~some:texpr_num_nodes init
+      + List.fold_left (fun n (_, v) -> n + texpr_num_nodes v) 0 updates
+  | Loop _ -> 1
+
+(** The number of let-bindings of an expression *)
+let texpr_num_lets (e : texpr) : int =
+  let count = ref 0 in
+  let visitor =
+    object
+      inherit [_] iter_expr as super
+
+      method! visit_Let env monadic pat e1 e2 =
+        incr count;
+        super#visit_Let env monadic pat e1 e2
+    end
+  in
+  visitor#visit_texpr () e;
+  !count
+
+(** Is the expression closed (no free variables)? *)
+let texpr_is_closed (e : texpr) : bool =
+  FVarId.Set.subset (texpr_get_fvars e) (texpr_get_bound_fvars e)
+
+(** Closed sub-expressions bigger than this (in number of nodes) are printed as
+    a single shallow leaf rather than as a deep term: the denotation of a leaf
+    is the term itself, so the theorem holds trivially, and the deep structure
+    of large constant terms (precomputed tables, for instance) is of no interest
+    while elaborating their deep terms is prohibitively expensive. *)
+let closed_max_size = 64
+
+(** Bodies with more than this many let-bindings are printed through the escape
+    hatch: the deep term of a let-chain is quadratic in its length (every node
+    carries its context), and the elaboration of chains of several hundreds of
+    bindings exceeds the heartbeat budget. *)
+let deep_max_lets = 500
+
 (** Print a deep expression.
 
     - [fresh]: generator of fresh variable ids, shared with the one used to open
@@ -336,6 +422,17 @@ let rec extract_deep_texpr (span : Meta.span) (ctx : extraction_ctx)
     (fresh : unit -> fvar_id) (env : denv) (fmt : F.formatter)
     ?(expected : ty option) (e : texpr) : unit =
   match e.e with
+  | (App _ | Qualif _ | StructUpdate _ | Let _ | Switch _ | Lambda _)
+    when texpr_num_nodes e > closed_max_size && texpr_is_closed e ->
+      (* Large closed term: a single shallow leaf *)
+      F.pp_open_hovbox fmt ctx.indent_incr;
+      F.pp_print_string fmt
+        (if is_closed_data e then "(.lit" else "(.leaf (.other \"closed\")");
+      F.pp_print_space fmt ();
+      extract_annotated_shallow span ctx fmt
+        { e with ty = Option.value expected ~default:e.ty };
+      F.pp_print_string fmt ")";
+      F.pp_close_box fmt ()
   | FVar id -> extract_deep_var fmt (denv_index span env id)
   | BVar _ -> [%internal_error] span
   | CVar _ | Const _ ->
@@ -826,8 +923,12 @@ let extract_decl_deep (ctx : extraction_ctx) (fmt : F.formatter) ~(id : id)
       (* The body: the inputs are the initial environment *)
       let ctx_b, env = bind_vars span ctx_g [] input_vars in
       F.pp_open_hovbox fmt ctx.indent_incr;
-      extract_deep_texpr span ctx_b fresh env fmt ~expected:def.signature.output
-        body.body;
+      if texpr_num_lets body.body > deep_max_lets then
+        (* The body is too long for a deep term: escape hatch *)
+        extract_deep_escape span ctx_b env fmt body.body
+      else
+        extract_deep_texpr span ctx_b fresh env fmt
+          ~expected:def.signature.output body.body;
       F.pp_close_box fmt ();
       (* Close the vbox *)
       F.pp_close_box fmt ();

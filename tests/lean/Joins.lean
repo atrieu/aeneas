@@ -117,6 +117,7 @@ def shared_integer_scrutinee
   else ok 0#u32
 
 /-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
 
 /-- [joins::opt_add_1]:
     Source: 'tests/src/joins.rs', lines 5:0-8:1 -/
@@ -173,12 +174,13 @@ theorem opt_add_1_or_panic.deep_eq (b : Bool) (x : Std.U32) :
 def opt_add_switch_1.deep :
   Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
   (.bind
-    (.shallow (fun
-      | a ::ₕ x ::ₕ .nil =>
-        (match a with
-         | 0#uscalar => ok 0#u32
-         | 1#uscalar => ok 1#u32
-         | _ => fail panic))) .var
+    (.shallow (fun «deep env» =>
+      let a := Aeneas.Deep.Var.get .zero «deep env»
+      let x := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+      (match a with
+       | 0#uscalar => ok 0#u32
+       | 1#uscalar => ok 1#u32
+       | _ => fail panic))) .var
   (.app (.app (.leaf (.binop "panic.+::<u32>")
                 (fun (i : Std.U32) (i1 : Std.U32) =>
                 (i + i1 : Result Std.U32))) (.var (.succ (.succ .zero))))
@@ -194,11 +196,12 @@ theorem opt_add_switch_1.deep_eq (a : Std.U32) (x : Std.U32) :
     Source: 'tests/src/joins.rs', lines 30:0-36:1 -/
 def opt_add_switch_2.deep :
   Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
-  (.shallow (fun
-    | a ::ₕ x ::ₕ .nil =>
-      (match a with
-       | 0#uscalar => x + 0#u32
-       | _ => fail panic)))
+  (.shallow (fun «deep env» =>
+    let a := Aeneas.Deep.Var.get .zero «deep env»
+    let x := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+    (match a with
+     | 0#uscalar => x + 0#u32
+     | _ => fail panic)))
 
 theorem opt_add_switch_2.deep_eq (a : Std.U32) (x : Std.U32) :
   opt_add_switch_2 a x =
@@ -288,11 +291,13 @@ theorem shared_bool_scrutinee.deep_eq (k : SharedBool) (x : Std.U32)
 def shared_integer_scrutinee.deep :
   Aeneas.Deep.Expr [Std.U8, Std.U32, Std.U32] (Result Std.U32) :=
   (.bind
-    (.shallow (fun
-      | n ::ₕ x ::ₕ y ::ₕ .nil =>
-        (match n with
-         | 0#uscalar => ok x
-         | _ => ok y))) .var
+    (.shallow (fun «deep env» =>
+      let n := Aeneas.Deep.Var.get .zero «deep env»
+      let x := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+      let y := Aeneas.Deep.Var.get (.succ (.succ .zero)) «deep env»
+      (match n with
+       | 0#uscalar => ok x
+       | _ => ok y))) .var
   (.ite (.ge (.var (.succ (.succ .zero))) (.var .zero))
   (.ok (.lit 1#u32))
   (.ok (.lit 0#u32))))
