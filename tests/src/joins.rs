@@ -1,5 +1,6 @@
 //@ [!lean] skip
 //@ [lean] aeneas-args=-strict-joins
+//@ [lean] aeneas-args=-deep
 
 fn opt_add_1(b: bool, x: u32) -> u32 {
     let y = if b { 1 } else { 0 };

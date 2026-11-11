@@ -45,13 +45,18 @@ The manifest describes **what Aeneas did**: the Lean declarations it produced an
 
 `loop` and `parent_lean_name` appear together or not at all.
 
+With the `-deep` option (see [deep-embedding.md](deep-embedding.md)), function entries
+additionally carry `deep_term` (the full Lean name of the deep term, `Namespace.Name.deep`)
+and `deep_theorem` (the full Lean name of the theorem relating it to the function,
+`Namespace.Name.deep_eq`). Both are absent otherwise.
+
 **Loop position** (`loop.pos`): nesting path of the loop in the source function. `[0]` is the first top-level loop, `[0, 1]` is the second loop nested inside it, etc. Matches `Pure.fun_decl.loop_pos`.
 
 **One Rust function, many entries**: a function with several loops produces multiple entries all sharing the same `def_id`.
 
 ### Type and global entries
 
-Type and global entries carry `def_id`, `lean_name`, `lean_file`, `rust_name`, `is_local`, and `source`; global entries additionally carry `can_fail`. Note that `def_id` is `TypeDeclId` or `GlobalDeclId` respectively. 
+Type and global entries carry `def_id`, `lean_name`, `lean_file`, `rust_name`, `is_local`, and `source`; global entries additionally carry `can_fail`, and, with `-deep`, `deep_term` and `deep_theorem` (as for functions). Note that `def_id` is `TypeDeclId` or `GlobalDeclId` respectively. 
 
 ### Trait entries
 

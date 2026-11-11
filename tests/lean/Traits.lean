@@ -21,14 +21,14 @@ set_option maxRecDepth 2048
 namespace traits
 
 /-- Trait declaration: [traits::BoolTrait]
-    Source: 'tests/src/traits.rs', lines 3:0-11:1
+    Source: 'tests/src/traits.rs', lines 4:0-12:1
     Visibility: public -/
 structure BoolTrait (Self : Type _) where
   get_bool : Self → Result Bool
   ret_true : Self → Result Bool
 
 /-- [traits::BoolTrait::ret_true]:
-    Source: 'tests/src/traits.rs', lines 8:4-10:5
+    Source: 'tests/src/traits.rs', lines 9:4-11:5
     Visibility: public -/
 @[trait_default]
 def BoolTrait.ret_true.default
@@ -36,13 +36,13 @@ def BoolTrait.ret_true.default
   ok true
 
 /-- [traits::{impl traits::BoolTrait for bool}::get_bool]:
-    Source: 'tests/src/traits.rs', lines 14:4-16:5
+    Source: 'tests/src/traits.rs', lines 15:4-17:5
     Visibility: public -/
 def Bool.Insts.TraitsBoolTrait.get_bool (self : Bool) : Result Bool := do
   ok self
 
 /-- Trait implementation: [traits::{impl traits::BoolTrait for bool}]
-    Source: 'tests/src/traits.rs', lines 13:0-17:1 -/
+    Source: 'tests/src/traits.rs', lines 14:0-18:1 -/
 @[reducible]
 def Bool.Insts.TraitsBoolTrait : BoolTrait Bool := {
   get_bool := Bool.Insts.TraitsBoolTrait.get_bool
@@ -50,7 +50,7 @@ def Bool.Insts.TraitsBoolTrait : BoolTrait Bool := {
 }
 
 /-- [traits::test_bool_trait_bool]:
-    Source: 'tests/src/traits.rs', lines 19:0-21:1
+    Source: 'tests/src/traits.rs', lines 20:0-22:1
     Visibility: public -/
 def test_bool_trait_bool (x : Bool) : Result Bool := do
   let b ← Bool.Insts.TraitsBoolTrait.get_bool x
@@ -59,7 +59,7 @@ def test_bool_trait_bool (x : Bool) : Result Bool := do
   else ok false
 
 /-- [traits::{impl traits::BoolTrait for core::option::Option<T>}::get_bool]:
-    Source: 'tests/src/traits.rs', lines 25:4-30:5
+    Source: 'tests/src/traits.rs', lines 26:4-31:5
     Visibility: public -/
 def core.option.Option.Insts.TraitsBoolTrait.get_bool
   {T : Type _} (self : Option T) : Result Bool := do
@@ -68,7 +68,7 @@ def core.option.Option.Insts.TraitsBoolTrait.get_bool
   | some _ => ok true
 
 /-- Trait implementation: [traits::{impl traits::BoolTrait for core::option::Option<T>}]
-    Source: 'tests/src/traits.rs', lines 24:0-31:1 -/
+    Source: 'tests/src/traits.rs', lines 25:0-32:1 -/
 @[reducible]
 def core.option.Option.Insts.TraitsBoolTrait (T : Type _) : BoolTrait (Option
   T) := {
@@ -77,7 +77,7 @@ def core.option.Option.Insts.TraitsBoolTrait (T : Type _) : BoolTrait (Option
 }
 
 /-- [traits::test_bool_trait_option]:
-    Source: 'tests/src/traits.rs', lines 33:0-35:1
+    Source: 'tests/src/traits.rs', lines 34:0-36:1
     Visibility: public -/
 def test_bool_trait_option {T : Type _} (x : Option T) : Result Bool := do
   let b ← core.option.Option.Insts.TraitsBoolTrait.get_bool x
@@ -86,33 +86,33 @@ def test_bool_trait_option {T : Type _} (x : Option T) : Result Bool := do
   else ok false
 
 /-- [traits::test_bool_trait]:
-    Source: 'tests/src/traits.rs', lines 37:0-39:1
+    Source: 'tests/src/traits.rs', lines 38:0-40:1
     Visibility: public -/
 def test_bool_trait
   {T : Type _} (BoolTraitInst : BoolTrait T) (x : T) : Result Bool := do
   BoolTraitInst.get_bool x
 
 /-- Trait declaration: [traits::ToU64]
-    Source: 'tests/src/traits.rs', lines 41:0-43:1
+    Source: 'tests/src/traits.rs', lines 42:0-44:1
     Visibility: public -/
 structure ToU64 (Self : Type _) where
   to_u64 : Self → Result Std.U64
 
 /-- [traits::{impl traits::ToU64 for u64}::to_u64]:
-    Source: 'tests/src/traits.rs', lines 46:4-48:5
+    Source: 'tests/src/traits.rs', lines 47:4-49:5
     Visibility: public -/
 def U64.Insts.TraitsToU64.to_u64 (self : Std.U64) : Result Std.U64 := do
   ok self
 
 /-- Trait implementation: [traits::{impl traits::ToU64 for u64}]
-    Source: 'tests/src/traits.rs', lines 45:0-49:1 -/
+    Source: 'tests/src/traits.rs', lines 46:0-50:1 -/
 @[reducible]
 def U64.Insts.TraitsToU64 : ToU64 Std.U64 := {
   to_u64 := U64.Insts.TraitsToU64.to_u64
 }
 
 /-- [traits::{impl traits::ToU64 for (A, A)}::to_u64]:
-    Source: 'tests/src/traits.rs', lines 52:4-54:5
+    Source: 'tests/src/traits.rs', lines 53:4-55:5
     Visibility: public -/
 def Pair.Insts.TraitsToU64.to_u64
   {A : Type _} (ToU64Inst : ToU64 A) (self : (A × A)) : Result Std.U64 := do
@@ -122,7 +122,7 @@ def Pair.Insts.TraitsToU64.to_u64
   i + i1
 
 /-- Trait implementation: [traits::{impl traits::ToU64 for (A, A)}]
-    Source: 'tests/src/traits.rs', lines 51:0-55:1 -/
+    Source: 'tests/src/traits.rs', lines 52:0-56:1 -/
 @[reducible]
 def Pair.Insts.TraitsToU64 {A : Type _} (ToU64Inst : ToU64 A) : ToU64 (A × A)
   := {
@@ -130,13 +130,13 @@ def Pair.Insts.TraitsToU64 {A : Type _} (ToU64Inst : ToU64 A) : ToU64 (A × A)
 }
 
 /-- [traits::f]:
-    Source: 'tests/src/traits.rs', lines 57:0-59:1
+    Source: 'tests/src/traits.rs', lines 58:0-60:1
     Visibility: public -/
 def f {T : Type _} (ToU64Inst : ToU64 T) (x : (T × T)) : Result Std.U64 := do
   Pair.Insts.TraitsToU64.to_u64 ToU64Inst x
 
 /-- [traits::g]:
-    Source: 'tests/src/traits.rs', lines 61:0-66:1
+    Source: 'tests/src/traits.rs', lines 62:0-67:1
     Visibility: public -/
 def g
   {T : Type _} (ToU64PairInst : ToU64 (T × T)) (x : (T × T)) :
@@ -145,26 +145,26 @@ def g
   ToU64PairInst.to_u64 x
 
 /-- [traits::h0]:
-    Source: 'tests/src/traits.rs', lines 68:0-70:1
+    Source: 'tests/src/traits.rs', lines 69:0-71:1
     Visibility: public -/
 def h0 (x : Std.U64) : Result Std.U64 := do
   U64.Insts.TraitsToU64.to_u64 x
 
 /-- [traits::Wrapper]
-    Source: 'tests/src/traits.rs', lines 72:0-74:1
+    Source: 'tests/src/traits.rs', lines 73:0-75:1
     Visibility: public -/
 structure Wrapper (T : Type _) where
   x : T
 
 /-- [traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64]:
-    Source: 'tests/src/traits.rs', lines 77:4-79:5
+    Source: 'tests/src/traits.rs', lines 78:4-80:5
     Visibility: public -/
 def Wrapper.Insts.TraitsToU64.to_u64
   {T : Type _} (ToU64Inst : ToU64 T) (self : Wrapper T) : Result Std.U64 := do
   ToU64Inst.to_u64 self.x
 
 /-- Trait implementation: [traits::{impl traits::ToU64 for traits::Wrapper<T>}]
-    Source: 'tests/src/traits.rs', lines 76:0-80:1 -/
+    Source: 'tests/src/traits.rs', lines 77:0-81:1 -/
 @[reducible]
 def Wrapper.Insts.TraitsToU64 {T : Type _} (ToU64Inst : ToU64 T) : ToU64
   (Wrapper T) := {
@@ -172,45 +172,45 @@ def Wrapper.Insts.TraitsToU64 {T : Type _} (ToU64Inst : ToU64 T) : ToU64
 }
 
 /-- [traits::h1]:
-    Source: 'tests/src/traits.rs', lines 82:0-84:1
+    Source: 'tests/src/traits.rs', lines 83:0-85:1
     Visibility: public -/
 def h1 (x : Wrapper Std.U64) : Result Std.U64 := do
   Wrapper.Insts.TraitsToU64.to_u64 U64.Insts.TraitsToU64 x
 
 /-- [traits::h2]:
-    Source: 'tests/src/traits.rs', lines 86:0-88:1
+    Source: 'tests/src/traits.rs', lines 87:0-89:1
     Visibility: public -/
 def h2
   {T : Type _} (ToU64Inst : ToU64 T) (x : Wrapper T) : Result Std.U64 := do
   Wrapper.Insts.TraitsToU64.to_u64 ToU64Inst x
 
 /-- Trait declaration: [traits::ToType]
-    Source: 'tests/src/traits.rs', lines 90:0-92:1
+    Source: 'tests/src/traits.rs', lines 91:0-93:1
     Visibility: public -/
 structure ToType (Self : Type _) (T : Type _) where
   to_type : Self → Result T
 
 /-- [traits::{impl traits::ToType<bool> for u64}::to_type]:
-    Source: 'tests/src/traits.rs', lines 95:4-97:5
+    Source: 'tests/src/traits.rs', lines 96:4-98:5
     Visibility: public -/
 def U64.Insts.TraitsToTypeBool.to_type (self : Std.U64) : Result Bool := do
   ok (self > 0#u64)
 
 /-- Trait implementation: [traits::{impl traits::ToType<bool> for u64}]
-    Source: 'tests/src/traits.rs', lines 94:0-98:1 -/
+    Source: 'tests/src/traits.rs', lines 95:0-99:1 -/
 @[reducible]
 def U64.Insts.TraitsToTypeBool : ToType Std.U64 Bool := {
   to_type := U64.Insts.TraitsToTypeBool.to_type
 }
 
 /-- Trait declaration: [traits::OfType]
-    Source: 'tests/src/traits.rs', lines 100:0-104:1
+    Source: 'tests/src/traits.rs', lines 101:0-105:1
     Visibility: public -/
 structure OfType (Self : Type _) where
   of_type : forall {T : Type} (ToTypeInst : ToType T Self), T → Result Self
 
 /-- [traits::h3]:
-    Source: 'tests/src/traits.rs', lines 106:0-108:1
+    Source: 'tests/src/traits.rs', lines 107:0-109:1
     Visibility: public -/
 def h3
   {T1 : Type _} {T2 : Type _} (OfTypeInst : OfType T1) (ToTypeInst : ToType T2
@@ -220,14 +220,14 @@ def h3
   OfTypeInst.of_type ToTypeInst y
 
 /-- Trait declaration: [traits::OfTypeBis]
-    Source: 'tests/src/traits.rs', lines 111:0-118:1
+    Source: 'tests/src/traits.rs', lines 112:0-119:1
     Visibility: public -/
 structure OfTypeBis (Self : Type _) (T : Type _) where
   ToTypeInst : ToType T Self
   of_type : T → Result Self
 
 /-- [traits::h4]:
-    Source: 'tests/src/traits.rs', lines 120:0-122:1
+    Source: 'tests/src/traits.rs', lines 121:0-123:1
     Visibility: public -/
 def h4
   {T1 : Type _} {T2 : Type _} (OfTypeBisInst : OfTypeBis T1 T2) (ToTypeInst :
@@ -237,24 +237,24 @@ def h4
   OfTypeBisInst.of_type y
 
 /-- [traits::TestType]
-    Source: 'tests/src/traits.rs', lines 124:0-124:26
+    Source: 'tests/src/traits.rs', lines 125:0-125:26
     Visibility: public -/
 @[reducible]
 def TestType (T : Type _) := T
 
 /-- [traits::{traits::TestType<T>}::test::TestType1]
-    Source: 'tests/src/traits.rs', lines 129:8-129:30 -/
+    Source: 'tests/src/traits.rs', lines 130:8-130:30 -/
 @[reducible]
 def TestType.test.TestType1 := Std.U64
 
 /-- [traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}::test]:
-    Source: 'tests/src/traits.rs', lines 141:12-143:13 -/
+    Source: 'tests/src/traits.rs', lines 142:12-144:13 -/
 def TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test
   (self : TestType.test.TestType1) : Result Bool := do
   ok (self > 1#u64)
 
 /-- [traits::{traits::TestType<T>}::test]:
-    Source: 'tests/src/traits.rs', lines 128:4-149:5
+    Source: 'tests/src/traits.rs', lines 129:4-150:5
     Visibility: public -/
 def TestType.test
   {T : Type _} (ToU64Inst : ToU64 T) (self : TestType T) (x : T) :
@@ -266,12 +266,12 @@ def TestType.test
   else ok false
 
 /-- Trait declaration: [traits::{traits::TestType<T>}::test::TestTrait]
-    Source: 'tests/src/traits.rs', lines 130:8-132:9 -/
+    Source: 'tests/src/traits.rs', lines 131:8-133:9 -/
 structure TestType.test.TestTrait (Self : Type _) where
   test : Self → Result Bool
 
 /-- Trait implementation: [traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}]
-    Source: 'tests/src/traits.rs', lines 140:8-144:9 -/
+    Source: 'tests/src/traits.rs', lines 141:8-145:9 -/
 @[reducible]
 def TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait :
   TestType.test.TestTrait TestType.test.TestType1 := {
@@ -279,13 +279,13 @@ def TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait :
 }
 
 /-- [traits::BoolWrapper]
-    Source: 'tests/src/traits.rs', lines 152:0-152:33
+    Source: 'tests/src/traits.rs', lines 153:0-153:33
     Visibility: public -/
 @[reducible]
 def BoolWrapper := Bool
 
 /-- [traits::{impl traits::ToType<T> for traits::BoolWrapper}::to_type]:
-    Source: 'tests/src/traits.rs', lines 158:4-160:5
+    Source: 'tests/src/traits.rs', lines 159:4-161:5
     Visibility: public -/
 def BoolWrapper.Insts.TraitsToType.to_type
   {T : Type _} (ToTypeBoolTInst : ToType Bool T) (self : BoolWrapper) :
@@ -294,7 +294,7 @@ def BoolWrapper.Insts.TraitsToType.to_type
   ToTypeBoolTInst.to_type self
 
 /-- Trait implementation: [traits::{impl traits::ToType<T> for traits::BoolWrapper}]
-    Source: 'tests/src/traits.rs', lines 154:0-161:1 -/
+    Source: 'tests/src/traits.rs', lines 155:0-162:1 -/
 @[reducible]
 def BoolWrapper.Insts.TraitsToType {T : Type _} (ToTypeBoolTInst : ToType Bool
   T) : ToType BoolWrapper T := {
@@ -302,7 +302,7 @@ def BoolWrapper.Insts.TraitsToType {T : Type _} (ToTypeBoolTInst : ToType Bool
 }
 
 /-- Trait declaration: [traits::WithConstTy]
-    Source: 'tests/src/traits.rs', lines 163:0-174:1
+    Source: 'tests/src/traits.rs', lines 164:0-175:1
     Visibility: public -/
 structure WithConstTy (Self : Type _) (Self_V : Type _) (Self_W : Type _) (LEN
   : Std.Usize) where
@@ -312,7 +312,7 @@ structure WithConstTy (Self : Type _) (Self_V : Type _) (Self_W : Type _) (LEN
   f : Self_W → Array Std.U8 LEN → Result Self_W
 
 /-- [traits::WithConstTy::LEN2]
-    Source: 'tests/src/traits.rs', lines 166:4-166:27
+    Source: 'tests/src/traits.rs', lines 167:4-167:27
     Visibility: public -/
 @[global_simps, irreducible, trait_default]
 def WithConstTy.LEN2.default (Self : Type _) (Clause0_V : Type _) (Clause0_W :
@@ -320,20 +320,20 @@ def WithConstTy.LEN2.default (Self : Type _) (Clause0_V : Type _) (Clause0_W :
   32#usize
 
 /-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::f]:
-    Source: 'tests/src/traits.rs', lines 182:4-182:42
+    Source: 'tests/src/traits.rs', lines 183:4-183:42
     Visibility: public -/
 def Bool.Insts.TraitsWithConstTyU8U6432.f
   (i : Std.U64) (a : Array Std.U8 32#usize) : Result Std.U64 := do
   ok i
 
 /-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::LEN1]
-    Source: 'tests/src/traits.rs', lines 177:4-177:27
+    Source: 'tests/src/traits.rs', lines 178:4-178:27
     Visibility: public -/
 @[global_simps, irreducible]
 def Bool.Insts.TraitsWithConstTyU8U6432.LEN1 : Std.Usize := 12#usize
 
 /-- Trait implementation: [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}]
-    Source: 'tests/src/traits.rs', lines 176:0-183:1 -/
+    Source: 'tests/src/traits.rs', lines 177:0-184:1 -/
 @[reducible]
 def Bool.Insts.TraitsWithConstTyU8U6432 : WithConstTy Bool Std.U8 Std.U64
   32#usize := {
@@ -344,7 +344,7 @@ def Bool.Insts.TraitsWithConstTyU8U6432 : WithConstTy Bool Std.U8 Std.U64
 }
 
 /-- [traits::use_with_const_ty1]:
-    Source: 'tests/src/traits.rs', lines 185:0-187:1
+    Source: 'tests/src/traits.rs', lines 186:0-188:1
     Visibility: public -/
 def use_with_const_ty1
   {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
@@ -354,7 +354,7 @@ def use_with_const_ty1
   WithConstTyInst.LEN1
 
 /-- [traits::use_with_const_ty2]:
-    Source: 'tests/src/traits.rs', lines 189:0-189:76
+    Source: 'tests/src/traits.rs', lines 190:0-190:76
     Visibility: public -/
 def use_with_const_ty2
   {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
@@ -364,7 +364,7 @@ def use_with_const_ty2
   ok ()
 
 /-- [traits::use_with_const_ty3]:
-    Source: 'tests/src/traits.rs', lines 191:0-193:1
+    Source: 'tests/src/traits.rs', lines 192:0-194:1
     Visibility: public -/
 def use_with_const_ty3
   {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
@@ -374,13 +374,13 @@ def use_with_const_ty3
   WithConstTyInst.ToU64Inst.to_u64 x
 
 /-- [traits::test_where1]:
-    Source: 'tests/src/traits.rs', lines 195:0-195:43
+    Source: 'tests/src/traits.rs', lines 196:0-196:43
     Visibility: public -/
 def test_where1 {T : Type _} (_x : T) : Result Unit := do
   ok ()
 
 /-- [traits::test_where2]:
-    Source: 'tests/src/traits.rs', lines 196:0-196:60
+    Source: 'tests/src/traits.rs', lines 197:0-197:60
     Visibility: public -/
 def test_where2
   {T : Type _} {Clause0_W : Type _} (WithConstTyTU32Clause0_W32Inst :
@@ -390,26 +390,26 @@ def test_where2
   ok ()
 
 /-- Trait declaration: [traits::ParentTrait0]
-    Source: 'tests/src/traits.rs', lines 202:0-206:1
+    Source: 'tests/src/traits.rs', lines 203:0-207:1
     Visibility: public -/
 structure ParentTrait0 (Self : Type _) (Self_W : Type _) where
   get_name : Self → Result String
   get_w : Self → Result Self_W
 
 /-- Trait declaration: [traits::ParentTrait1]
-    Source: 'tests/src/traits.rs', lines 207:0-207:25
+    Source: 'tests/src/traits.rs', lines 208:0-208:25
     Visibility: public -/
 structure ParentTrait1 (Self : Type _) where
 
 /-- Trait declaration: [traits::ChildTrait]
-    Source: 'tests/src/traits.rs', lines 208:0-208:52
+    Source: 'tests/src/traits.rs', lines 209:0-209:52
     Visibility: public -/
 structure ChildTrait (Self : Type _) (Self_Clause0_W : Type _) where
   ParentTrait0Inst : ParentTrait0 Self Self_Clause0_W
   ParentTrait1Inst : ParentTrait1 Self
 
 /-- [traits::test_child_trait1]:
-    Source: 'tests/src/traits.rs', lines 211:0-213:1
+    Source: 'tests/src/traits.rs', lines 212:0-214:1
     Visibility: public -/
 def test_child_trait1
   {T : Type _} {Clause0_Clause0_W : Type _} (ChildTraitInst : ChildTrait T
@@ -419,7 +419,7 @@ def test_child_trait1
   ChildTraitInst.ParentTrait0Inst.get_name x
 
 /-- [traits::test_child_trait2]:
-    Source: 'tests/src/traits.rs', lines 215:0-217:1
+    Source: 'tests/src/traits.rs', lines 216:0-218:1
     Visibility: public -/
 def test_child_trait2
   {T : Type _} {Clause0_Clause0_W : Type _} (ChildTraitInst : ChildTrait T
@@ -429,7 +429,7 @@ def test_child_trait2
   ChildTraitInst.ParentTrait0Inst.get_w x
 
 /-- [traits::order1]:
-    Source: 'tests/src/traits.rs', lines 221:0-221:62
+    Source: 'tests/src/traits.rs', lines 222:0-222:62
     Visibility: public -/
 def order1
   {T : Type _} {U : Type _} {Clause1_W : Type _} (ParentTrait0Inst :
@@ -439,31 +439,31 @@ def order1
   ok ()
 
 /-- Trait declaration: [traits::ChildTrait1]
-    Source: 'tests/src/traits.rs', lines 224:0-224:38
+    Source: 'tests/src/traits.rs', lines 225:0-225:38
     Visibility: public -/
 structure ChildTrait1 (Self : Type _) where
   ParentTrait1Inst : ParentTrait1 Self
 
 /-- Trait implementation: [traits::{impl traits::ParentTrait1 for usize}]
-    Source: 'tests/src/traits.rs', lines 226:0-226:30 -/
+    Source: 'tests/src/traits.rs', lines 227:0-227:30 -/
 @[reducible]
 def Usize.Insts.TraitsParentTrait1 : ParentTrait1 Std.Usize := {
 }
 
 /-- Trait implementation: [traits::{impl traits::ChildTrait1 for usize}]
-    Source: 'tests/src/traits.rs', lines 227:0-227:29 -/
+    Source: 'tests/src/traits.rs', lines 228:0-228:29 -/
 @[reducible]
 def Usize.Insts.TraitsChildTrait1 : ChildTrait1 Std.Usize := {
   ParentTrait1Inst := Usize.Insts.TraitsParentTrait1
 }
 
 /-- Trait declaration: [traits::Iterator]
-    Source: 'tests/src/traits.rs', lines 231:0-233:1
+    Source: 'tests/src/traits.rs', lines 232:0-234:1
     Visibility: public -/
 structure Iterator (Self : Type _) (Self_Item : Type _) where
 
 /-- Trait declaration: [traits::IntoIterator]
-    Source: 'tests/src/traits.rs', lines 235:0-241:1
+    Source: 'tests/src/traits.rs', lines 236:0-242:1
     Visibility: public -/
 structure IntoIterator (Self : Type _) (Self_Item : Type _) (Self_IntoIter :
   Type _) where
@@ -471,28 +471,28 @@ structure IntoIterator (Self : Type _) (Self_Item : Type _) (Self_IntoIter :
   into_iter : Self → Result Self_IntoIter
 
 /-- Trait declaration: [traits::FromResidual]
-    Source: 'tests/src/traits.rs', lines 252:0-252:24 -/
+    Source: 'tests/src/traits.rs', lines 253:0-253:24 -/
 structure FromResidual (Self : Type _) (T : Type _) where
 
 /-- Trait declaration: [traits::Try]
-    Source: 'tests/src/traits.rs', lines 248:0-250:1 -/
+    Source: 'tests/src/traits.rs', lines 249:0-251:1 -/
 structure Try (Self : Type _) (Self_Residual : Type _) where
   FromResidualInst : FromResidual Self Self_Residual
 
 /-- Trait declaration: [traits::WithTarget]
-    Source: 'tests/src/traits.rs', lines 254:0-256:1
+    Source: 'tests/src/traits.rs', lines 255:0-257:1
     Visibility: public -/
 structure WithTarget (Self : Type _) (Self_Target : Type _) where
 
 /-- Trait declaration: [traits::ParentTrait2]
-    Source: 'tests/src/traits.rs', lines 258:0-260:1
+    Source: 'tests/src/traits.rs', lines 259:0-261:1
     Visibility: public -/
 structure ParentTrait2 (Self : Type _) (Self_U : Type _) (Self_Clause0_Target :
   Type _) where
   WithTargetInst : WithTarget Self_U Self_Clause0_Target
 
 /-- Trait declaration: [traits::ChildTrait2]
-    Source: 'tests/src/traits.rs', lines 262:0-264:1
+    Source: 'tests/src/traits.rs', lines 263:0-265:1
     Visibility: public -/
 structure ChildTrait2 (Self : Type _) (Self_Clause0_U : Type _)
   (Self_Clause0_Clause0_Target : Type _) where
@@ -501,13 +501,13 @@ structure ChildTrait2 (Self : Type _) (Self_Clause0_U : Type _)
   convert : Self_Clause0_U → Result Self_Clause0_Clause0_Target
 
 /-- Trait implementation: [traits::{impl traits::WithTarget<u32> for u32}]
-    Source: 'tests/src/traits.rs', lines 266:0-268:1 -/
+    Source: 'tests/src/traits.rs', lines 267:0-269:1 -/
 @[reducible]
 def U32.Insts.TraitsWithTargetU32 : WithTarget Std.U32 Std.U32 := {
 }
 
 /-- Trait implementation: [traits::{impl traits::ParentTrait2<u32, u32> for u32}]
-    Source: 'tests/src/traits.rs', lines 270:0-272:1 -/
+    Source: 'tests/src/traits.rs', lines 271:0-273:1 -/
 @[reducible]
 def U32.Insts.TraitsParentTrait2U32U32 : ParentTrait2 Std.U32 Std.U32 Std.U32
   := {
@@ -515,14 +515,14 @@ def U32.Insts.TraitsParentTrait2U32U32 : ParentTrait2 Std.U32 Std.U32 Std.U32
 }
 
 /-- [traits::{impl traits::ChildTrait2<u32, u32> for u32}::convert]:
-    Source: 'tests/src/traits.rs', lines 275:4-277:5
+    Source: 'tests/src/traits.rs', lines 276:4-278:5
     Visibility: public -/
 def U32.Insts.TraitsChildTrait2U32U32.convert
   (x : Std.U32) : Result Std.U32 := do
   ok x
 
 /-- Trait implementation: [traits::{impl traits::ChildTrait2<u32, u32> for u32}]
-    Source: 'tests/src/traits.rs', lines 274:0-278:1 -/
+    Source: 'tests/src/traits.rs', lines 275:0-279:1 -/
 @[reducible]
 def U32.Insts.TraitsChildTrait2U32U32 : ChildTrait2 Std.U32 Std.U32 Std.U32
   := {
@@ -531,13 +531,13 @@ def U32.Insts.TraitsChildTrait2U32U32 : ChildTrait2 Std.U32 Std.U32 Std.U32
 }
 
 /-- Trait declaration: [traits::CFnOnce]
-    Source: 'tests/src/traits.rs', lines 288:0-292:1
+    Source: 'tests/src/traits.rs', lines 289:0-293:1
     Visibility: public -/
 structure CFnOnce (Self : Type _) (Args : Type _) (Self_Output : Type _) where
   call_once : Self → Args → Result Self_Output
 
 /-- Trait declaration: [traits::CFnMut]
-    Source: 'tests/src/traits.rs', lines 294:0-296:1
+    Source: 'tests/src/traits.rs', lines 295:0-297:1
     Visibility: public -/
 structure CFnMut (Self : Type _) (Args : Type _) (Self_Clause0_Output : Type _)
   where
@@ -545,7 +545,7 @@ structure CFnMut (Self : Type _) (Args : Type _) (Self_Clause0_Output : Type _)
   call_mut : Self → Args → Result (Self_Clause0_Output × Self)
 
 /-- Trait declaration: [traits::CFn]
-    Source: 'tests/src/traits.rs', lines 298:0-300:1
+    Source: 'tests/src/traits.rs', lines 299:0-301:1
     Visibility: public -/
 structure CFn (Self : Type _) (Args : Type _) (Self_Clause0_Clause0_Output :
   Type _) where
@@ -553,13 +553,13 @@ structure CFn (Self : Type _) (Args : Type _) (Self_Clause0_Clause0_Output :
   call : Self → Args → Result Self_Clause0_Clause0_Output
 
 /-- Trait declaration: [traits::GetTrait]
-    Source: 'tests/src/traits.rs', lines 302:0-305:1
+    Source: 'tests/src/traits.rs', lines 303:0-306:1
     Visibility: public -/
 structure GetTrait (Self : Type _) (Self_W : Type _) where
   get_w : Self → Result Self_W
 
 /-- [traits::test_get_trait]:
-    Source: 'tests/src/traits.rs', lines 307:0-309:1
+    Source: 'tests/src/traits.rs', lines 308:0-310:1
     Visibility: public -/
 def test_get_trait
   {T : Type _} {Clause0_W : Type _} (GetTraitInst : GetTrait T Clause0_W)
@@ -569,19 +569,19 @@ def test_get_trait
   GetTraitInst.get_w x
 
 /-- Trait declaration: [traits::Trait]
-    Source: 'tests/src/traits.rs', lines 312:0-314:1
+    Source: 'tests/src/traits.rs', lines 313:0-315:1
     Visibility: public -/
 structure Trait (Self : Type _) where
   LEN : Result Std.Usize
 
 /-- [traits::{impl traits::Trait for [T; N]}::LEN]
-    Source: 'tests/src/traits.rs', lines 317:4-317:25
+    Source: 'tests/src/traits.rs', lines 318:4-318:25
     Visibility: public -/
 @[global_simps, irreducible]
 def Array.Insts.TraitsTrait.LEN (T : Type _) (N : Std.Usize) : Std.Usize := N
 
 /-- Trait implementation: [traits::{impl traits::Trait for [T; N]}]
-    Source: 'tests/src/traits.rs', lines 316:0-318:1 -/
+    Source: 'tests/src/traits.rs', lines 317:0-319:1 -/
 @[reducible]
 def Array.Insts.TraitsTrait (T : Type _) (N : Std.Usize) : Trait (Array T N)
   := {
@@ -589,7 +589,7 @@ def Array.Insts.TraitsTrait (T : Type _) (N : Std.Usize) : Trait (Array T N)
 }
 
 /-- [traits::{impl traits::Trait for traits::Wrapper<T>}::LEN]
-    Source: 'tests/src/traits.rs', lines 321:4-321:25
+    Source: 'tests/src/traits.rs', lines 322:4-322:25
     Visibility: public -/
 @[global_simps, irreducible]
 def Wrapper.Insts.TraitsTrait.LEN {T : Type _} (TraitInst : Trait T)
@@ -597,7 +597,7 @@ def Wrapper.Insts.TraitsTrait.LEN {T : Type _} (TraitInst : Trait T)
   0#usize
 
 /-- Trait implementation: [traits::{impl traits::Trait for traits::Wrapper<T>}]
-    Source: 'tests/src/traits.rs', lines 320:0-322:1 -/
+    Source: 'tests/src/traits.rs', lines 321:0-323:1 -/
 @[reducible]
 def Wrapper.Insts.TraitsTrait {T : Type _} (TraitInst : Trait T) : Trait
   (Wrapper T) := {
@@ -605,20 +605,20 @@ def Wrapper.Insts.TraitsTrait {T : Type _} (TraitInst : Trait T) : Trait
 }
 
 /-- [traits::use_wrapper_len]:
-    Source: 'tests/src/traits.rs', lines 324:0-326:1
+    Source: 'tests/src/traits.rs', lines 325:0-327:1
     Visibility: public -/
 def use_wrapper_len {T : Type _} (TraitInst : Trait T) : Result Std.Usize := do
   ok (Wrapper.Insts.TraitsTrait.LEN TraitInst)
 
 /-- [traits::Foo]
-    Source: 'tests/src/traits.rs', lines 328:0-331:1
+    Source: 'tests/src/traits.rs', lines 329:0-332:1
     Visibility: public -/
 structure Foo (T : Type _) (U : Type _) where
   x : T
   y : U
 
 /-- [traits::{traits::Foo<T, U>}::FOO]
-    Source: 'tests/src/traits.rs', lines 334:4-334:43
+    Source: 'tests/src/traits.rs', lines 335:4-335:43
     Visibility: public -/
 @[global_simps, irreducible]
 def Foo.FOO {T : Type _} (U : Type _) (TraitInst : Trait T)
@@ -626,7 +626,7 @@ def Foo.FOO {T : Type _} (U : Type _) (TraitInst : Trait T)
   core.result.Result.Err 0#i32
 
 /-- [traits::use_foo1]:
-    Source: 'tests/src/traits.rs', lines 337:0-339:1
+    Source: 'tests/src/traits.rs', lines 338:0-340:1
     Visibility: public -/
 def use_foo1
   {T : Type _} (U : Type _) (TraitInst : Trait T) :
@@ -635,12 +635,633 @@ def use_foo1
   ok (Foo.FOO U TraitInst)
 
 /-- [traits::use_foo2]:
-    Source: 'tests/src/traits.rs', lines 341:0-343:1
+    Source: 'tests/src/traits.rs', lines 342:0-344:1
     Visibility: public -/
 def use_foo2
   (T : Type _) {U : Type _} (TraitInst : Trait U) :
   Result (core.result.Result U Std.I32)
   := do
   ok (Foo.FOO T TraitInst)
+
+/-! ## Deep embedding of the function bodies -/
+
+/-- [traits::BoolTrait::ret_true]:
+    Source: 'tests/src/traits.rs', lines 9:4-11:5
+    Visibility: public -/
+def BoolTrait.ret_true.default.deep {Self : Type _} :
+  Aeneas.Deep.Expr [Self] (Result Bool) :=
+  (.ok (.lit true))
+
+theorem BoolTrait.ret_true.default.deep_eq {Self : Type _} (self : Self) :
+  BoolTrait.ret_true.default self =
+    Aeneas.Deep.Expr.denote (BoolTrait.ret_true.default.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::BoolTrait for bool}::get_bool]:
+    Source: 'tests/src/traits.rs', lines 15:4-17:5
+    Visibility: public -/
+def Bool.Insts.TraitsBoolTrait.get_bool.deep :
+  Aeneas.Deep.Expr [Bool] (Result Bool) :=
+  (.ok (.var .zero))
+
+theorem Bool.Insts.TraitsBoolTrait.get_bool.deep_eq (self : Bool) :
+  Bool.Insts.TraitsBoolTrait.get_bool self =
+    Aeneas.Deep.Expr.denote (Bool.Insts.TraitsBoolTrait.get_bool.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_bool_trait_bool]:
+    Source: 'tests/src/traits.rs', lines 20:0-22:1
+    Visibility: public -/
+def test_bool_trait_bool.deep : Aeneas.Deep.Expr [Bool] (Result Bool) :=
+  (.bind
+    (.app (.leaf (.fn "traits::{impl traits::BoolTrait for bool}::get_bool")
+            (fun (b : Bool) =>
+            (Bool.Insts.TraitsBoolTrait.get_bool b : Result Bool)))
+      (.var .zero)) .var
+  (.ite (.bool (.var .zero))
+  (.app (.leaf (.fn "traits::BoolTrait::ret_true") (fun (b1 : Bool) =>
+          (BoolTrait.ret_true.default b1 : Result Bool))) (.var (.succ .zero)))
+  (.ok (.lit false))))
+
+theorem test_bool_trait_bool.deep_eq (x : Bool) :
+  test_bool_trait_bool x =
+    Aeneas.Deep.Expr.denote (test_bool_trait_bool.deep)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::BoolTrait for core::option::Option<T>}::get_bool]:
+    Source: 'tests/src/traits.rs', lines 26:4-31:5
+    Visibility: public -/
+def core.option.Option.Insts.TraitsBoolTrait.get_bool.deep {T : Type _} :
+  Aeneas.Deep.Expr [Option T] (Result Bool) :=
+  (.match_ (.var .zero) Aeneas.Deep.Option.deepElim
+  (.cons (.ok (.lit false))
+  (.cons (.ok (.lit true))
+  .nil)))
+
+theorem core.option.Option.Insts.TraitsBoolTrait.get_bool.deep_eq {T : Type _}
+  (self : Option T) :
+  core.option.Option.Insts.TraitsBoolTrait.get_bool self =
+    Aeneas.Deep.Expr.denote
+      (core.option.Option.Insts.TraitsBoolTrait.get_bool.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_bool_trait_option]:
+    Source: 'tests/src/traits.rs', lines 34:0-36:1
+    Visibility: public -/
+def test_bool_trait_option.deep {T : Type _} :
+  Aeneas.Deep.Expr [Option T] (Result Bool) :=
+  (.bind
+    (.app (.leaf (.fn "traits::{impl traits::BoolTrait for core::option::Option<T>}::get_bool")
+            (fun (o : Option T) =>
+            (core.option.Option.Insts.TraitsBoolTrait.get_bool o : Result Bool)))
+      (.var .zero)) .var
+  (.ite (.bool (.var .zero))
+  (.app (.leaf (.fn "traits::BoolTrait::ret_true") (fun (o : Option T) =>
+          (BoolTrait.ret_true.default o : Result Bool))) (.var (.succ .zero)))
+  (.ok (.lit false))))
+
+theorem test_bool_trait_option.deep_eq {T : Type _} (x : Option T) :
+  test_bool_trait_option x =
+    Aeneas.Deep.Expr.denote (test_bool_trait_option.deep)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_bool_trait]:
+    Source: 'tests/src/traits.rs', lines 38:0-40:1
+    Visibility: public -/
+def test_bool_trait.deep {T : Type _} (BoolTraitInst : BoolTrait T) :
+  Aeneas.Deep.Expr [T] (Result Bool) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).get_bool") (fun (t : T) =>
+          (BoolTraitInst.get_bool t : Result Bool))) (.var .zero))
+
+theorem test_bool_trait.deep_eq {T : Type _} (BoolTraitInst : BoolTrait T)
+  (x : T) :
+  test_bool_trait BoolTraitInst x =
+    Aeneas.Deep.Expr.denote (test_bool_trait.deep BoolTraitInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::ToU64 for u64}::to_u64]:
+    Source: 'tests/src/traits.rs', lines 47:4-49:5
+    Visibility: public -/
+def U64.Insts.TraitsToU64.to_u64.deep :
+  Aeneas.Deep.Expr [Std.U64] (Result Std.U64) :=
+  (.ok (.var .zero))
+
+theorem U64.Insts.TraitsToU64.to_u64.deep_eq (self : Std.U64) :
+  U64.Insts.TraitsToU64.to_u64 self =
+    Aeneas.Deep.Expr.denote (U64.Insts.TraitsToU64.to_u64.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::ToU64 for (A, A)}::to_u64]:
+    Source: 'tests/src/traits.rs', lines 53:4-55:5
+    Visibility: public -/
+def Pair.Insts.TraitsToU64.to_u64.deep {A : Type _} (ToU64Inst : ToU64 A) :
+  Aeneas.Deep.Expr [(A × A)] (Result Std.U64) :=
+  (.let_ (.var .zero) (.pair .var .var)
+  (.bind
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t2 : A) =>
+            (ToU64Inst.to_u64 t2 : Result Std.U64))) (.var .zero)) .var
+  (.bind
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t2 : A) =>
+            (ToU64Inst.to_u64 t2 : Result Std.U64)))
+      (.var (.succ (.succ .zero)))) .var
+  (.app (.app (.leaf (.binop "panic.+::<u64>")
+                (fun (i2 : Std.U64) (i3 : Std.U64) =>
+                (i2 + i3 : Result Std.U64))) (.var (.succ .zero)))
+    (.var .zero)))))
+
+theorem Pair.Insts.TraitsToU64.to_u64.deep_eq
+  {A : Type _} (ToU64Inst : ToU64 A) (self : (A × A)) :
+  Pair.Insts.TraitsToU64.to_u64 ToU64Inst self =
+    Aeneas.Deep.Expr.denote (Pair.Insts.TraitsToU64.to_u64.deep ToU64Inst)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::f]:
+    Source: 'tests/src/traits.rs', lines 58:0-60:1
+    Visibility: public -/
+def f.deep {T : Type _} (ToU64Inst : ToU64 T) :
+  Aeneas.Deep.Expr [(T × T)] (Result Std.U64) :=
+  (.app (.leaf (.fn "traits::{impl traits::ToU64 for (A, A)}::to_u64")
+          (fun (p : (T × T)) =>
+          (Pair.Insts.TraitsToU64.to_u64 ToU64Inst p : Result Std.U64)))
+    (.var .zero))
+
+theorem f.deep_eq {T : Type _} (ToU64Inst : ToU64 T) (x : (T × T)) :
+  f ToU64Inst x =
+    Aeneas.Deep.Expr.denote (f.deep ToU64Inst) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::g]:
+    Source: 'tests/src/traits.rs', lines 62:0-67:1
+    Visibility: public -/
+def g.deep {T : Type _} (ToU64PairInst : ToU64 (T × T)) :
+  Aeneas.Deep.Expr [(T × T)] (Result Std.U64) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (p : (T × T)) =>
+          (ToU64PairInst.to_u64 p : Result Std.U64))) (.var .zero))
+
+theorem g.deep_eq {T : Type _} (ToU64PairInst : ToU64 (T × T)) (x : (T × T))
+  :
+  g ToU64PairInst x =
+    Aeneas.Deep.Expr.denote (g.deep ToU64PairInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::h0]:
+    Source: 'tests/src/traits.rs', lines 69:0-71:1
+    Visibility: public -/
+def h0.deep : Aeneas.Deep.Expr [Std.U64] (Result Std.U64) :=
+  (.app (.leaf (.fn "traits::{impl traits::ToU64 for u64}::to_u64")
+          (fun (i : Std.U64) =>
+          (U64.Insts.TraitsToU64.to_u64 i : Result Std.U64))) (.var .zero))
+
+theorem h0.deep_eq (x : Std.U64) :
+  h0 x = Aeneas.Deep.Expr.denote (h0.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- Deep eliminator for [traits::Wrapper]
+    Source: 'tests/src/traits.rs', lines 73:0-75:1 -/
+@[reducible] def Wrapper.deepElim {T : Type _} :
+  Aeneas.Deep.Elim (Wrapper T) [[T]] :=
+  fun x alts => Wrapper.casesOn x alts.1
+
+/-- [traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64]:
+    Source: 'tests/src/traits.rs', lines 78:4-80:5
+    Visibility: public -/
+def Wrapper.Insts.TraitsToU64.to_u64.deep {T : Type _} (ToU64Inst : ToU64 T) :
+  Aeneas.Deep.Expr [Wrapper T] (Result Std.U64) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t : T) =>
+          (ToU64Inst.to_u64 t : Result Std.U64)))
+    (.app (.leaf (.proj "x") (fun (w : Wrapper T) => (w.x : T))) (.var .zero)))
+
+theorem Wrapper.Insts.TraitsToU64.to_u64.deep_eq
+  {T : Type _} (ToU64Inst : ToU64 T) (self : Wrapper T) :
+  Wrapper.Insts.TraitsToU64.to_u64 ToU64Inst self =
+    Aeneas.Deep.Expr.denote (Wrapper.Insts.TraitsToU64.to_u64.deep ToU64Inst)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::h1]:
+    Source: 'tests/src/traits.rs', lines 83:0-85:1
+    Visibility: public -/
+def h1.deep : Aeneas.Deep.Expr [Wrapper Std.U64] (Result Std.U64) :=
+  (.app (.leaf (.fn "traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64")
+          (fun (w : Wrapper Std.U64) =>
+          (Wrapper.Insts.TraitsToU64.to_u64 U64.Insts.TraitsToU64 w : Result
+            Std.U64))) (.var .zero))
+
+theorem h1.deep_eq (x : Wrapper Std.U64) :
+  h1 x = Aeneas.Deep.Expr.denote (h1.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::h2]:
+    Source: 'tests/src/traits.rs', lines 87:0-89:1
+    Visibility: public -/
+def h2.deep {T : Type _} (ToU64Inst : ToU64 T) :
+  Aeneas.Deep.Expr [Wrapper T] (Result Std.U64) :=
+  (.app (.leaf (.fn "traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64")
+          (fun (w : Wrapper T) =>
+          (Wrapper.Insts.TraitsToU64.to_u64 ToU64Inst w : Result Std.U64)))
+    (.var .zero))
+
+theorem h2.deep_eq {T : Type _} (ToU64Inst : ToU64 T) (x : Wrapper T) :
+  h2 ToU64Inst x =
+    Aeneas.Deep.Expr.denote (h2.deep ToU64Inst) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::ToType<bool> for u64}::to_type]:
+    Source: 'tests/src/traits.rs', lines 96:4-98:5
+    Visibility: public -/
+def U64.Insts.TraitsToTypeBool.to_type.deep :
+  Aeneas.Deep.Expr [Std.U64] (Result Bool) :=
+  (.ok (.decide (.gt (.var .zero) (.lit 0#u64))))
+
+theorem U64.Insts.TraitsToTypeBool.to_type.deep_eq (self : Std.U64) :
+  U64.Insts.TraitsToTypeBool.to_type self =
+    Aeneas.Deep.Expr.denote (U64.Insts.TraitsToTypeBool.to_type.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::h3]:
+    Source: 'tests/src/traits.rs', lines 107:0-109:1
+    Visibility: public -/
+def h3.deep {T1 : Type _} {T2 : Type _} (OfTypeInst : OfType T1) (ToTypeInst :
+  ToType T2 T1) : Aeneas.Deep.Expr [T2] (Result T1) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).of_type") (fun (t : T2) =>
+          (OfTypeInst.of_type ToTypeInst t : Result T1))) (.var .zero))
+
+theorem h3.deep_eq
+  {T1 : Type _} {T2 : Type _} (OfTypeInst : OfType T1) (ToTypeInst : ToType T2
+  T1) (y : T2) :
+  h3 OfTypeInst ToTypeInst y =
+    Aeneas.Deep.Expr.denote (h3.deep OfTypeInst ToTypeInst)
+      (y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::h4]:
+    Source: 'tests/src/traits.rs', lines 121:0-123:1
+    Visibility: public -/
+def h4.deep {T1 : Type _} {T2 : Type _} (OfTypeBisInst : OfTypeBis T1 T2)
+  (ToTypeInst : ToType T2 T1) : Aeneas.Deep.Expr [T2] (Result T1) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).of_type") (fun (t : T2) =>
+          (OfTypeBisInst.of_type t : Result T1))) (.var .zero))
+
+theorem h4.deep_eq
+  {T1 : Type _} {T2 : Type _} (OfTypeBisInst : OfTypeBis T1 T2) (ToTypeInst :
+  ToType T2 T1) (y : T2) :
+  h4 OfTypeBisInst ToTypeInst y =
+    Aeneas.Deep.Expr.denote (h4.deep OfTypeBisInst ToTypeInst)
+      (y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}::test]:
+    Source: 'tests/src/traits.rs', lines 142:12-144:13 -/
+def TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep :
+  Aeneas.Deep.Expr [TestType.test.TestType1] (Result Bool) :=
+  (.ok (.decide (.gt (.var .zero) (.lit 1#u64))))
+
+theorem TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep_eq
+  (self : TestType.test.TestType1) :
+  TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test self =
+    Aeneas.Deep.Expr.denote
+      (TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{traits::TestType<T>}::test]:
+    Source: 'tests/src/traits.rs', lines 129:4-150:5
+    Visibility: public -/
+def TestType.test.deep {T : Type _} (ToU64Inst : ToU64 T) :
+  Aeneas.Deep.Expr [TestType T, T] (Result Bool) :=
+  (.bind
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t : T) =>
+            (ToU64Inst.to_u64 t : Result Std.U64))) (.var (.succ .zero))) .var
+  (.ite (.gt (.var .zero) (.lit 0#u64))
+  (.app (.leaf (.fn "traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}::test")
+          (fun (tt : TestType.test.TestType1) =>
+          (TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test tt :
+            Result Bool)))
+    (.app (.leaf (.ctor "traits::{traits::TestType<T>}::test::TestType1")
+            (fun (i : Std.U64) => (i : TestType.test.TestType1))) (.lit 0#u64)))
+  (.ok (.lit false))))
+
+theorem TestType.test.deep_eq {T : Type _} (ToU64Inst : ToU64 T)
+  (self : TestType T) (x : T) :
+  TestType.test ToU64Inst self x =
+    Aeneas.Deep.Expr.denote (TestType.test.deep ToU64Inst)
+      (self ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::ToType<T> for traits::BoolWrapper}::to_type]:
+    Source: 'tests/src/traits.rs', lines 159:4-161:5
+    Visibility: public -/
+def BoolWrapper.Insts.TraitsToType.to_type.deep {T : Type _} (ToTypeBoolTInst :
+  ToType Bool T) : Aeneas.Deep.Expr [BoolWrapper] (Result T) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_type") (fun (b : Bool) =>
+          (ToTypeBoolTInst.to_type b : Result T))) (.var .zero))
+
+theorem BoolWrapper.Insts.TraitsToType.to_type.deep_eq
+  {T : Type _} (ToTypeBoolTInst : ToType Bool T) (self : BoolWrapper) :
+  BoolWrapper.Insts.TraitsToType.to_type ToTypeBoolTInst self =
+    Aeneas.Deep.Expr.denote (BoolWrapper.Insts.TraitsToType.to_type.deep
+      ToTypeBoolTInst) (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::WithConstTy::LEN2]
+    Source: 'tests/src/traits.rs', lines 167:4-167:27
+    Visibility: public -/
+def WithConstTy.LEN2.default.deep (Self : Type _) (Clause0_V : Type _)
+  (Clause0_W : Type _) (LEN : Std.Usize) : Aeneas.Deep.Expr [] Std.Usize :=
+  (.lit 32#usize)
+
+theorem WithConstTy.LEN2.default.deep_eq
+  (Self : Type _) (Clause0_V : Type _) (Clause0_W : Type _) (LEN : Std.Usize) :
+  WithConstTy.LEN2.default Self Clause0_V Clause0_W LEN =
+    Aeneas.Deep.Expr.denote (WithConstTy.LEN2.default.deep Self Clause0_V
+      Clause0_W LEN) (Aeneas.Deep.HList.nil)
+  := by unfold WithConstTy.LEN2.default; deep_rfl
+
+/-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::f]:
+    Source: 'tests/src/traits.rs', lines 183:4-183:42
+    Visibility: public -/
+def Bool.Insts.TraitsWithConstTyU8U6432.f.deep :
+  Aeneas.Deep.Expr [Std.U64, Array Std.U8 32#usize] (Result Std.U64) :=
+  (.ok (.var .zero))
+
+theorem Bool.Insts.TraitsWithConstTyU8U6432.f.deep_eq (i : Std.U64)
+  (a : Array Std.U8 32#usize) :
+  Bool.Insts.TraitsWithConstTyU8U6432.f i a =
+    Aeneas.Deep.Expr.denote (Bool.Insts.TraitsWithConstTyU8U6432.f.deep)
+      (i ::ₕ a ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::LEN1]
+    Source: 'tests/src/traits.rs', lines 178:4-178:27
+    Visibility: public -/
+def Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep :
+  Aeneas.Deep.Expr [] Std.Usize :=
+  (.lit 12#usize)
+
+theorem Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep_eq :
+  Bool.Insts.TraitsWithConstTyU8U6432.LEN1 =
+    Aeneas.Deep.Expr.denote (Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep)
+      (Aeneas.Deep.HList.nil)
+  := by unfold Bool.Insts.TraitsWithConstTyU8U6432.LEN1; deep_rfl
+
+/-- [traits::use_with_const_ty1]:
+    Source: 'tests/src/traits.rs', lines 186:0-188:1
+    Visibility: public -/
+def use_with_const_ty1.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
+  Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
+  Clause0_W LEN) : Aeneas.Deep.Expr [] (Result Std.Usize) :=
+  (.leaf (.other "trait_const") (WithConstTyInst.LEN1 : Result Std.Usize))
+
+theorem use_with_const_ty1.deep_eq
+  {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
+  (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) :
+  use_with_const_ty1 WithConstTyInst =
+    Aeneas.Deep.Expr.denote (use_with_const_ty1.deep WithConstTyInst)
+      (Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::use_with_const_ty2]:
+    Source: 'tests/src/traits.rs', lines 190:0-190:76
+    Visibility: public -/
+def use_with_const_ty2.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
+  Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
+  Clause0_W LEN) : Aeneas.Deep.Expr [Clause0_W] (Result Unit) :=
+  (.ok (.lit ()))
+
+theorem use_with_const_ty2.deep_eq
+  {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
+  (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) (t : Clause0_W) :
+  use_with_const_ty2 WithConstTyInst t =
+    Aeneas.Deep.Expr.denote (use_with_const_ty2.deep WithConstTyInst)
+      (t ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::use_with_const_ty3]:
+    Source: 'tests/src/traits.rs', lines 192:0-194:1
+    Visibility: public -/
+def use_with_const_ty3.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
+  Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
+  Clause0_W LEN) : Aeneas.Deep.Expr [Clause0_W] (Result Std.U64) :=
+  (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.to_u64")
+          (fun (t : Clause0_W) =>
+          (WithConstTyInst.ToU64Inst.to_u64 t : Result Std.U64))) (.var .zero))
+
+theorem use_with_const_ty3.deep_eq
+  {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
+  (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) (x : Clause0_W) :
+  use_with_const_ty3 WithConstTyInst x =
+    Aeneas.Deep.Expr.denote (use_with_const_ty3.deep WithConstTyInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_where1]:
+    Source: 'tests/src/traits.rs', lines 196:0-196:43
+    Visibility: public -/
+def test_where1.deep {T : Type _} : Aeneas.Deep.Expr [T] (Result Unit) :=
+  (.ok (.lit ()))
+
+theorem test_where1.deep_eq {T : Type _} (_x : T) :
+  test_where1 _x =
+    Aeneas.Deep.Expr.denote (test_where1.deep) (_x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_where2]:
+    Source: 'tests/src/traits.rs', lines 197:0-197:60
+    Visibility: public -/
+def test_where2.deep {T : Type _} {Clause0_W : Type _}
+  (WithConstTyTU32Clause0_W32Inst : WithConstTy T Std.U32 Clause0_W 32#usize) :
+  Aeneas.Deep.Expr [Std.U32] (Result Unit) :=
+  (.ok (.lit ()))
+
+theorem test_where2.deep_eq
+  {T : Type _} {Clause0_W : Type _} (WithConstTyTU32Clause0_W32Inst :
+  WithConstTy T Std.U32 Clause0_W 32#usize) (_x : Std.U32) :
+  test_where2 WithConstTyTU32Clause0_W32Inst _x =
+    Aeneas.Deep.Expr.denote (test_where2.deep WithConstTyTU32Clause0_W32Inst)
+      (_x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_child_trait1]:
+    Source: 'tests/src/traits.rs', lines 212:0-214:1
+    Visibility: public -/
+def test_child_trait1.deep {T : Type _} {Clause0_Clause0_W : Type _}
+  (ChildTraitInst : ChildTrait T Clause0_Clause0_W) :
+  Aeneas.Deep.Expr [T] (Result String) :=
+  (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.get_name")
+          (fun (t : T) =>
+          (ChildTraitInst.ParentTrait0Inst.get_name t : Result String)))
+    (.var .zero))
+
+theorem test_child_trait1.deep_eq
+  {T : Type _} {Clause0_Clause0_W : Type _} (ChildTraitInst : ChildTrait T
+  Clause0_Clause0_W) (x : T) :
+  test_child_trait1 ChildTraitInst x =
+    Aeneas.Deep.Expr.denote (test_child_trait1.deep ChildTraitInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_child_trait2]:
+    Source: 'tests/src/traits.rs', lines 216:0-218:1
+    Visibility: public -/
+def test_child_trait2.deep {T : Type _} {Clause0_Clause0_W : Type _}
+  (ChildTraitInst : ChildTrait T Clause0_Clause0_W) :
+  Aeneas.Deep.Expr [T] (Result Clause0_Clause0_W) :=
+  (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.get_w")
+          (fun (t : T) =>
+          (ChildTraitInst.ParentTrait0Inst.get_w t : Result Clause0_Clause0_W)))
+    (.var .zero))
+
+theorem test_child_trait2.deep_eq
+  {T : Type _} {Clause0_Clause0_W : Type _} (ChildTraitInst : ChildTrait T
+  Clause0_Clause0_W) (x : T) :
+  test_child_trait2 ChildTraitInst x =
+    Aeneas.Deep.Expr.denote (test_child_trait2.deep ChildTraitInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::order1]:
+    Source: 'tests/src/traits.rs', lines 222:0-222:62
+    Visibility: public -/
+def order1.deep {T : Type _} {U : Type _} {Clause1_W : Type _}
+  (ParentTrait0Inst : ParentTrait0 T Clause1_W) (ParentTrait0Inst1 :
+  ParentTrait0 U Clause1_W) : Aeneas.Deep.Expr [] (Result Unit) :=
+  (.ok (.lit ()))
+
+theorem order1.deep_eq
+  {T : Type _} {U : Type _} {Clause1_W : Type _} (ParentTrait0Inst :
+  ParentTrait0 T Clause1_W) (ParentTrait0Inst1 : ParentTrait0 U Clause1_W) :
+  order1 ParentTrait0Inst ParentTrait0Inst1 =
+    Aeneas.Deep.Expr.denote (order1.deep ParentTrait0Inst ParentTrait0Inst1)
+      (Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::ChildTrait2<u32, u32> for u32}::convert]:
+    Source: 'tests/src/traits.rs', lines 276:4-278:5
+    Visibility: public -/
+def U32.Insts.TraitsChildTrait2U32U32.convert.deep :
+  Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+  (.ok (.var .zero))
+
+theorem U32.Insts.TraitsChildTrait2U32U32.convert.deep_eq (x : Std.U32) :
+  U32.Insts.TraitsChildTrait2U32U32.convert x =
+    Aeneas.Deep.Expr.denote (U32.Insts.TraitsChildTrait2U32U32.convert.deep)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::test_get_trait]:
+    Source: 'tests/src/traits.rs', lines 308:0-310:1
+    Visibility: public -/
+def test_get_trait.deep {T : Type _} {Clause0_W : Type _} (GetTraitInst :
+  GetTrait T Clause0_W) : Aeneas.Deep.Expr [T] (Result Clause0_W) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).get_w") (fun (t : T) =>
+          (GetTraitInst.get_w t : Result Clause0_W))) (.var .zero))
+
+theorem test_get_trait.deep_eq
+  {T : Type _} {Clause0_W : Type _} (GetTraitInst : GetTrait T Clause0_W)
+  (x : T) :
+  test_get_trait GetTraitInst x =
+    Aeneas.Deep.Expr.denote (test_get_trait.deep GetTraitInst)
+      (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::{impl traits::Trait for [T; N]}::LEN]
+    Source: 'tests/src/traits.rs', lines 318:4-318:25
+    Visibility: public -/
+def Array.Insts.TraitsTrait.LEN.deep (T : Type _) (N : Std.Usize) :
+  Aeneas.Deep.Expr [] Std.Usize :=
+  (.lit N)
+
+theorem Array.Insts.TraitsTrait.LEN.deep_eq (T : Type _) (N : Std.Usize) :
+  Array.Insts.TraitsTrait.LEN T N =
+    Aeneas.Deep.Expr.denote (Array.Insts.TraitsTrait.LEN.deep T N)
+      (Aeneas.Deep.HList.nil)
+  := by unfold Array.Insts.TraitsTrait.LEN; deep_rfl
+
+/-- [traits::{impl traits::Trait for traits::Wrapper<T>}::LEN]
+    Source: 'tests/src/traits.rs', lines 322:4-322:25
+    Visibility: public -/
+def Wrapper.Insts.TraitsTrait.LEN.deep {T : Type _} (TraitInst : Trait T) :
+  Aeneas.Deep.Expr [] Std.Usize :=
+  (.lit 0#usize)
+
+theorem Wrapper.Insts.TraitsTrait.LEN.deep_eq
+  {T : Type _} (TraitInst : Trait T) :
+  Wrapper.Insts.TraitsTrait.LEN TraitInst =
+    Aeneas.Deep.Expr.denote (Wrapper.Insts.TraitsTrait.LEN.deep TraitInst)
+      (Aeneas.Deep.HList.nil)
+  := by unfold Wrapper.Insts.TraitsTrait.LEN; deep_rfl
+
+/-- [traits::use_wrapper_len]:
+    Source: 'tests/src/traits.rs', lines 325:0-327:1
+    Visibility: public -/
+def use_wrapper_len.deep {T : Type _} (TraitInst : Trait T) :
+  Aeneas.Deep.Expr [] (Result Std.Usize) :=
+  (.ok
+    (.leaf (.global "traits::{impl traits::Trait for traits::Wrapper<T>}::LEN")
+      (Wrapper.Insts.TraitsTrait.LEN TraitInst : Std.Usize)))
+
+theorem use_wrapper_len.deep_eq {T : Type _} (TraitInst : Trait T) :
+  use_wrapper_len TraitInst =
+    Aeneas.Deep.Expr.denote (use_wrapper_len.deep TraitInst)
+      (Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- Deep eliminator for [traits::Foo]
+    Source: 'tests/src/traits.rs', lines 329:0-332:1 -/
+@[reducible] def Foo.deepElim {T : Type _} {U : Type _} :
+  Aeneas.Deep.Elim (Foo T U) [[T, U]] :=
+  fun x alts => Foo.casesOn x alts.1
+
+/-- [traits::{traits::Foo<T, U>}::FOO]
+    Source: 'tests/src/traits.rs', lines 335:4-335:43
+    Visibility: public -/
+def Foo.FOO.deep {T : Type _} (U : Type _) (TraitInst : Trait T) :
+  Aeneas.Deep.Expr [] (core.result.Result T Std.I32) :=
+  (.app (.leaf (.ctor "core::result::Result::Err") (fun (i : Std.I32) =>
+          (core.result.Result.Err i : core.result.Result T Std.I32)))
+    (.lit 0#i32))
+
+theorem Foo.FOO.deep_eq {T : Type _} (U : Type _) (TraitInst : Trait T) :
+  Foo.FOO U TraitInst =
+    Aeneas.Deep.Expr.denote (Foo.FOO.deep U TraitInst) (Aeneas.Deep.HList.nil)
+  := by unfold Foo.FOO; deep_rfl
+
+/-- [traits::use_foo1]:
+    Source: 'tests/src/traits.rs', lines 338:0-340:1
+    Visibility: public -/
+def use_foo1.deep {T : Type _} (U : Type _) (TraitInst : Trait T) :
+  Aeneas.Deep.Expr [] (Result (core.result.Result T Std.I32)) :=
+  (.ok
+    (.leaf (.global "traits::{traits::Foo<T, U>}::FOO")
+      (Foo.FOO U TraitInst : core.result.Result T Std.I32)))
+
+theorem use_foo1.deep_eq {T : Type _} (U : Type _) (TraitInst : Trait T) :
+  use_foo1 U TraitInst =
+    Aeneas.Deep.Expr.denote (use_foo1.deep U TraitInst) (Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [traits::use_foo2]:
+    Source: 'tests/src/traits.rs', lines 342:0-344:1
+    Visibility: public -/
+def use_foo2.deep (T : Type _) {U : Type _} (TraitInst : Trait U) :
+  Aeneas.Deep.Expr [] (Result (core.result.Result U Std.I32)) :=
+  (.ok
+    (.leaf (.global "traits::{traits::Foo<T, U>}::FOO")
+      (Foo.FOO T TraitInst : core.result.Result U Std.I32)))
+
+theorem use_foo2.deep_eq (T : Type _) {U : Type _} (TraitInst : Trait U) :
+  use_foo2 T TraitInst =
+    Aeneas.Deep.Expr.denote (use_foo2.deep T TraitInst) (Aeneas.Deep.HList.nil)
+  := by deep_rfl
 
 end traits

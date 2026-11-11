@@ -2551,7 +2551,11 @@ let simplify_array_slice_update_visitor (ctx : ctx) (def : fun_decl) =
             generics = index_generics;
           }
       in
-      let qualif = { e = qualif; ty = mk_arrows [ a.ty; i.ty; v.ty ] e2.ty } in
+      (* The update function returns the updated array/slice, in the [Result]
+         monad: [Array.update : Array α n → Usize → α → Result (Array α n)] *)
+      let qualif =
+        { e = qualif; ty = mk_arrows [ a.ty; i.ty; v.ty ] (mk_result_ty a.ty) }
+      in
       [%add_loc] mk_apps span qualif [ a; i; v ]
     in
 

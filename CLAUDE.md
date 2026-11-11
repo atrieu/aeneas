@@ -28,4 +28,5 @@ Copilot) and `.claude/skills/` (for Claude Code). **Always edit files in
 - `documentation/tactics-reference.md` — All tactics with docstrings and examples
 - `documentation/crypto-verification.md` — Crypto verification guide (ML-KEM/Kyber patterns)
 - `documentation/tips-and-tricks.md` — Pitfalls, tips, and tricks
+- `documentation/deep-embedding.md` — The `-deep` mode: deep AST terms and denotation theorems
 - `documentation/glossary.md` — Glossary of Aeneas-specific terms

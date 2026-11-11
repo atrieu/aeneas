@@ -144,6 +144,11 @@ let () =
       ( "-emit-json",
         Arg.Set emit_json,
         " Emit a translation.json file alongside the Lean files (Lean only)" );
+      ( "-deep",
+        Arg.Set extract_deep,
+        " Generate, for every function, a deep embedding of its body together \
+         with a theorem relating it to the function, in a separate file (Lean \
+         only)" );
       ("-print-llbc", Arg.Set print_llbc, " Print the imported LLBC");
       ( "-abort-on-error",
         Arg.Set fail_hard,
@@ -481,6 +486,12 @@ let () =
       "The -max-recdepth option is valid only for the Lean backend";
   if !emit_json && not (backend () = Lean) then
     fail_with_error "The -emit-json option is valid only for the Lean backend";
+  if !extract_deep && not (backend () = Lean) then
+    fail_with_error "The -deep option is valid only for the Lean backend";
+  check_arg_not !extract_deep "-deep" !extract_decreases_clauses
+    "-decreases-clauses";
+  check_arg_not !extract_deep "-deep" !use_fuel "-use-fuel";
+  check_arg_not !extract_deep "-deep" !borrow_check "-borrow-check";
 
   check_arg_implies !diagnose_detailed "-diagnose-detailed"
     !diagnose_micro_passes "-diagnose-micro-passes";

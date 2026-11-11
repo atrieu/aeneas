@@ -57,6 +57,7 @@
   ExtractBuiltin
   ExtractBuiltinCore
   ExtractBuiltinLean
+  ExtractDeep
   ExtractErrors
   ExtractName
   ExtractTypes

@@ -1,4 +1,5 @@
 //@ [!lean] skip
+//@ [lean] aeneas-args=-deep
 use std::vec::Vec;
 
 pub fn iter(max: u32) -> u32 {

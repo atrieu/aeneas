@@ -634,6 +634,15 @@ type gen_config = {
           definitions. In the future, we might want to extract all the
           declarations in an interface file, together with an implementation
           file if needed. *)
+  extract_deep : bool;
+      (** If [true], generate the deep embedding of the function bodies (see
+          {!ExtractDeep}) instead of the regular definitions. *)
+  append_deep : bool;
+      (** If [true], append the deep embedding of the function bodies at the end
+          of the file, after the regular definitions. We do this when the crate
+          is not split between several files: the deep terms then live in the
+          same file as the definitions, which saves us from having to know the
+          Lean module name of the file. *)
 }
 
 (** Returns the pair: (has opaque type decls, has opaque fun decls).
@@ -691,12 +700,16 @@ let export_type (fmt : Format.formatter) (config : gen_config) (ctx : gen_ctx)
     (is_opaque && config.extract_opaque)
     || ((not is_opaque) && config.extract_transparent)
   in
-  if extract then (
-    if extract_decl then (
-      Extract.extract_type_decl ctx fmt type_decl_group kind def;
-      EmitJson.record_type_if_enabled ctx def);
-    if extract_extra_info then
-      Extract.extract_type_decl_extra_info ctx fmt kind def)
+  if extract then
+    if config.extract_deep then (
+      (* Deep mode: we only print the deep eliminators *)
+      if extract_decl then ExtractDeep.extract_type_decl_deep ctx fmt def)
+    else (
+      if extract_decl then (
+        Extract.extract_type_decl ctx fmt type_decl_group kind def;
+        EmitJson.record_type_if_enabled ctx def);
+      if extract_extra_info then
+        Extract.extract_type_decl_extra_info ctx fmt kind def)
 
 (** Export a group of types.
 
@@ -782,20 +795,24 @@ let export_types_group (fmt : Format.formatter) (config : gen_config)
          End
        ]}
     *)
-    Extract.start_type_decl_group ctx fmt is_rec defs;
+    (* In deep mode we only print the (non recursive) deep eliminators: no
+       need to delimit the group *)
+    if not config.extract_deep then
+      Extract.start_type_decl_group ctx fmt is_rec defs;
     List.iteri
       (fun i def ->
         let kind = kind_from_index i in
         export_type_decl kind def)
       defs;
-    Extract.end_type_decl_group fmt is_rec defs;
+    if not config.extract_deep then (
+      Extract.end_type_decl_group fmt is_rec defs;
 
-    (* Export the extra information (ex.: [Arguments] instructions in Coq) *)
-    List.iteri
-      (fun i def ->
-        let kind = kind_from_index i in
-        export_type_extra_info kind def)
-      defs)
+      (* Export the extra information (ex.: [Arguments] instructions in Coq) *)
+      List.iteri
+        (fun i def ->
+          let kind = kind_from_index i in
+          export_type_extra_info kind def)
+        defs))
 
 (** Utility.
 
@@ -876,22 +893,29 @@ let export_functions_group_scc (fmt : Format.formatter) (config : gen_config)
         then
           Some
             (fun () ->
-              Extract.extract_fun_decl ctx fmt kind has_decr_clause def;
-              EmitJson.record_fun_if_enabled ctx def)
+              if config.extract_deep then
+                ExtractDeep.extract_fun_decl_deep ctx fmt kind def
+              else (
+                Extract.extract_fun_decl ctx fmt kind has_decr_clause def;
+                EmitJson.record_fun_if_enabled ctx def))
         else None)
       decls
   in
   let extract_defs = List.filter_map (fun x -> x) extract_defs in
   if extract_defs <> [] then (
-    (* Save the fact that we extract opaque definitions, if we do *)
-    let contains_opaque =
-      List.exists (fun (d : Pure.fun_decl) -> Option.is_none d.body) decls
-    in
-    ctx.extracted_opaque := contains_opaque || !(ctx.extracted_opaque);
+    if config.extract_deep then
+      (* The deep terms are never recursive: no need to delimit the group *)
+      List.iter (fun f -> f ()) extract_defs
+    else
+      (* Save the fact that we extract opaque definitions, if we do *)
+      let contains_opaque =
+        List.exists (fun (d : Pure.fun_decl) -> Option.is_none d.body) decls
+      in
+      ctx.extracted_opaque := contains_opaque || !(ctx.extracted_opaque);
 
-    Extract.start_fun_decl_group ctx fmt is_rec decls;
-    List.iter (fun f -> f ()) extract_defs;
-    Extract.end_fun_decl_group fmt is_rec decls)
+      Extract.start_fun_decl_group ctx fmt is_rec decls;
+      List.iter (fun f -> f ()) extract_defs;
+      Extract.end_fun_decl_group fmt is_rec decls)
 
 (** Extract the decreases-clause template bodies for a list of function
     declarations (typically a function together with the loops it contains).
@@ -977,9 +1001,10 @@ let export_functions_group (fmt : Format.formatter) (config : gen_config)
     export_fun_decls_scc fmt config ctx decls;
 
     (* Insert unit tests for functions marked with #[verify::test] *)
-    List.iter
-      (fun trans -> Extract.extract_unit_test_if_marked ctx fmt trans.f)
-      pure_ls)
+    if not config.extract_deep then
+      List.iter
+        (fun trans -> Extract.extract_unit_test_if_marked ctx fmt trans.f)
+        pure_ls)
 
 (** Export a global declaration.
 
@@ -1044,8 +1069,14 @@ let export_global (fmt : Format.formatter) (config : gen_config) (ctx : gen_ctx)
     export_fun_decls_scc fmt config ctx (trans.loops @ trans.bodies);
 
     let pure_global = GlobalDeclId.Map.find_opt id ctx.trans_globals in
-    Extract.extract_global_decl ctx fmt pure_global body config.interface;
-    Option.iter (EmitJson.record_global_if_enabled ctx) pure_global)
+    if config.extract_deep then
+      Option.iter
+        (fun pure_global ->
+          ExtractDeep.extract_global_decl_deep ctx fmt pure_global body)
+        pure_global
+    else (
+      Extract.extract_global_decl ctx fmt pure_global body config.interface;
+      Option.iter (EmitJson.record_global_if_enabled ctx) pure_global))
 
 let trait_decl_is_builtin (ctx : gen_ctx) (id : Pure.trait_decl_id) : bool =
   let trait_decl =
@@ -1439,6 +1470,27 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
 
   (* Extract the definitions *)
   extract_definitions fmt config ctx;
+
+  (* Append the deep embedding of the function bodies, if requested *)
+  if config.append_deep then (
+    let deep_config =
+      {
+        config with
+        extract_types = true;
+        extract_decreases_clauses = false;
+        extract_template_decreases_clauses = false;
+        extract_trait_decls = false;
+        extract_trait_impls = false;
+        extract_opaque = false;
+        extract_globals = true;
+        extract_deep = true;
+        append_deep = false;
+      }
+    in
+    Format.pp_print_break fmt 0 0;
+    Format.pp_print_string fmt "/-! ## Deep embedding of the function bodies -/";
+    Format.pp_print_break fmt 0 0;
+    extract_definitions fmt deep_config ctx);
 
   (* Close the box and end the formatting *)
   Format.pp_close_box fmt ();
@@ -1886,6 +1938,8 @@ let extract_translated_crate (filename : string) (dest_dir : string)
          extract_opaque = false;
          extract_globals = false;
          interface = false;
+         extract_deep = false;
+         append_deep = false;
        }
      in
 
@@ -2122,6 +2176,8 @@ let extract_translated_crate (filename : string) (dest_dir : string)
          extract_opaque = true;
          extract_globals = true;
          interface = false;
+         extract_deep = false;
+         append_deep = !Config.extract_deep;
        }
      in
      let file_info =
@@ -2140,6 +2196,47 @@ let extract_translated_crate (filename : string) (dest_dir : string)
        }
      in
      extract_file gen_config ctx file_info);
+
+  (* Extract the deep embedding of the function bodies, if requested. If the
+     crate is split between several files, we generate it in a separate file
+     which imports the function definitions (otherwise it is appended at the end
+     of the file, see [append_deep]). *)
+  (if !Config.extract_deep && !Config.split_files then
+     let deep_config =
+       {
+         extract_types = true;
+         extract_decreases_clauses = false;
+         extract_template_decreases_clauses = false;
+         extract_fun_decls = true;
+         extract_trait_decls = false;
+         extract_trait_impls = false;
+         extract_transparent = true;
+         extract_opaque = false;
+         extract_globals = true;
+         interface = false;
+         extract_deep = true;
+         append_deep = false;
+       }
+     in
+     let shallow_module = import_prefix ^ "Funs" in
+     let deep_filename = extract_filebasename ^ "Deep" ^ ext in
+     let deep_module = import_prefix ^ "Deep" in
+     let file_info =
+       {
+         filename = deep_filename;
+         namespace;
+         in_namespace = true;
+         open_namespace = false;
+         crate_name;
+         rust_module_name = crate.name;
+         module_name = deep_module;
+         custom_msg = ": deep embedding of the function bodies";
+         custom_imports = [];
+         custom_includes = [ shallow_module ];
+         noncomputable = has_opaque && not !Config.all_computable;
+       }
+     in
+     extract_file deep_config ctx file_info);
 
   (* Emit translation.json. *)
   EmitJson.write_if_enabled ~crate_name:crate.name
@@ -2163,10 +2260,13 @@ let extract_translated_crate (filename : string) (dest_dir : string)
       if !Config.split_files && !Config.generate_lib_entry_point then (
         let filename = Filename.concat dest_dir (crate_name ^ ".lean") in
         let out = open_out filename in
-        if !Config.use_lean_modules then (
-          Printf.fprintf out "module\n";
-          Printf.fprintf out "public import %s.Funs\n" crate_name)
-        else Printf.fprintf out "import %s.Funs\n" crate_name;
+        let import_kw =
+          if !Config.use_lean_modules then "public import" else "import"
+        in
+        if !Config.use_lean_modules then Printf.fprintf out "module\n";
+        Printf.fprintf out "%s %s.Funs\n" import_kw crate_name;
+        if !Config.extract_deep then
+          Printf.fprintf out "%s %s.Deep\n" import_kw crate_name;
         (* Flush and close the file, log *)
         close_out out;
         log#linfo (lazy ("Generated: " ^ filename)));

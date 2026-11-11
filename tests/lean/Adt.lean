@@ -21,29 +21,58 @@ set_option maxRecDepth 2048
 namespace adt
 
 /-- [adt::Struct]
-    Source: 'tests/src/adt.rs', lines 3:0-5:1 -/
+    Source: 'tests/src/adt.rs', lines 4:0-6:1 -/
 structure Struct where
   len : Std.Usize
 
 /-- [adt::{adt::Struct}::len]:
-    Source: 'tests/src/adt.rs', lines 8:4-10:5 -/
+    Source: 'tests/src/adt.rs', lines 9:4-11:5 -/
 def Struct.impl.len (self : Struct) : Result Std.Usize := do
   ok self.len
 
 /-- [adt::{adt::Struct}::f]:
-    Source: 'tests/src/adt.rs', lines 11:4-11:13 -/
+    Source: 'tests/src/adt.rs', lines 12:4-12:13 -/
 def Struct.f : Result Unit := do
   ok ()
 
 /-- [adt::BigStructName]
-    Source: 'tests/src/adt.rs', lines 14:0-14:23 -/
+    Source: 'tests/src/adt.rs', lines 15:0-15:23 -/
 @[reducible]
 def BigStructName := Unit
 
 /-- [adt::BigStruct]
-    Source: 'tests/src/adt.rs', lines 17:0-24:2 -/
+    Source: 'tests/src/adt.rs', lines 18:0-25:2 -/
 def BigStruct :=
   BigStructName × BigStructName × BigStructName × BigStructName ×
   BigStructName × BigStructName
+
+/-! ## Deep embedding of the function bodies -/
+
+/-- Deep eliminator for [adt::Struct]
+    Source: 'tests/src/adt.rs', lines 4:0-6:1 -/
+@[reducible] def Struct.deepElim : Aeneas.Deep.Elim Struct [[Std.Usize]] :=
+  fun x alts => Struct.casesOn x alts.1
+
+/-- [adt::{adt::Struct}::len]:
+    Source: 'tests/src/adt.rs', lines 9:4-11:5 -/
+def Struct.impl.len.deep : Aeneas.Deep.Expr [Struct] (Result Std.Usize) :=
+  (.ok
+    (.app (.leaf (.proj "len") (fun (s : Struct) => (s.len : Std.Usize)))
+      (.var .zero)))
+
+theorem Struct.impl.len.deep_eq (self : Struct) :
+  Struct.impl.len self =
+    Aeneas.Deep.Expr.denote (Struct.impl.len.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [adt::{adt::Struct}::f]:
+    Source: 'tests/src/adt.rs', lines 12:4-12:13 -/
+def Struct.f.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+  (.ok (.lit ()))
+
+theorem Struct.f.deep_eq :
+  Struct.f = Aeneas.Deep.Expr.denote (Struct.f.deep) (Aeneas.Deep.HList.nil)
+  := by deep_rfl
 
 end adt

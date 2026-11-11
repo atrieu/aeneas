@@ -21,7 +21,7 @@ set_option maxRecDepth 2048
 namespace demo
 
 /-- [demo::choose]:
-    Source: 'tests/src/demo.rs', lines 8:0-14:1
+    Source: 'tests/src/demo.rs', lines 9:0-15:1
     Visibility: public -/
 def choose
   {T : Type _} (b : Bool) (x : T) (y : T) :
@@ -34,27 +34,27 @@ def choose
        ok (y, back)
 
 /-- [demo::mul2_add1]:
-    Source: 'tests/src/demo.rs', lines 16:0-18:1
+    Source: 'tests/src/demo.rs', lines 17:0-19:1
     Visibility: public -/
 def mul2_add1 (x : Std.U32) : Result Std.U32 := do
   let i ← x + x
   i + 1#u32
 
 /-- [demo::use_mul2_add1]:
-    Source: 'tests/src/demo.rs', lines 20:0-22:1
+    Source: 'tests/src/demo.rs', lines 21:0-23:1
     Visibility: public -/
 def use_mul2_add1 (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   let i ← mul2_add1 x
   i + y
 
 /-- [demo::incr]:
-    Source: 'tests/src/demo.rs', lines 24:0-26:1
+    Source: 'tests/src/demo.rs', lines 25:0-27:1
     Visibility: public -/
 def incr (x : Std.U32) : Result Std.U32 := do
   x + 1#u32
 
 /-- [demo::use_incr]:
-    Source: 'tests/src/demo.rs', lines 28:0-33:1
+    Source: 'tests/src/demo.rs', lines 29:0-34:1
     Visibility: public -/
 def use_incr : Result Unit := do
   let x ← incr 0#u32
@@ -63,7 +63,7 @@ def use_incr : Result Unit := do
   ok ()
 
 /-- [demo::CList]
-    Source: 'tests/src/demo.rs', lines 37:0-40:1
+    Source: 'tests/src/demo.rs', lines 38:0-41:1
     Visibility: public -/
 @[discriminant isize]
 inductive CList (T : Type _) where
@@ -71,7 +71,7 @@ inductive CList (T : Type _) where
 | CNil : CList T
 
 /-- [demo::list_nth]:
-    Source: 'tests/src/demo.rs', lines 42:0-55:1
+    Source: 'tests/src/demo.rs', lines 43:0-56:1
     Visibility: public -/
 def list_nth {T : Type _} (l : CList T) (i : Std.U32) : Result T := do
   match l with
@@ -84,7 +84,7 @@ def list_nth {T : Type _} (l : CList T) (i : Std.U32) : Result T := do
 partial_fixpoint
 
 /-- [demo::list_nth1]: loop 0:
-    Source: 'tests/src/demo.rs', lines 58:4-66:1
+    Source: 'tests/src/demo.rs', lines 59:4-67:1
     Visibility: public -/
 @[rust_loop]
 def list_nth1_loop {T : Type _} (l : CList T) (i : Std.U32) : Result T := do
@@ -98,14 +98,14 @@ def list_nth1_loop {T : Type _} (l : CList T) (i : Std.U32) : Result T := do
 partial_fixpoint
 
 /-- [demo::list_nth1]:
-    Source: 'tests/src/demo.rs', lines 57:0-66:1
+    Source: 'tests/src/demo.rs', lines 58:0-67:1
     Visibility: public -/
 @[reducible]
 def list_nth1 {T : Type _} (l : CList T) (i : Std.U32) : Result T := do
   list_nth1_loop l i
 
 /-- [demo::list_nth_mut]:
-    Source: 'tests/src/demo.rs', lines 68:0-81:1
+    Source: 'tests/src/demo.rs', lines 69:0-82:1
     Visibility: public -/
 def list_nth_mut
   {T : Type _} (l : CList T) (i : Std.U32) :
@@ -126,7 +126,7 @@ def list_nth_mut
 partial_fixpoint
 
 /-- [demo::i32_id]:
-    Source: 'tests/src/demo.rs', lines 83:0-89:1
+    Source: 'tests/src/demo.rs', lines 84:0-90:1
     Visibility: public -/
 def i32_id (i : Std.I32) : Result Std.I32 := do
   if i = 0#i32
@@ -137,7 +137,7 @@ def i32_id (i : Std.I32) : Result Std.I32 := do
 partial_fixpoint
 
 /-- [demo::list_tail]:
-    Source: 'tests/src/demo.rs', lines 91:0-96:1
+    Source: 'tests/src/demo.rs', lines 92:0-97:1
     Visibility: public -/
 def list_tail
   {T : Type _} (l : CList T) :
@@ -153,13 +153,13 @@ def list_tail
 partial_fixpoint
 
 /-- Trait declaration: [demo::Counter]
-    Source: 'tests/src/demo.rs', lines 100:0-102:1
+    Source: 'tests/src/demo.rs', lines 101:0-103:1
     Visibility: public -/
 structure Counter (Self : Type _) where
   incr : Self → Result (Std.Usize × Self)
 
 /-- [demo::{impl demo::Counter for usize}::incr]:
-    Source: 'tests/src/demo.rs', lines 105:4-109:5
+    Source: 'tests/src/demo.rs', lines 106:4-110:5
     Visibility: public -/
 def Usize.Insts.DemoCounter.incr
   (self : Std.Usize) : Result (Std.Usize × Std.Usize) := do
@@ -167,14 +167,14 @@ def Usize.Insts.DemoCounter.incr
   ok (self, self1)
 
 /-- Trait implementation: [demo::{impl demo::Counter for usize}]
-    Source: 'tests/src/demo.rs', lines 104:0-110:1 -/
+    Source: 'tests/src/demo.rs', lines 105:0-111:1 -/
 @[reducible]
 def Usize.Insts.DemoCounter : Counter Std.Usize := {
   incr := Usize.Insts.DemoCounter.incr
 }
 
 /-- [demo::use_counter]:
-    Source: 'tests/src/demo.rs', lines 112:0-114:1
+    Source: 'tests/src/demo.rs', lines 113:0-115:1
     Visibility: public -/
 def use_counter
   {T : Type _} (CounterInst : Counter T) (cnt : T) :
@@ -183,7 +183,7 @@ def use_counter
   CounterInst.incr cnt
 
 /-- [demo::mod_add]:
-    Source: 'tests/src/demo.rs', lines 117:0-125:1 -/
+    Source: 'tests/src/demo.rs', lines 118:0-126:1 -/
 def mod_add (a : Std.U32) (b : Std.U32) : Result Std.U32 := do
   massert (a < 3329#u32)
   massert (b < 3329#u32)
@@ -192,5 +192,331 @@ def mod_add (a : Std.U32) (b : Std.U32) : Result Std.U32 := do
   let mask ← res >>> 16#i32
   let q ← lift (3329#u32 &&& mask)
   ok (core.num.U32.wrapping_add res q)
+
+/-! ## Deep embedding of the function bodies -/
+
+/-- [demo::choose]:
+    Source: 'tests/src/demo.rs', lines 9:0-15:1
+    Visibility: public -/
+def choose.deep {T : Type _} :
+  Aeneas.Deep.Expr [Bool, T, T] (Result (T × (T → (T × T)))) :=
+  (.ite (.bool (.var .zero))
+  (.let_ (.lam .var (.pair (.var .zero) (.var (.succ (.succ (.succ .zero))))))
+    .var
+  (.ok (.pair (.var (.succ (.succ .zero))) (.var .zero))))
+  (.let_ (.lam .var (.pair (.var (.succ (.succ .zero))) (.var .zero))) .var
+  (.ok (.pair (.var (.succ (.succ (.succ .zero)))) (.var .zero)))))
+
+theorem choose.deep_eq {T : Type _} (b : Bool) (x : T) (y : T) :
+  choose b x y =
+    Aeneas.Deep.Expr.denote (choose.deep)
+      (b ::ₕ x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::mul2_add1]:
+    Source: 'tests/src/demo.rs', lines 17:0-19:1
+    Visibility: public -/
+def mul2_add1.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+  (.bind
+    (.app (.app (.leaf (.binop "panic.+::<u32>")
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (i + i1 : Result Std.U32))) (.var .zero)) (.var .zero)) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                (i1 + i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)))
+
+theorem mul2_add1.deep_eq (x : Std.U32) :
+  mul2_add1 x =
+    Aeneas.Deep.Expr.denote (mul2_add1.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::use_mul2_add1]:
+    Source: 'tests/src/demo.rs', lines 21:0-23:1
+    Visibility: public -/
+def use_mul2_add1.deep : Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32)
+  :=
+  (.bind
+    (.app (.leaf (.fn "demo::mul2_add1") (fun (i : Std.U32) =>
+            (mul2_add1 i : Result Std.U32))) (.var .zero)) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                (i1 + i2 : Result Std.U32))) (.var .zero))
+    (.var (.succ (.succ .zero)))))
+
+theorem use_mul2_add1.deep_eq (x : Std.U32) (y : Std.U32) :
+  use_mul2_add1 x y =
+    Aeneas.Deep.Expr.denote (use_mul2_add1.deep)
+      (x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::incr]:
+    Source: 'tests/src/demo.rs', lines 25:0-27:1
+    Visibility: public -/
+def incr.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (i + i1 : Result Std.U32))) (.var .zero)) (.lit 1#u32))
+
+theorem incr.deep_eq (x : Std.U32) :
+  incr x = Aeneas.Deep.Expr.denote (incr.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::use_incr]:
+    Source: 'tests/src/demo.rs', lines 29:0-34:1
+    Visibility: public -/
+def use_incr.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+  (.bind
+    (.app (.leaf (.fn "demo::incr") (fun (i : Std.U32) =>
+            (incr i : Result Std.U32))) (.lit 0#u32)) .var
+  (.bind
+    (.app (.leaf (.fn "demo::incr") (fun (i : Std.U32) =>
+            (incr i : Result Std.U32))) (.var .zero)) .var
+  (.bind
+    (.app (.leaf (.fn "demo::incr") (fun (i : Std.U32) =>
+            (incr i : Result Std.U32))) (.var .zero)) .ignore
+  (.ok (.lit ())))))
+
+theorem use_incr.deep_eq :
+  use_incr = Aeneas.Deep.Expr.denote (use_incr.deep) (Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- Deep eliminator for [demo::CList]
+    Source: 'tests/src/demo.rs', lines 38:0-41:1 -/
+@[reducible] def CList.deepElim {T : Type _} :
+  Aeneas.Deep.Elim (CList T) [[T, CList T], []] :=
+  fun x alts => CList.casesOn x alts.1 alts.2.1
+
+/-- [demo::list_nth]:
+    Source: 'tests/src/demo.rs', lines 43:0-56:1
+    Visibility: public -/
+def list_nth.deep {T : Type _} : Aeneas.Deep.Expr [CList T, Std.U32] (Result T)
+  :=
+  (.match_ (.var .zero) CList.deepElim
+  (.cons (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+         (.ok (.var .zero))
+         (.bind
+           (.app (.app (.leaf (.binop "panic.-::<u32>")
+                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                         (i1 - i2 : Result Std.U32)))
+             (.var (.succ (.succ (.succ .zero))))) (.lit 1#u32)) .var
+         (.app (.app (.leaf (.fn "demo::list_nth")
+                       (fun (c : CList T) (i2 : Std.U32) =>
+                       (list_nth c i2 : Result T)))
+           (.var (.succ (.succ .zero)))) (.var .zero))))
+  (.cons (.fail panic)
+  .nil)))
+
+theorem list_nth.deep_eq {T : Type _} (l : CList T) (i : Std.U32) :
+  list_nth l i =
+    Aeneas.Deep.Expr.denote (list_nth.deep)
+      (l ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+  := by unfold list_nth; deep_rfl
+
+/-- [demo::list_nth1]: loop 0:
+    Source: 'tests/src/demo.rs', lines 59:4-67:1
+    Visibility: public -/
+def list_nth1_loop.deep {T : Type _} :
+  Aeneas.Deep.Expr [CList T, Std.U32] (Result T) :=
+  (.match_ (.var .zero) CList.deepElim
+  (.cons (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+         (.ok (.var .zero))
+         (.bind
+           (.app (.app (.leaf (.binop "panic.-::<u32>")
+                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                         (i1 - i2 : Result Std.U32)))
+             (.var (.succ (.succ (.succ .zero))))) (.lit 1#u32)) .var
+         (.app (.app (.leaf (.fn "demo::list_nth1^loop0")
+                       (fun (c : CList T) (i2 : Std.U32) =>
+                       (list_nth1_loop c i2 : Result T)))
+           (.var (.succ (.succ .zero)))) (.var .zero))))
+  (.cons (.fail panic)
+  .nil)))
+
+theorem list_nth1_loop.deep_eq {T : Type _} (l : CList T) (i : Std.U32) :
+  list_nth1_loop l i =
+    Aeneas.Deep.Expr.denote (list_nth1_loop.deep)
+      (l ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+  := by unfold list_nth1_loop; deep_rfl
+
+/-- [demo::list_nth1]:
+    Source: 'tests/src/demo.rs', lines 58:0-67:1
+    Visibility: public -/
+def list_nth1.deep {T : Type _} :
+  Aeneas.Deep.Expr [CList T, Std.U32] (Result T) :=
+  (.app (.app (.leaf (.fn "demo::list_nth1^loop0")
+                (fun (c : CList T) (i1 : Std.U32) =>
+                (list_nth1_loop c i1 : Result T))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem list_nth1.deep_eq {T : Type _} (l : CList T) (i : Std.U32) :
+  list_nth1 l i =
+    Aeneas.Deep.Expr.denote (list_nth1.deep)
+      (l ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::list_nth_mut]:
+    Source: 'tests/src/demo.rs', lines 69:0-82:1
+    Visibility: public -/
+def list_nth_mut.deep {T : Type _} :
+  Aeneas.Deep.Expr [CList T, Std.U32] (Result (T × (T → CList T))) :=
+  (.match_ (.var .zero) CList.deepElim
+  (.cons (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+         (.let_
+           (.lam .var
+             (.app (.app (.leaf (.ctor "demo::CList::CCons")
+                           (fun (t1 : T) (c : CList T) =>
+                           (CList.CCons t1 c : CList T))) (.var .zero))
+               (.var (.succ (.succ .zero))))) .var
+         (.ok (.pair (.var (.succ .zero)) (.var .zero))))
+         (.bind
+           (.app (.app (.leaf (.binop "panic.-::<u32>")
+                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                         (i1 - i2 : Result Std.U32)))
+             (.var (.succ (.succ (.succ .zero))))) (.lit 1#u32)) .var
+         (.bind
+           (.app (.app (.leaf (.fn "demo::list_nth_mut")
+                         (fun (c : CList T) (i2 : Std.U32) =>
+                         (list_nth_mut c i2 : Result (T × (T → CList T)))))
+             (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var .var)
+         (.let_
+           (.lam .var
+             (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
+             (.app (.app (.leaf (.ctor "demo::CList::CCons")
+                           (fun (t1 : T) (c : CList T) =>
+                           (CList.CCons t1 c : CList T)))
+               (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
+               (.var .zero)))) .var
+         (.ok (.pair (.var (.succ .zero)) (.var .zero)))))))
+  (.cons (.fail panic)
+  .nil)))
+
+theorem list_nth_mut.deep_eq {T : Type _} (l : CList T) (i : Std.U32) :
+  list_nth_mut l i =
+    Aeneas.Deep.Expr.denote (list_nth_mut.deep)
+      (l ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+  := by unfold list_nth_mut; deep_rfl
+
+/-- [demo::i32_id]:
+    Source: 'tests/src/demo.rs', lines 84:0-90:1
+    Visibility: public -/
+def i32_id.deep : Aeneas.Deep.Expr [Std.I32] (Result Std.I32) :=
+  (.ite (.eq (.var .zero) (.lit 0#i32))
+  (.ok (.lit 0#i32))
+  (.bind
+    (.app (.app (.leaf (.binop "panic.-::<i32>")
+                  (fun (i1 : Std.I32) (i2 : Std.I32) =>
+                  (i1 - i2 : Result Std.I32))) (.var .zero)) (.lit 1#i32)) .var
+  (.bind
+    (.app (.leaf (.fn "demo::i32_id") (fun (i2 : Std.I32) =>
+            (i32_id i2 : Result Std.I32))) (.var .zero)) .var
+  (.app (.app (.leaf (.binop "panic.+::<i32>")
+                (fun (i3 : Std.I32) (i4 : Std.I32) =>
+                (i3 + i4 : Result Std.I32))) (.var .zero)) (.lit 1#i32)))))
+
+theorem i32_id.deep_eq (i : Std.I32) :
+  i32_id i =
+    Aeneas.Deep.Expr.denote (i32_id.deep) (i ::ₕ Aeneas.Deep.HList.nil)
+  := by unfold i32_id; deep_rfl
+
+/-- [demo::list_tail]:
+    Source: 'tests/src/demo.rs', lines 92:0-97:1
+    Visibility: public -/
+def list_tail.deep {T : Type _} :
+  Aeneas.Deep.Expr [CList T] (Result ((CList T) × (CList T → CList T))) :=
+  (.match_ (.var .zero) CList.deepElim
+  (.cons (.bind
+           (.app (.leaf (.fn "demo::list_tail") (fun (c : CList T) =>
+                   (list_tail c : Result ((CList T) × (CList T → CList T)))))
+             (.var (.succ .zero))) (.pair .var .var)
+         (.let_
+           (.lam .var
+             (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
+             (.app (.app (.leaf (.ctor "demo::CList::CCons")
+                           (fun (t1 : T) (c2 : CList T) =>
+                           (CList.CCons t1 c2 : CList T)))
+               (.var (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))))
+           .var
+         (.ok (.pair (.var (.succ .zero)) (.var .zero)))))
+  (.cons (.ok
+           (.pair (.leaf (.ctor "demo::CList::CNil") (CList.CNil : CList T))
+             (.lam .var (.var .zero))))
+  .nil)))
+
+theorem list_tail.deep_eq {T : Type _} (l : CList T) :
+  list_tail l =
+    Aeneas.Deep.Expr.denote (list_tail.deep) (l ::ₕ Aeneas.Deep.HList.nil)
+  := by unfold list_tail; deep_rfl
+
+/-- [demo::{impl demo::Counter for usize}::incr]:
+    Source: 'tests/src/demo.rs', lines 106:4-110:5
+    Visibility: public -/
+def Usize.Insts.DemoCounter.incr.deep :
+  Aeneas.Deep.Expr [Std.Usize] (Result (Std.Usize × Std.Usize)) :=
+  (.bind
+    (.app (.app (.leaf (.binop "panic.+::<usize>")
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (i + i1 : Result Std.Usize))) (.var .zero)) (.lit 1#usize))
+    .var
+  (.ok (.pair (.var (.succ .zero)) (.var .zero))))
+
+theorem Usize.Insts.DemoCounter.incr.deep_eq (self : Std.Usize) :
+  Usize.Insts.DemoCounter.incr self =
+    Aeneas.Deep.Expr.denote (Usize.Insts.DemoCounter.incr.deep)
+      (self ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::use_counter]:
+    Source: 'tests/src/demo.rs', lines 113:0-115:1
+    Visibility: public -/
+def use_counter.deep {T : Type _} (CounterInst : Counter T) :
+  Aeneas.Deep.Expr [T] (Result (Std.Usize × T)) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).incr") (fun (t : T) =>
+          (CounterInst.incr t : Result (Std.Usize × T)))) (.var .zero))
+
+theorem use_counter.deep_eq {T : Type _} (CounterInst : Counter T) (cnt : T) :
+  use_counter CounterInst cnt =
+    Aeneas.Deep.Expr.denote (use_counter.deep CounterInst)
+      (cnt ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [demo::mod_add]:
+    Source: 'tests/src/demo.rs', lines 118:0-126:1 -/
+def mod_add.deep : Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  (.bind (.assert (.lt (.var .zero) (.lit 3329#u32))) .ignore
+  (.bind (.assert (.lt (.var (.succ .zero)) (.lit 3329#u32))) .ignore
+  (.bind
+    (.app (.app (.leaf (.binop "panic.+::<u32>")
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (i + i1 : Result Std.U32))) (.var .zero))
+      (.var (.succ .zero))) .var
+  (.bind
+    (.app (.leaf (.fn "@toResult") (fun (i : Std.U32) =>
+            (lift i : Result Std.U32)))
+      (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_sub")
+                    (fun (i : Std.U32) (i1 : Std.U32) =>
+                    (core.num.U32.wrapping_sub i i1 : Std.U32))) (.var .zero))
+        (.lit 3329#u32))) .var
+  (.bind
+    (.app (.app (.leaf (.binop "panic.>>::<u32,  i32>")
+                  (fun (i : Std.U32) (i1 : Std.I32) =>
+                  (i >>> i1 : Result Std.U32))) (.var .zero)) (.lit 16#i32))
+    .var
+  (.bind
+    (.app (.leaf (.fn "@toResult") (fun (i : Std.U32) =>
+            (lift i : Result Std.U32)))
+      (.app (.app (.leaf (.binop "&::<u32>")
+                    (fun (i : Std.U32) (i1 : Std.U32) => (i &&& i1 : Std.U32)))
+        (.lit 3329#u32)) (.var .zero))) .var
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_add")
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.wrapping_add i i1 : Std.U32)))
+      (.var (.succ (.succ .zero)))) (.var .zero)))))))))
+
+theorem mod_add.deep_eq (a : Std.U32) (b : Std.U32) :
+  mod_add a b =
+    Aeneas.Deep.Expr.denote (mod_add.deep)
+      (a ::ₕ b ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
 
 end demo

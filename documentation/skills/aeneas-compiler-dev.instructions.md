@@ -86,6 +86,38 @@ When adding a new Rust test file in `tests/src/`:
 
 4. **Regenerate** with `gmake test-yourfile.rs`.
 
+## Deep Printing Mode (`-deep`)
+
+The `-deep` option makes the Lean backend print, for every function and global, a deep
+AST term (`f.deep : Aeneas.Deep.Expr …`) and a theorem `f.deep_eq` relating it to the
+definition, proved by the `deep_rfl` tactic (kernel reflexivity). The user-facing
+description is `documentation/deep-embedding.md`; the printer is
+`src/extract/ExtractDeep.ml`, the AST and tactics are in `backends/lean/Aeneas/Deep/`.
+
+Rules when touching this mode:
+
+1. **The denotation must mirror the elaborated shallow term exactly.** For every AST node,
+   `Expr.denote` in `Aeneas/Deep/Basic.lean` must reduce to the term that Lean produces
+   for the shallow code (the custom `do` elaborator in `Aeneas/Do/Elab.lean` fixes the
+   shape of binds, tuple and struct patterns, and `if` conditions). Before adding a node,
+   write its shallow counterpart in `Aeneas/Deep/Tests/Shallow.lean`, the hand-written
+   deep term and the theorem in `Aeneas/Deep/Tests.lean`, and check it with `deep_rfl`.
+   Use `deep_rfl_meta` to see the two sides when it fails.
+2. **Unsupported constructs go through the escape hatch** (`Expr.shallow`), never through
+   `sorry` or an error: the printer must keep total coverage. Add the construct to the
+   "Limitations" list of `documentation/deep-embedding.md` if it cannot be mirrored
+   (default match branches and scalar-literal matches are the known cases).
+3. **Leaves reuse the shallow printer**, eta-expanded over their arguments
+   (`extract_deep_eta_leaf`). Do not hand-print Lean syntax for a leaf: any notation or
+   coercion difference breaks the theorem.
+4. **Do not trust the `ty` field of application nodes** of the pure AST for type
+   annotations: thread the expected type from the enclosing binder or signature.
+5. **Test** with the deep-enabled test files (`//@ [lean] aeneas-args=-deep` in
+   `tests/src/demo.rs`, `loops.rs`, `adt.rs`, `traits.rs`, `closures.rs`,
+   `switch_test.rs`, `joins.rs`, `hashmap.rs`, `constants.rs`, `loops-rec.rs`):
+   regenerate them with `gmake test-<file>.rs`, then `lake build <Module>` in `tests/lean`.
+   A regression shows up as a `(kernel) declaration type mismatch` on a `.deep_eq` theorem.
+
 ## Error Handling: Always Use PPX Macros
 
 Aeneas defines custom PPX macros for all error handling. These macros automatically

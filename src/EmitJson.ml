@@ -38,6 +38,12 @@ type function_entry = {
       (** Present only on loop-wrapper / loop-body entries *)
   parent_lean_name : string option; [@default None]
       (** Present only on loop-wrapper / loop-body entries *)
+  deep_term : string option; [@default None]
+      (** Present only with [-deep]: the full Lean name of the deep term of the
+          function ([NAME.deep]). *)
+  deep_theorem : string option; [@default None]
+      (** Present only with [-deep]: the full Lean name of the theorem relating
+          the deep term to the function ([NAME.deep_eq]). *)
 }
 [@@deriving to_yojson]
 
@@ -61,6 +67,12 @@ type global_entry = {
   is_local : bool;
   source : source;
   can_fail : bool;
+  deep_term : string option; [@default None]
+      (** Present only with [-deep]: the full Lean name of the deep term of the
+          global ([NAME.deep]). *)
+  deep_theorem : string option; [@default None]
+      (** Present only with [-deep]: the full Lean name of the theorem relating
+          the deep term to the global ([NAME.deep_eq]). *)
 }
 [@@deriving to_yojson]
 
@@ -166,6 +178,21 @@ let source_of_span (span : Meta.span) : source =
   in
   { file; begin_line = data.beg_loc.line; end_line = data.end_loc.line }
 
+(** The full Lean name of the deep term of a declaration, if we generate the
+    deep embedding (see {!ExtractDeep}). [id] is a [FunId] or a [GlobalId]. *)
+let deep_term_of (ctx : ExtractBase.extraction_ctx) (span : Meta.span)
+    (id : ExtractBase.id) : string option =
+  if !Config.extract_deep then
+    Some (full_lean_name (ExtractBase.ctx_get_deep_term span id ctx))
+  else None
+
+(** See {!deep_term_of} *)
+let deep_theorem_of (ctx : ExtractBase.extraction_ctx) (span : Meta.span)
+    (id : ExtractBase.id) : string option =
+  if !Config.extract_deep then
+    Some (full_lean_name (ExtractBase.ctx_get_deep_eq span id ctx))
+  else None
+
 let function_entry_of_fun_decl (ctx : ExtractBase.extraction_ctx)
     (def : Pure.fun_decl) : function_entry =
   let span = def.item_meta.span in
@@ -193,6 +220,7 @@ let function_entry_of_fun_decl (ctx : ExtractBase.extraction_ctx)
           }
   in
   let eff = def.signature.fwd_info.effect_info in
+  let id = ExtractBase.FunId (FromLlbc (Pure.FunId def.def_id, def.loop_id)) in
   {
     def_id = Pure.FunDeclId.to_int def.def_id;
     lean_name;
@@ -207,6 +235,8 @@ let function_entry_of_fun_decl (ctx : ExtractBase.extraction_ctx)
     reducible = def.backend_attributes.reducible;
     loop;
     parent_lean_name;
+    deep_term = deep_term_of ctx span id;
+    deep_theorem = deep_theorem_of ctx span id;
   }
 
 let type_entry_of_type_decl (ctx : ExtractBase.extraction_ctx)
@@ -233,6 +263,8 @@ let global_entry_of_global_decl (ctx : ExtractBase.extraction_ctx)
     is_local = def.item_meta.is_local;
     source = source_of_span span;
     can_fail = def.can_fail;
+    deep_term = deep_term_of ctx span (ExtractBase.GlobalId def.def_id);
+    deep_theorem = deep_theorem_of ctx span (ExtractBase.GlobalId def.def_id);
   }
 
 let trait_decl_entry_of_trait_decl (ctx : ExtractBase.extraction_ctx)

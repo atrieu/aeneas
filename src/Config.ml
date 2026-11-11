@@ -231,6 +231,14 @@ let lean_gen_lakefile = ref false
 (** Only for Lean: emit a translation.json file alongside the Lean files. *)
 let emit_json = ref false
 
+(** Lean backend only: generate, for every transparent function, a deep
+    embedding of its body (a term constructing the AST of the body, see
+    [backends/lean/Aeneas/Deep/Basic.lean]) together with a theorem stating that
+    the denotation of this term is the function itself. The deep terms are
+    generated in a separate file ([Deep.lean] in split mode, [<Crate>Deep.lean]
+    otherwise). See {!ExtractDeep}. *)
+let extract_deep = ref false
+
 (** If true, treat the unit functions (function taking no inputs and returning
     no outputs) as unit tests: evaluate them with the interpreter and check that
     they don't panic. *)

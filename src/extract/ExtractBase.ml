@@ -173,6 +173,13 @@ and id =
   | TraitConstId of TraitDeclId.id * assoc_const_id
       (** A trait associated constant *)
   | TraitParentClauseId of TraitDeclId.id * TraitClauseId.id
+  | DeepTermId of id
+      (** The deep term generated for a function or a global ([f.deep], see
+          {!ExtractDeep}). The inner id is a [FunId] or a [GlobalId]. *)
+  | DeepEqId of id
+      (** The theorem relating the deep term of a function or a global to its
+          definition ([f.deep_eq]). The inner id is a [FunId] or a [GlobalId].
+      *)
   | KeywordId
       (** Used for stored various strings like keywords, definitions which
           should always be in context, etc. and which can't be linked to one of
@@ -678,8 +685,8 @@ let adt_field_to_string (span : Meta.span option) (ctx : extraction_ctx) =
 (** Debugging function, used when communicating name collisions to the user, and
     also to print ids for internal debugging (in case of lookup miss for
     instance). *)
-let id_to_string (span : Meta.span option) (id : id) (ctx : extraction_ctx) :
-    string =
+let rec id_to_string (span : Meta.span option) (id : id) (ctx : extraction_ctx)
+    : string =
   let trait_decl_id_to_string (id : A.TraitDeclId.id) : string =
     let trait_name = trait_decl_id_to_string ctx id in
     "trait_decl: " ^ trait_name ^ " (id: " ^ A.TraitDeclId.to_string id ^ ")"
@@ -719,6 +726,8 @@ let id_to_string (span : Meta.span option) (id : id) (ctx : extraction_ctx) :
       let type_name = type_id_to_string ctx id in
       let field_name = adt_field_to_string span ctx id field_id in
       "type name: " ^ type_name ^ ", field name: " ^ field_name
+  | DeepTermId id -> "deep term of: " ^ id_to_string span id ctx
+  | DeepEqId id -> "deep equality theorem of: " ^ id_to_string span id ctx
   | KeywordId -> "keyword"
   | FVarId id -> "var_id: " ^ FVarId.to_string id
   | TraitDeclId id -> "trait_decl_id: " ^ TraitDeclId.to_string id
@@ -821,6 +830,18 @@ let ctx_get_global (span : Meta.span) (id : A.GlobalDeclId.id)
 let ctx_get_function (span : Meta.span) (id : fun_id) (ctx : extraction_ctx) :
     string =
   ctx_get (Some span) (FunId id) ctx
+
+(** The name of the deep term of a function or a global (see {!ExtractDeep}).
+    [id] is a [FunId] or a [GlobalId]. *)
+let ctx_get_deep_term (span : Meta.span) (id : id) (ctx : extraction_ctx) :
+    string =
+  ctx_get (Some span) (DeepTermId id) ctx
+
+(** The name of the theorem relating the deep term of a function or a global to
+    its definition (see {!ExtractDeep}). [id] is a [FunId] or a [GlobalId]. *)
+let ctx_get_deep_eq (span : Meta.span) (id : id) (ctx : extraction_ctx) : string
+    =
+  ctx_get (Some span) (DeepEqId id) ctx
 
 let ctx_get_local_function (span : Meta.span) (id : A.FunDeclId.id)
     (lp : (LoopId.id * bool) option) (ctx : extraction_ctx) : string =
@@ -2440,6 +2461,17 @@ let ctx_compute_global_name_no_suffix (item_meta : T.item_meta)
     (extractable_global_source src)
     ~is_trait_decl_field:false ctx
 
+(** Register the names of the deep term and of the deep equality theorem of a
+    function or a global ([NAME.deep] and [NAME.deep_eq]), if we generate the
+    deep embedding (see {!ExtractDeep}). [id] is a [FunId] or a [GlobalId], and
+    [name] is the name of the declaration. *)
+let ctx_add_deep_names (span : Meta.span) (id : id) (name : string)
+    (ctx : extraction_ctx) : extraction_ctx =
+  if !Config.extract_deep then
+    let ctx = ctx_add span (DeepTermId id) (name ^ ".deep") ctx in
+    ctx_add span (DeepEqId id) (name ^ ".deep_eq") ctx
+  else ctx
+
 (** Register the name of a global declaration.
 
     Note that we only register the name of the global itself, not the name of
@@ -2450,7 +2482,10 @@ let ctx_compute_global_name_no_suffix (item_meta : T.item_meta)
 let ctx_add_global_decl (def : global_decl) (ctx : extraction_ctx) :
     extraction_ctx =
   let name = ctx_compute_global_name_no_suffix def.item_meta def.src ctx in
-  ctx_add def.item_meta.span (GlobalId def.def_id) name ctx
+  let id = GlobalId def.def_id in
+  let ctx = ctx_add def.item_meta.span id name ctx in
+  (* Add the names of the deep term and theorem, if necessary *)
+  ctx_add_deep_names def.item_meta.span id name ctx
 
 let ctx_compute_fun_name (def : fun_decl) (is_trait_decl_field : bool)
     (ctx : extraction_ctx) : string =
@@ -2553,7 +2588,10 @@ let ctx_add_fun_decl (def : fun_decl) (ctx : extraction_ctx) : extraction_ctx =
     (* Add the function name *)
     let def_name = ctx_compute_fun_name def false ctx in
     let fun_id = (Pure.FunId def_id, def.loop_id) in
-    ctx_add def.item_meta.span (FunId (FromLlbc fun_id)) def_name ctx
+    let id = FunId (FromLlbc fun_id) in
+    let ctx = ctx_add def.item_meta.span id def_name ctx in
+    (* Add the names of the deep term and theorem, if necessary *)
+    ctx_add_deep_names def.item_meta.span id def_name ctx
 
 let ctx_compute_type_decl_name (ctx : extraction_ctx) (def : type_decl) : string
     =

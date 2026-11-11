@@ -6,7 +6,7 @@ open Primitives
 #set-options "--z3rlimit 50 --fuel 1 --ifuel 1"
 
 (** [switch_test::match_u32]:
-    Source: 'tests/src/switch_test.rs', lines 4:0-10:1 *)
+    Source: 'tests/src/switch_test.rs', lines 5:0-11:1 *)
 let match_u32 (x : u32) : result u32 =
   begin match x with | 0 -> Ok 0 | 1 -> Ok 1 | _ -> Ok 2 end
 

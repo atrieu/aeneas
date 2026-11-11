@@ -21,7 +21,7 @@ set_option maxRecDepth 2048
 namespace joins
 
 /-- [joins::opt_add_1]:
-    Source: 'tests/src/joins.rs', lines 4:0-7:1 -/
+    Source: 'tests/src/joins.rs', lines 5:0-8:1 -/
 def opt_add_1 (b : Bool) (x : Std.U32) : Result Std.U32 := do
   let y ← if b
             then ok 1#u32
@@ -29,7 +29,7 @@ def opt_add_1 (b : Bool) (x : Std.U32) : Result Std.U32 := do
   x + y
 
 /-- [joins::opt_add_2]:
-    Source: 'tests/src/joins.rs', lines 9:0-13:1 -/
+    Source: 'tests/src/joins.rs', lines 10:0-14:1 -/
 def opt_add_2 (b : Bool) (x : Std.U32) : Result Std.U32 := do
   let y ← if b
             then ok 1#u32
@@ -38,13 +38,13 @@ def opt_add_2 (b : Bool) (x : Std.U32) : Result Std.U32 := do
   i + y
 
 /-- [joins::opt_add_1_or_panic]:
-    Source: 'tests/src/joins.rs', lines 15:0-18:1 -/
+    Source: 'tests/src/joins.rs', lines 16:0-19:1 -/
 def opt_add_1_or_panic (b : Bool) (x : Std.U32) : Result Std.U32 := do
   massert b
   x + 1#u32
 
 /-- [joins::opt_add_switch_1]:
-    Source: 'tests/src/joins.rs', lines 20:0-27:1 -/
+    Source: 'tests/src/joins.rs', lines 21:0-28:1 -/
 def opt_add_switch_1 (a : Std.U32) (x : Std.U32) : Result Std.U32 := do
   let y ←
     match a with
@@ -54,14 +54,14 @@ def opt_add_switch_1 (a : Std.U32) (x : Std.U32) : Result Std.U32 := do
   x + y
 
 /-- [joins::opt_add_switch_2]:
-    Source: 'tests/src/joins.rs', lines 29:0-35:1 -/
+    Source: 'tests/src/joins.rs', lines 30:0-36:1 -/
 def opt_add_switch_2 (a : Std.U32) (x : Std.U32) : Result Std.U32 := do
   match a with
   | 0#uscalar => x + 0#u32
   | _ => fail panic
 
 /-- [joins::Enum]
-    Source: 'tests/src/joins.rs', lines 37:0-41:1 -/
+    Source: 'tests/src/joins.rs', lines 38:0-42:1 -/
 @[discriminant isize]
 inductive Enum where
 | V0 : Enum
@@ -69,7 +69,7 @@ inductive Enum where
 | V2 : Enum
 
 /-- [joins::use_enum]:
-    Source: 'tests/src/joins.rs', lines 43:0-51:1 -/
+    Source: 'tests/src/joins.rs', lines 44:0-52:1 -/
 def use_enum (e : Enum) (x : Std.U32) : Result Std.U32 := do
   let y ←
     match e with
@@ -79,7 +79,7 @@ def use_enum (e : Enum) (x : Std.U32) : Result Std.U32 := do
   x + y
 
 /-- [joins::call_choose]:
-    Source: 'tests/src/joins.rs', lines 53:0-56:1 -/
+    Source: 'tests/src/joins.rs', lines 54:0-57:1 -/
 def call_choose
   (b : Bool) (x : Std.U32) (y : Std.U32) : Result (Std.U32 × Std.U32) := do
   let (z, back) ←
@@ -90,12 +90,12 @@ def call_choose
   ok (back z1)
 
 /-- [joins::SharedBool]
-    Source: 'tests/src/joins.rs', lines 58:0-60:1 -/
+    Source: 'tests/src/joins.rs', lines 59:0-61:1 -/
 structure SharedBool where
   value : Bool
 
 /-- [joins::shared_bool_scrutinee]:
-    Source: 'tests/src/joins.rs', lines 62:0-69:1 -/
+    Source: 'tests/src/joins.rs', lines 63:0-70:1 -/
 def shared_bool_scrutinee
   (k : SharedBool) (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   let f ← if k.value
@@ -106,7 +106,7 @@ def shared_bool_scrutinee
   else ok 0#u32
 
 /-- [joins::shared_integer_scrutinee]:
-    Source: 'tests/src/joins.rs', lines 71:0-82:1 -/
+    Source: 'tests/src/joins.rs', lines 72:0-83:1 -/
 def shared_integer_scrutinee
   (n : Std.U8) (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   let f ← match n with
@@ -115,5 +115,193 @@ def shared_integer_scrutinee
   if x >= f
   then ok 1#u32
   else ok 0#u32
+
+/-! ## Deep embedding of the function bodies -/
+
+/-- [joins::opt_add_1]:
+    Source: 'tests/src/joins.rs', lines 5:0-8:1 -/
+def opt_add_1.deep : Aeneas.Deep.Expr [Bool, Std.U32] (Result Std.U32) :=
+  (.bind (.ite (.bool (.var .zero)) (.ok (.lit 1#u32)) (.ok (.lit 0#u32))) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (i + i1 : Result Std.U32))) (.var (.succ (.succ .zero))))
+    (.var .zero)))
+
+theorem opt_add_1.deep_eq (b : Bool) (x : Std.U32) :
+  opt_add_1 b x =
+    Aeneas.Deep.Expr.denote (opt_add_1.deep)
+      (b ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::opt_add_2]:
+    Source: 'tests/src/joins.rs', lines 10:0-14:1 -/
+def opt_add_2.deep : Aeneas.Deep.Expr [Bool, Std.U32] (Result Std.U32) :=
+  (.bind (.ite (.bool (.var .zero)) (.ok (.lit 1#u32)) (.ok (.lit 0#u32))) .var
+  (.bind
+    (.app (.app (.leaf (.binop "panic.+::<u32>")
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (i + i1 : Result Std.U32))) (.var (.succ (.succ .zero))))
+      (.var .zero)) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i1 : Std.U32) (i2 : Std.U32) =>
+                (i1 + i2 : Result Std.U32))) (.var .zero))
+    (.var (.succ .zero)))))
+
+theorem opt_add_2.deep_eq (b : Bool) (x : Std.U32) :
+  opt_add_2 b x =
+    Aeneas.Deep.Expr.denote (opt_add_2.deep)
+      (b ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::opt_add_1_or_panic]:
+    Source: 'tests/src/joins.rs', lines 16:0-19:1 -/
+def opt_add_1_or_panic.deep : Aeneas.Deep.Expr [Bool, Std.U32] (Result Std.U32)
+  :=
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (i + i1 : Result Std.U32))) (.var (.succ .zero))) (.lit 1#u32)))
+
+theorem opt_add_1_or_panic.deep_eq (b : Bool) (x : Std.U32) :
+  opt_add_1_or_panic b x =
+    Aeneas.Deep.Expr.denote (opt_add_1_or_panic.deep)
+      (b ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::opt_add_switch_1]:
+    Source: 'tests/src/joins.rs', lines 21:0-28:1 -/
+def opt_add_switch_1.deep :
+  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  (.bind
+    (.shallow (fun
+      | a ::ₕ x ::ₕ .nil =>
+        (match a with
+         | 0#uscalar => ok 0#u32
+         | 1#uscalar => ok 1#u32
+         | _ => fail panic))) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (i + i1 : Result Std.U32))) (.var (.succ (.succ .zero))))
+    (.var .zero)))
+
+theorem opt_add_switch_1.deep_eq (a : Std.U32) (x : Std.U32) :
+  opt_add_switch_1 a x =
+    Aeneas.Deep.Expr.denote (opt_add_switch_1.deep)
+      (a ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::opt_add_switch_2]:
+    Source: 'tests/src/joins.rs', lines 30:0-36:1 -/
+def opt_add_switch_2.deep :
+  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  (.shallow (fun
+    | a ::ₕ x ::ₕ .nil =>
+      (match a with
+       | 0#uscalar => x + 0#u32
+       | _ => fail panic)))
+
+theorem opt_add_switch_2.deep_eq (a : Std.U32) (x : Std.U32) :
+  opt_add_switch_2 a x =
+    Aeneas.Deep.Expr.denote (opt_add_switch_2.deep)
+      (a ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- Deep eliminator for [joins::Enum]
+    Source: 'tests/src/joins.rs', lines 38:0-42:1 -/
+@[reducible] def Enum.deepElim : Aeneas.Deep.Elim Enum [[], [], []] :=
+  fun x alts => Enum.casesOn x alts.1 alts.2.1 alts.2.2.1
+
+/-- [joins::use_enum]:
+    Source: 'tests/src/joins.rs', lines 44:0-52:1 -/
+def use_enum.deep : Aeneas.Deep.Expr [Enum, Std.U32] (Result Std.U32) :=
+  (.bind
+    (.match_ (.var .zero) Enum.deepElim
+    (.cons (.ok (.lit 0#u32))
+    (.cons (.ok (.lit 1#u32))
+    (.cons (.ok (.lit 2#u32))
+    .nil)))) .var
+  (.app (.app (.leaf (.binop "panic.+::<u32>")
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (i + i1 : Result Std.U32))) (.var (.succ (.succ .zero))))
+    (.var .zero)))
+
+theorem use_enum.deep_eq (e : Enum) (x : Std.U32) :
+  use_enum e x =
+    Aeneas.Deep.Expr.denote (use_enum.deep)
+      (e ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::call_choose]:
+    Source: 'tests/src/joins.rs', lines 54:0-57:1 -/
+def call_choose.deep :
+  Aeneas.Deep.Expr [Bool, Std.U32, Std.U32] (Result (Std.U32 × Std.U32)) :=
+  (.bind
+    (.ite (.bool (.var .zero))
+    (.ok
+      (.pair (.var (.succ .zero))
+        (.lam .var (.pair (.var .zero) (.var (.succ (.succ (.succ .zero))))))))
+    (.ok
+      (.pair (.var (.succ (.succ .zero)))
+        (.lam .var (.pair (.var (.succ (.succ .zero))) (.var .zero))))))
+    (.pair .var .var)
+  (.bind
+    (.app (.app (.leaf (.binop "panic.+::<u32>")
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (i + i1 : Result Std.U32))) (.var .zero)) (.lit 1#u32)) .var
+  (.ok (.app (.var (.succ (.succ .zero))) (.var .zero)))))
+
+theorem call_choose.deep_eq (b : Bool) (x : Std.U32) (y : Std.U32) :
+  call_choose b x y =
+    Aeneas.Deep.Expr.denote (call_choose.deep)
+      (b ::ₕ x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- Deep eliminator for [joins::SharedBool]
+    Source: 'tests/src/joins.rs', lines 59:0-61:1 -/
+@[reducible] def SharedBool.deepElim : Aeneas.Deep.Elim SharedBool [[Bool]] :=
+  fun x alts => SharedBool.casesOn x alts.1
+
+/-- [joins::shared_bool_scrutinee]:
+    Source: 'tests/src/joins.rs', lines 63:0-70:1 -/
+def shared_bool_scrutinee.deep :
+  Aeneas.Deep.Expr [SharedBool, Std.U32, Std.U32] (Result Std.U32) :=
+  (.bind
+    (.ite
+      (.bool
+        (.app (.leaf (.proj "value") (fun (sb : SharedBool) =>
+                (sb.value : Bool))) (.var .zero)))
+    (.ok (.var (.succ .zero)))
+    (.ok (.var (.succ (.succ .zero))))) .var
+  (.ite (.ge (.var (.succ (.succ .zero))) (.var .zero))
+  (.ok (.lit 1#u32))
+  (.ok (.lit 0#u32))))
+
+theorem shared_bool_scrutinee.deep_eq (k : SharedBool) (x : Std.U32)
+  (y : Std.U32) :
+  shared_bool_scrutinee k x y =
+    Aeneas.Deep.Expr.denote (shared_bool_scrutinee.deep)
+      (k ::ₕ x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
+
+/-- [joins::shared_integer_scrutinee]:
+    Source: 'tests/src/joins.rs', lines 72:0-83:1 -/
+def shared_integer_scrutinee.deep :
+  Aeneas.Deep.Expr [Std.U8, Std.U32, Std.U32] (Result Std.U32) :=
+  (.bind
+    (.shallow (fun
+      | n ::ₕ x ::ₕ y ::ₕ .nil =>
+        (match n with
+         | 0#uscalar => ok x
+         | _ => ok y))) .var
+  (.ite (.ge (.var (.succ (.succ .zero))) (.var .zero))
+  (.ok (.lit 1#u32))
+  (.ok (.lit 0#u32))))
+
+theorem shared_integer_scrutinee.deep_eq (n : Std.U8) (x : Std.U32)
+  (y : Std.U32) :
+  shared_integer_scrutinee n x y =
+    Aeneas.Deep.Expr.denote (shared_integer_scrutinee.deep)
+      (n ::ₕ x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+  := by deep_rfl
 
 end joins

@@ -1,5 +1,6 @@
 //@ [!lean] skip
 //@ [lean] aeneas-args=-loops-to-rec
+//@ [lean] aeneas-args=-deep
 
 use std::vec::Vec;
 

@@ -1,4 +1,5 @@
 //@ [!lean] skip
+//@ [lean] aeneas-args=-deep
 
 fn call_fn_no_state(i: u32) -> u32 {
     let incr = |i: u32| -> u32 { i + 1 };

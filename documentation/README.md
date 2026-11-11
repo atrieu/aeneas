@@ -8,6 +8,7 @@ Aeneas translates Rust programs to into pure functional programs (primarily Lean
 - [Tactics Reference](tactics-reference.md) — All tactics with docstrings and examples
 - [Tips, Tricks & Pitfalls](tips-and-tricks.md) — Common pitfalls and how to avoid them
 - [Crypto Verification](crypto-verification.md) — Verifying cryptographic code
+- [Deep Embedding](deep-embedding.md) — The `-deep` mode: deep AST terms and denotation theorems
 - [Glossary](glossary.md) — Aeneas-specific terms
 
 For AI agent instructions see the [skills/](skills/) folder.

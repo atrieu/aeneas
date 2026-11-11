@@ -1,6 +1,7 @@
 //@ [!lean] skip
 //@ [lean] subdir=Hashmap
 //@ [lean] aeneas-args=-split-files -loops-to-rec
+//@ [lean] aeneas-args=-deep
 
 //! A hashmap implementation.
 //!

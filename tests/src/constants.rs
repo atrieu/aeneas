@@ -1,4 +1,5 @@
 //@ [coq,fstar] subdir=misc
+//@ [lean] aeneas-args=-deep
 //! Tests with constants
 
 // Integers

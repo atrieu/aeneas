@@ -206,9 +206,11 @@ When Aeneas translates a Rust crate, it produces several Lean files:
 | **FunsExternal_Template.lean**     | Template for hand-written models of external functions (e.g., from Rust's standard library) |
 | **TypesExternal.lean**             | User-maintained file with type models (never overwritten by Aeneas)                         |
 | **FunsExternal.lean**              | User-maintained file with function models (never overwritten by Aeneas)                     |
+| **Deep.lean**                      | With `-deep` only: deep AST terms of the function bodies and their denotation theorems (see [deep-embedding.md](deep-embedding.md)) |
 
 > **Tip:** Use the `-split-files` option to have Aeneas generate one file per
 > declaration group as detailed in the above table. This is helpful for large crates.
+> Without it, the deep terms of `-deep` are appended at the end of the single generated file.
 
 ### 3.2 Scalar Types
 

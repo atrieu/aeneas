@@ -21,7 +21,7 @@ Axiom core_num_U32_wrapping_sub : u32 -> u32 -> result u32.
 Axiom core_num_U32_wrapping_add : u32 -> u32 -> result u32.
 
 (** [demo::choose]:
-    Source: 'tests/src/demo.rs', lines 8:0-14:1
+    Source: 'tests/src/demo.rs', lines 9:0-15:1
     Visibility: public *)
 Definition choose
   {T : Type} (b : bool) (x : T) (y : T) : result (T * (T -> (T * T))) :=
@@ -31,34 +31,34 @@ Definition choose
 .
 
 (** [demo::mul2_add1]:
-    Source: 'tests/src/demo.rs', lines 16:0-18:1
+    Source: 'tests/src/demo.rs', lines 17:0-19:1
     Visibility: public *)
 Definition mul2_add1 (x : u32) : result u32 :=
   i <- u32_add x x; u32_add i 1%u32
 .
 
 (** [demo::use_mul2_add1]:
-    Source: 'tests/src/demo.rs', lines 20:0-22:1
+    Source: 'tests/src/demo.rs', lines 21:0-23:1
     Visibility: public *)
 Definition use_mul2_add1 (x : u32) (y : u32) : result u32 :=
   i <- mul2_add1 x; u32_add i y
 .
 
 (** [demo::incr]:
-    Source: 'tests/src/demo.rs', lines 24:0-26:1
+    Source: 'tests/src/demo.rs', lines 25:0-27:1
     Visibility: public *)
 Definition incr (x : u32) : result u32 :=
   u32_add x 1%u32.
 
 (** [demo::use_incr]:
-    Source: 'tests/src/demo.rs', lines 28:0-33:1
+    Source: 'tests/src/demo.rs', lines 29:0-34:1
     Visibility: public *)
 Definition use_incr : result unit :=
   x <- incr 0%u32; x1 <- incr x; _ <- incr x1; Ok tt
 .
 
 (** [demo::CList]
-    Source: 'tests/src/demo.rs', lines 37:0-40:1
+    Source: 'tests/src/demo.rs', lines 38:0-41:1
     Visibility: public *)
 Inductive CList_t (T : Type) :=
 | CList_CCons : T -> CList_t T -> CList_t T
@@ -69,7 +69,7 @@ Arguments CList_CCons { _ }.
 Arguments CList_CNil { _ }.
 
 (** [demo::list_nth]:
-    Source: 'tests/src/demo.rs', lines 42:0-55:1
+    Source: 'tests/src/demo.rs', lines 43:0-56:1
     Visibility: public *)
 Fixpoint list_nth {T : Type} (n : nat) (l : CList_t T) (i : u32) : result T :=
   match n with
@@ -84,7 +84,7 @@ Fixpoint list_nth {T : Type} (n : nat) (l : CList_t T) (i : u32) : result T :=
 .
 
 (** [demo::list_nth1]: loop 0:
-    Source: 'tests/src/demo.rs', lines 58:4-66:1
+    Source: 'tests/src/demo.rs', lines 59:4-67:1
     Visibility: public *)
 Fixpoint list_nth1_loop
   {T : Type} (n : nat) (l : CList_t T) (i : u32) : result T :=
@@ -102,7 +102,7 @@ Fixpoint list_nth1_loop
 .
 
 (** [demo::list_nth1]:
-    Source: 'tests/src/demo.rs', lines 57:0-66:1
+    Source: 'tests/src/demo.rs', lines 58:0-67:1
     Visibility: public *)
 Definition list_nth1
   {T : Type} (n : nat) (l : CList_t T) (i : u32) : result T :=
@@ -110,7 +110,7 @@ Definition list_nth1
 .
 
 (** [demo::list_nth_mut]:
-    Source: 'tests/src/demo.rs', lines 68:0-81:1
+    Source: 'tests/src/demo.rs', lines 69:0-82:1
     Visibility: public *)
 Fixpoint list_nth_mut
   {T : Type} (n : nat) (l : CList_t T) (i : u32) :
@@ -137,7 +137,7 @@ Fixpoint list_nth_mut
 .
 
 (** [demo::i32_id]:
-    Source: 'tests/src/demo.rs', lines 83:0-89:1
+    Source: 'tests/src/demo.rs', lines 84:0-90:1
     Visibility: public *)
 Fixpoint i32_id (n : nat) (i : i32) : result i32 :=
   match n with
@@ -150,7 +150,7 @@ Fixpoint i32_id (n : nat) (i : i32) : result i32 :=
 .
 
 (** [demo::list_tail]:
-    Source: 'tests/src/demo.rs', lines 91:0-96:1
+    Source: 'tests/src/demo.rs', lines 92:0-97:1
     Visibility: public *)
 Fixpoint list_tail
   {T : Type} (n : nat) (l : CList_t T) :
@@ -174,7 +174,7 @@ Fixpoint list_tail
 .
 
 (** Trait declaration: [demo::Counter]
-    Source: 'tests/src/demo.rs', lines 100:0-102:1
+    Source: 'tests/src/demo.rs', lines 101:0-103:1
     Visibility: public *)
 Record Counter_t (Self : Type) := mkCounter_t {
   Counter_t_incr : Self -> result (usize * Self);
@@ -184,7 +184,7 @@ Arguments mkCounter_t { _ }.
 Arguments Counter_t_incr { _ } _.
 
 (** [demo::{impl demo::Counter for usize}::incr]:
-    Source: 'tests/src/demo.rs', lines 105:4-109:5
+    Source: 'tests/src/demo.rs', lines 106:4-110:5
     Visibility: public *)
 Definition Usize_Insts_DemoCounter_incr
   (self : usize) : result (usize * usize) :=
@@ -192,13 +192,13 @@ Definition Usize_Insts_DemoCounter_incr
 .
 
 (** Trait implementation: [demo::{impl demo::Counter for usize}]
-    Source: 'tests/src/demo.rs', lines 104:0-110:1 *)
+    Source: 'tests/src/demo.rs', lines 105:0-111:1 *)
 Definition Usize_Insts_DemoCounter : Counter_t usize := {|
   Counter_t_incr := Usize_Insts_DemoCounter_incr;
 |}.
 
 (** [demo::use_counter]:
-    Source: 'tests/src/demo.rs', lines 112:0-114:1
+    Source: 'tests/src/demo.rs', lines 113:0-115:1
     Visibility: public *)
 Definition use_counter
   {T : Type} (counterInst : Counter_t T) (cnt : T) : result (usize * T) :=
@@ -206,7 +206,7 @@ Definition use_counter
 .
 
 (** [demo::mod_add]:
-    Source: 'tests/src/demo.rs', lines 117:0-125:1 *)
+    Source: 'tests/src/demo.rs', lines 118:0-126:1 *)
 Definition mod_add (a : u32) (b : u32) : result u32 :=
   _ <- massert (a s< 3329%u32);
   _ <- massert (b s< 3329%u32);
