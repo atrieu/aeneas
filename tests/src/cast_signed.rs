@@ -1,4 +1,5 @@
 //@ [!lean] skip
+//@ [lean] aeneas-args=-deep
 #![feature(register_tool)]
 #![register_tool(verify)]
 //! Tests for `<uN>::cast_signed` / `<iN>::cast_unsigned`, verifying the

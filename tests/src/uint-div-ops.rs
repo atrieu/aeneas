@@ -1,5 +1,6 @@
 //@ [!lean] skip
 //@ [lean] subdir=UintDivOps
+//@ [lean] aeneas-args=-deep
 #![feature(register_tool)]
 #![register_tool(verify)]
 //! Tests for the Lean models of division operations on unsigned integers (`div_ceil`).

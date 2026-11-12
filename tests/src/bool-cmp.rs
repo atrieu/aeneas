@@ -1,4 +1,5 @@
 //@ [!lean] skip
+//@ [lean] aeneas-args=-deep
 //! Regression test: comparison operators ([<], [<=], [>=], [>]) applied to
 //! booleans.
 

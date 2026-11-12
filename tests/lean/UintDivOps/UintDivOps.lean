@@ -21,13 +21,13 @@ set_option maxRecDepth 2048
 namespace uint_div_ops
 
 /-- [uint_div_ops::ceil_u8]:
-    Source: 'tests/src/uint-div-ops.rs', lines 10:0-12:1
+    Source: 'tests/src/uint-div-ops.rs', lines 11:0-13:1
     Visibility: public -/
 def ceil_u8 (x : Std.U8) (y : Std.U8) : Result Std.U8 := do
   core.num.U8.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_u8]:
-    Source: 'tests/src/uint-div-ops.rs', lines 15:0-23:1
+    Source: 'tests/src/uint-div-ops.rs', lines 16:0-24:1
     Visibility: public -/
 def test_ceil_u8 : Result Unit := do
   let left_val ← ceil_u8 7#u8 4#u8
@@ -49,13 +49,13 @@ def test_ceil_u8 : Result Unit := do
 #guard (test_ceil_u8).reducesTo ()
 
 /-- [uint_div_ops::ceil_u16]:
-    Source: 'tests/src/uint-div-ops.rs', lines 25:0-27:1
+    Source: 'tests/src/uint-div-ops.rs', lines 26:0-28:1
     Visibility: public -/
 def ceil_u16 (x : Std.U16) (y : Std.U16) : Result Std.U16 := do
   core.num.U16.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_u16]:
-    Source: 'tests/src/uint-div-ops.rs', lines 30:0-32:1
+    Source: 'tests/src/uint-div-ops.rs', lines 31:0-33:1
     Visibility: public -/
 def test_ceil_u16 : Result Unit := do
   let left_val ← ceil_u16 7#u16 4#u16
@@ -65,13 +65,13 @@ def test_ceil_u16 : Result Unit := do
 #guard (test_ceil_u16).reducesTo ()
 
 /-- [uint_div_ops::ceil_u32]:
-    Source: 'tests/src/uint-div-ops.rs', lines 34:0-36:1
+    Source: 'tests/src/uint-div-ops.rs', lines 35:0-37:1
     Visibility: public -/
 def ceil_u32 (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   core.num.U32.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_u32]:
-    Source: 'tests/src/uint-div-ops.rs', lines 39:0-41:1
+    Source: 'tests/src/uint-div-ops.rs', lines 40:0-42:1
     Visibility: public -/
 def test_ceil_u32 : Result Unit := do
   let left_val ← ceil_u32 7#u32 4#u32
@@ -81,13 +81,13 @@ def test_ceil_u32 : Result Unit := do
 #guard (test_ceil_u32).reducesTo ()
 
 /-- [uint_div_ops::ceil_u64]:
-    Source: 'tests/src/uint-div-ops.rs', lines 43:0-45:1
+    Source: 'tests/src/uint-div-ops.rs', lines 44:0-46:1
     Visibility: public -/
 def ceil_u64 (x : Std.U64) (y : Std.U64) : Result Std.U64 := do
   core.num.U64.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_u64]:
-    Source: 'tests/src/uint-div-ops.rs', lines 48:0-50:1
+    Source: 'tests/src/uint-div-ops.rs', lines 49:0-51:1
     Visibility: public -/
 def test_ceil_u64 : Result Unit := do
   let left_val ← ceil_u64 7#u64 4#u64
@@ -97,13 +97,13 @@ def test_ceil_u64 : Result Unit := do
 #guard (test_ceil_u64).reducesTo ()
 
 /-- [uint_div_ops::ceil_u128]:
-    Source: 'tests/src/uint-div-ops.rs', lines 52:0-54:1
+    Source: 'tests/src/uint-div-ops.rs', lines 53:0-55:1
     Visibility: public -/
 def ceil_u128 (x : Std.U128) (y : Std.U128) : Result Std.U128 := do
   core.num.U128.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_u128]:
-    Source: 'tests/src/uint-div-ops.rs', lines 57:0-59:1
+    Source: 'tests/src/uint-div-ops.rs', lines 58:0-60:1
     Visibility: public -/
 def test_ceil_u128 : Result Unit := do
   let left_val ← ceil_u128 7#u128 4#u128
@@ -113,13 +113,13 @@ def test_ceil_u128 : Result Unit := do
 #guard (test_ceil_u128).reducesTo ()
 
 /-- [uint_div_ops::ceil_usize]:
-    Source: 'tests/src/uint-div-ops.rs', lines 61:0-63:1
+    Source: 'tests/src/uint-div-ops.rs', lines 62:0-64:1
     Visibility: public -/
 def ceil_usize (x : Std.Usize) (y : Std.Usize) : Result Std.Usize := do
   core.num.Usize.div_ceil x y
 
 /-- [uint_div_ops::test_ceil_usize]:
-    Source: 'tests/src/uint-div-ops.rs', lines 67:0-74:1
+    Source: 'tests/src/uint-div-ops.rs', lines 68:0-75:1
     Visibility: public -/
 def test_ceil_usize : Result Unit := do
   let left_val ← ceil_usize 7#usize 4#usize
@@ -140,13 +140,13 @@ def test_ceil_usize : Result Unit := do
 #guard (test_ceil_usize).reducesTo ()
 
 /-- [uint_div_ops::num_chunks]:
-    Source: 'tests/src/uint-div-ops.rs', lines 77:0-79:1
+    Source: 'tests/src/uint-div-ops.rs', lines 78:0-80:1
     Visibility: public -/
 def num_chunks (len : Std.Usize) (chunk : Std.Usize) : Result Std.Usize := do
   core.num.Usize.div_ceil len chunk
 
 /-- [uint_div_ops::test_num_chunks]:
-    Source: 'tests/src/uint-div-ops.rs', lines 82:0-86:1
+    Source: 'tests/src/uint-div-ops.rs', lines 83:0-87:1
     Visibility: public -/
 def test_num_chunks : Result Unit := do
   let left_val ← num_chunks 10#usize 3#usize
@@ -158,5 +158,359 @@ def test_num_chunks : Result Unit := do
 
 /- Unit test for [uint_div_ops::test_num_chunks] -/
 #guard (test_num_chunks).reducesTo ()
+
+/-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
+
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | core_panicking_AssertKind
+  | core_fmt_Arguments
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.core_panicking_AssertKind, _ => core.panicking.AssertKind
+    | TypeName.core_fmt_Arguments, _ => core.fmt.Arguments
+  variants
+    | TypeName.core_panicking_AssertKind => []
+    | TypeName.core_fmt_Arguments => []
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | ceil_u8
+  | test_ceil_u8
+  | ceil_u16
+  | test_ceil_u16
+  | ceil_u32
+  | test_ceil_u32
+  | ceil_u64
+  | test_ceil_u64
+  | ceil_u128
+  | test_ceil_u128
+  | ceil_usize
+  | test_ceil_usize
+  | num_chunks
+  | test_num_chunks
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.ceil_u8 => ⟨⟨[(.scalar (.u .U8)), (.scalar (.u .U8))],
+      (.result (.scalar (.u .U8)))⟩, fun _ => ceil_u8⟩
+    | FunName.test_ceil_u8 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_u8⟩
+    | FunName.ceil_u16 => ⟨⟨[(.scalar (.u .U16)), (.scalar (.u .U16))],
+      (.result (.scalar (.u .U16)))⟩, fun _ => ceil_u16⟩
+    | FunName.test_ceil_u16 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_u16⟩
+    | FunName.ceil_u32 => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => ceil_u32⟩
+    | FunName.test_ceil_u32 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_u32⟩
+    | FunName.ceil_u64 => ⟨⟨[(.scalar (.u .U64)), (.scalar (.u .U64))],
+      (.result (.scalar (.u .U64)))⟩, fun _ => ceil_u64⟩
+    | FunName.test_ceil_u64 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_u64⟩
+    | FunName.ceil_u128 => ⟨⟨[(.scalar (.u .U128)), (.scalar (.u .U128))],
+      (.result (.scalar (.u .U128)))⟩, fun _ => ceil_u128⟩
+    | FunName.test_ceil_u128 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_u128⟩
+    | FunName.ceil_usize =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => ceil_usize⟩
+    | FunName.test_ceil_usize => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_ceil_usize⟩
+    | FunName.num_chunks =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => num_chunks⟩
+    | FunName.test_num_chunks => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_num_chunks⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+/-- [uint_div_ops::ceil_u8]:
+    Source: 'tests/src/uint-div-ops.rs', lines 11:0-13:1
+    Visibility: public -/
+def ceil_u8.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.scalar (.u .U8))] (.result (.scalar (.u .U8))) :=
+  (.app (.app (.leaf (.fn "core::num::{u8}::div_ceil")
+                (.arrow (.scalar (.u .U8)) (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))))
+                (fun (i : Std.U8) (i1 : Std.U8) =>
+                (core.num.U8.div_ceil i i1 : Result Std.U8))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem ceil_u8.deep_eq (x : Std.U8) (y : Std.U8) :
+  ceil_u8 x y =
+    Aeneas.Deep.Expr.denote (ceil_u8.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_u8]:
+    Source: 'tests/src/uint-div-ops.rs', lines 16:0-24:1
+    Visibility: public -/
+def test_ceil_u8.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.leaf (.other "closed") (.result .unit)
+    (do
+     let left_val ← ceil_u8 7#u8 4#u8
+     massert (left_val = 2#u8)
+     let left_val1 ← ceil_u8 0#u8 7#u8
+     massert (left_val1 = 0#u8)
+     let left_val2 ← ceil_u8 9#u8 3#u8
+     massert (left_val2 = 3#u8)
+     let left_val3 ← ceil_u8 255#u8 1#u8
+     massert (left_val3 = 255#u8)
+     let left_val4 ← ceil_u8 255#u8 2#u8
+     massert (left_val4 = 128#u8)
+     let left_val5 ← ceil_u8 255#u8 255#u8
+     massert (left_val5 = 1#u8)
+     let left_val6 ← ceil_u8 254#u8 255#u8
+     massert (left_val6 = 1#u8) : Result Unit))
+
+theorem test_ceil_u8.deep_eq :
+  test_ceil_u8 =
+    Aeneas.Deep.Expr.denote (test_ceil_u8.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::ceil_u16]:
+    Source: 'tests/src/uint-div-ops.rs', lines 26:0-28:1
+    Visibility: public -/
+def ceil_u16.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16)), (.scalar (.u .U16))] (.result (.scalar (.u .U16))) :=
+  (.app (.app (.leaf (.fn "core::num::{u16}::div_ceil")
+                (.arrow (.scalar (.u .U16)) (.arrow (.scalar (.u .U16)) (.result (.scalar (.u .U16)))))
+                (fun (i : Std.U16) (i1 : Std.U16) =>
+                (core.num.U16.div_ceil i i1 : Result Std.U16))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem ceil_u16.deep_eq (x : Std.U16) (y : Std.U16) :
+  ceil_u16 x y =
+    Aeneas.Deep.Expr.denote (ceil_u16.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_u16]:
+    Source: 'tests/src/uint-div-ops.rs', lines 31:0-33:1
+    Visibility: public -/
+def test_ceil_u16.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.ceil_u16) [] [] [(.scalar (.u .U16)), (.scalar (.u .U16))] (.result (.scalar (.u .U16))) rfl rfl
+      (.cons (.uscalarLit .U16 7 (by decide))
+        (.cons (.uscalarLit .U16 4 (by decide)) .nil))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U16 2 (by decide)))))
+
+theorem test_ceil_u16.deep_eq :
+  test_ceil_u16 =
+    Aeneas.Deep.Expr.denote (test_ceil_u16.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::ceil_u32]:
+    Source: 'tests/src/uint-div-ops.rs', lines 35:0-37:1
+    Visibility: public -/
+def ceil_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.app (.app (.leaf (.fn "core::num::{u32}::div_ceil")
+                (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.result (.scalar (.u .U32)))))
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (core.num.U32.div_ceil i i1 : Result Std.U32))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem ceil_u32.deep_eq (x : Std.U32) (y : Std.U32) :
+  ceil_u32 x y =
+    Aeneas.Deep.Expr.denote (ceil_u32.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_u32]:
+    Source: 'tests/src/uint-div-ops.rs', lines 40:0-42:1
+    Visibility: public -/
+def test_ceil_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.ceil_u32) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.uscalarLit .U32 7 (by decide))
+        (.cons (.uscalarLit .U32 4 (by decide)) .nil))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U32 2 (by decide)))))
+
+theorem test_ceil_u32.deep_eq :
+  test_ceil_u32 =
+    Aeneas.Deep.Expr.denote (test_ceil_u32.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::ceil_u64]:
+    Source: 'tests/src/uint-div-ops.rs', lines 44:0-46:1
+    Visibility: public -/
+def ceil_u64.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.scalar (.u .U64))] (.result (.scalar (.u .U64))) :=
+  (.app (.app (.leaf (.fn "core::num::{u64}::div_ceil")
+                (.arrow (.scalar (.u .U64)) (.arrow (.scalar (.u .U64)) (.result (.scalar (.u .U64)))))
+                (fun (i : Std.U64) (i1 : Std.U64) =>
+                (core.num.U64.div_ceil i i1 : Result Std.U64))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem ceil_u64.deep_eq (x : Std.U64) (y : Std.U64) :
+  ceil_u64 x y =
+    Aeneas.Deep.Expr.denote (ceil_u64.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_u64]:
+    Source: 'tests/src/uint-div-ops.rs', lines 49:0-51:1
+    Visibility: public -/
+def test_ceil_u64.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.ceil_u64) [] [] [(.scalar (.u .U64)), (.scalar (.u .U64))] (.result (.scalar (.u .U64))) rfl rfl
+      (.cons (.uscalarLit .U64 7 (by decide))
+        (.cons (.uscalarLit .U64 4 (by decide)) .nil))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U64 2 (by decide)))))
+
+theorem test_ceil_u64.deep_eq :
+  test_ceil_u64 =
+    Aeneas.Deep.Expr.denote (test_ceil_u64.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::ceil_u128]:
+    Source: 'tests/src/uint-div-ops.rs', lines 53:0-55:1
+    Visibility: public -/
+def ceil_u128.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U128)), (.scalar (.u .U128))] (.result (.scalar (.u .U128)))
+  :=
+  (.app (.app (.leaf (.fn "core::num::{u128}::div_ceil")
+                (.arrow (.scalar (.u .U128)) (.arrow (.scalar (.u .U128)) (.result (.scalar (.u .U128)))))
+                (fun (i : Std.U128) (i1 : Std.U128) =>
+                (core.num.U128.div_ceil i i1 : Result Std.U128))) (.var .zero))
+    (.var (.succ .zero)))
+
+theorem ceil_u128.deep_eq (x : Std.U128) (y : Std.U128) :
+  ceil_u128 x y =
+    Aeneas.Deep.Expr.denote (ceil_u128.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_u128]:
+    Source: 'tests/src/uint-div-ops.rs', lines 58:0-60:1
+    Visibility: public -/
+def test_ceil_u128.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.ceil_u128) [] [] [(.scalar (.u .U128)), (.scalar (.u .U128))] (.result (.scalar (.u .U128))) rfl rfl
+      (.cons (.uscalarLit .U128 7 (by decide))
+        (.cons (.uscalarLit .U128 4 (by decide)) .nil))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U128 2 (by decide)))))
+
+theorem test_ceil_u128.deep_eq :
+  test_ceil_u128 =
+    Aeneas.Deep.Expr.denote (test_ceil_u128.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::ceil_usize]:
+    Source: 'tests/src/uint-div-ops.rs', lines 62:0-64:1
+    Visibility: public -/
+def ceil_usize.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.scalar (.u .Usize))) :=
+  (.app (.app (.leaf (.fn "core::num::{usize}::div_ceil")
+                (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result (.scalar (.u .Usize)))))
+                (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                (core.num.Usize.div_ceil i i1 : Result Std.Usize)))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem ceil_usize.deep_eq (x : Std.Usize) (y : Std.Usize) :
+  ceil_usize x y =
+    Aeneas.Deep.Expr.denote (ceil_usize.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_ceil_usize]:
+    Source: 'tests/src/uint-div-ops.rs', lines 68:0-75:1
+    Visibility: public -/
+def test_ceil_usize.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.leaf (.other "closed") (.result .unit)
+    (do
+     let left_val ← ceil_usize 7#usize 4#usize
+     massert (left_val = 2#usize)
+     let left_val1 ← ceil_usize core.num.Usize.MAX 1#usize
+     massert (left_val1 = core.num.Usize.MAX)
+     let i ← core.num.Usize.MAX / 2#usize
+     let half ← i + 1#usize
+     let left_val2 ← ceil_usize core.num.Usize.MAX 2#usize
+     massert (left_val2 = half)
+     let left_val3 ← ceil_usize core.num.Usize.MAX core.num.Usize.MAX
+     massert (left_val3 = 1#usize)
+     let i1 ← core.num.Usize.MAX - 1#usize
+     let left_val4 ← ceil_usize i1 core.num.Usize.MAX
+     massert (left_val4 = 1#usize) : Result Unit))
+
+theorem test_ceil_usize.deep_eq :
+  test_ceil_usize =
+    Aeneas.Deep.Expr.denote (test_ceil_usize.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::num_chunks]:
+    Source: 'tests/src/uint-div-ops.rs', lines 78:0-80:1
+    Visibility: public -/
+def num_chunks.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.scalar (.u .Usize))) :=
+  (.app (.app (.leaf (.fn "core::num::{usize}::div_ceil")
+                (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result (.scalar (.u .Usize)))))
+                (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                (core.num.Usize.div_ceil i i1 : Result Std.Usize)))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem num_chunks.deep_eq (len : Std.Usize) (chunk : Std.Usize) :
+  num_chunks len chunk =
+    Aeneas.Deep.Expr.denote (num_chunks.deep)
+      (len ::ₑ chunk ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [uint_div_ops::test_num_chunks]:
+    Source: 'tests/src/uint-div-ops.rs', lines 83:0-87:1
+    Visibility: public -/
+def test_num_chunks.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.num_chunks) [] [] [(.scalar (.u .Usize)), (.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.uscalarLit .Usize 10 (by decide))
+        (.cons (.uscalarLit .Usize 3 (by decide)) .nil))) .var
+  (.bind (.assert (.eq (.var .zero) (.uscalarLit .Usize 4 (by decide))))
+    .ignore
+  (.bind
+    (.call (.crate FunName.num_chunks) [] [] [(.scalar (.u .Usize)), (.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.uscalarLit .Usize 9 (by decide))
+        (.cons (.uscalarLit .Usize 3 (by decide)) .nil))) .var
+  (.bind (.assert (.eq (.var .zero) (.uscalarLit .Usize 3 (by decide))))
+    .ignore
+  (.bind
+    (.call (.crate FunName.num_chunks) [] [] [(.scalar (.u .Usize)), (.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.uscalarLit .Usize 0 (by decide))
+        (.cons (.uscalarLit .Usize 5 (by decide)) .nil))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .Usize 0 (by decide)))))))))
+
+theorem test_num_chunks.deep_eq :
+  test_num_chunks =
+    Aeneas.Deep.Expr.denote (test_num_chunks.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
 
 end uint_div_ops

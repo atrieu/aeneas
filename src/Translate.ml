@@ -700,16 +700,12 @@ let export_type (fmt : Format.formatter) (config : gen_config) (ctx : gen_ctx)
     (is_opaque && config.extract_opaque)
     || ((not is_opaque) && config.extract_transparent)
   in
-  if extract then
-    if config.extract_deep then (
-      (* Deep mode: we only print the deep eliminators *)
-      if extract_decl then ExtractDeep.extract_type_decl_deep ctx fmt def)
-    else (
-      if extract_decl then (
-        Extract.extract_type_decl ctx fmt type_decl_group kind def;
-        EmitJson.record_type_if_enabled ctx def);
-      if extract_extra_info then
-        Extract.extract_type_decl_extra_info ctx fmt kind def)
+  if extract then (
+    if extract_decl then (
+      Extract.extract_type_decl ctx fmt type_decl_group kind def;
+      EmitJson.record_type_if_enabled ctx def);
+    if extract_extra_info then
+      Extract.extract_type_decl_extra_info ctx fmt kind def)
 
 (** Export a group of types.
 
@@ -1474,7 +1470,9 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
   (* Create a vertical box *)
   Format.pp_open_vbox fmt 0;
 
-  (* Extract the definitions *)
+  (* Extract the definitions. In deep mode, the section starts with the
+     closed world of types (see [ExtractDeep.extract_closed_world]) *)
+  if config.extract_deep then ExtractDeep.extract_closed_world ctx fmt;
   extract_definitions fmt config ctx;
 
   (* Append the deep embedding of the function bodies, if requested *)
@@ -1482,7 +1480,7 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
     let deep_config =
       {
         config with
-        extract_types = true;
+        extract_types = false;
         extract_decreases_clauses = false;
         extract_template_decreases_clauses = false;
         extract_trait_decls = false;
@@ -1501,6 +1499,7 @@ let extract_file (config : gen_config) (ctx : gen_ctx) (fi : extract_file_info)
     Format.pp_print_string fmt
       (Printf.sprintf "set_option maxRecDepth %d" (deep_max_recdepth ()));
     Format.pp_print_break fmt 0 0;
+    ExtractDeep.extract_closed_world ctx fmt;
     extract_definitions fmt deep_config ctx);
 
   (* Close the box and end the formatting *)
@@ -2215,7 +2214,7 @@ let extract_translated_crate (filename : string) (dest_dir : string)
   (if !Config.extract_deep && !Config.split_files then
      let deep_config =
        {
-         extract_types = true;
+         extract_types = false;
          extract_decreases_clauses = false;
          extract_template_decreases_clauses = false;
          extract_fun_decls = true;

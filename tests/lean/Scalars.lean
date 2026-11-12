@@ -21,67 +21,67 @@ set_option maxRecDepth 2048
 namespace scalars
 
 /-- [scalars::u32_use_wrapping_add]:
-    Source: 'tests/src/scalars.rs', lines 5:0-7:1 -/
+    Source: 'tests/src/scalars.rs', lines 6:0-8:1 -/
 def u32_use_wrapping_add (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.wrapping_add x y)
 
 /-- [scalars::i32_use_wrapping_add]:
-    Source: 'tests/src/scalars.rs', lines 9:0-11:1 -/
+    Source: 'tests/src/scalars.rs', lines 10:0-12:1 -/
 def i32_use_wrapping_add (x : Std.I32) (y : Std.I32) : Result Std.I32 := do
   ok (core.num.I32.wrapping_add x y)
 
 /-- [scalars::u32_use_wrapping_sub]:
-    Source: 'tests/src/scalars.rs', lines 13:0-15:1 -/
+    Source: 'tests/src/scalars.rs', lines 14:0-16:1 -/
 def u32_use_wrapping_sub (x : Std.U32) (y : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.wrapping_sub x y)
 
 /-- [scalars::i32_use_wrapping_sub]:
-    Source: 'tests/src/scalars.rs', lines 17:0-19:1 -/
+    Source: 'tests/src/scalars.rs', lines 18:0-20:1 -/
 def i32_use_wrapping_sub (x : Std.I32) (y : Std.I32) : Result Std.I32 := do
   ok (core.num.I32.wrapping_sub x y)
 
 /-- [scalars::u32_use_shift_right]:
-    Source: 'tests/src/scalars.rs', lines 21:0-23:1 -/
+    Source: 'tests/src/scalars.rs', lines 22:0-24:1 -/
 def u32_use_shift_right (x : Std.U32) : Result Std.U32 := do
   x >>> 2#i32
 
 /-- [scalars::i32_use_shift_right]:
-    Source: 'tests/src/scalars.rs', lines 25:0-27:1 -/
+    Source: 'tests/src/scalars.rs', lines 26:0-28:1 -/
 def i32_use_shift_right (x : Std.I32) : Result Std.I32 := do
   x >>> 2#i32
 
 /-- [scalars::u32_use_shift_left]:
-    Source: 'tests/src/scalars.rs', lines 29:0-31:1 -/
+    Source: 'tests/src/scalars.rs', lines 30:0-32:1 -/
 def u32_use_shift_left (x : Std.U32) : Result Std.U32 := do
   x <<< 2#i32
 
 /-- [scalars::i32_use_shift_left]:
-    Source: 'tests/src/scalars.rs', lines 33:0-35:1 -/
+    Source: 'tests/src/scalars.rs', lines 34:0-36:1 -/
 def i32_use_shift_left (x : Std.I32) : Result Std.I32 := do
   x <<< 2#i32
 
 /-- [scalars::u32_use_wrapping_shl]:
-    Source: 'tests/src/scalars.rs', lines 37:0-39:1 -/
+    Source: 'tests/src/scalars.rs', lines 38:0-40:1 -/
 def u32_use_wrapping_shl (x : Std.U32) (s : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.wrapping_shl x s)
 
 /-- [scalars::i32_use_wrapping_shl]:
-    Source: 'tests/src/scalars.rs', lines 41:0-43:1 -/
+    Source: 'tests/src/scalars.rs', lines 42:0-44:1 -/
 def i32_use_wrapping_shl (x : Std.I32) (s : Std.U32) : Result Std.I32 := do
   ok (core.num.I32.wrapping_shl x s)
 
 /-- [scalars::u32_use_wrapping_shr]:
-    Source: 'tests/src/scalars.rs', lines 45:0-47:1 -/
+    Source: 'tests/src/scalars.rs', lines 46:0-48:1 -/
 def u32_use_wrapping_shr (x : Std.U32) (s : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.wrapping_shr x s)
 
 /-- [scalars::i32_use_wrapping_shr]:
-    Source: 'tests/src/scalars.rs', lines 49:0-51:1 -/
+    Source: 'tests/src/scalars.rs', lines 50:0-52:1 -/
 def i32_use_wrapping_shr (x : Std.I32) (s : Std.U32) : Result Std.I32 := do
   ok (core.num.I32.wrapping_shr x s)
 
 /-- [scalars::shr_into_index_mut]:
-    Source: 'tests/src/scalars.rs', lines 57:0-59:1 -/
+    Source: 'tests/src/scalars.rs', lines 58:0-60:1 -/
 def shr_into_index_mut
   (x : Std.U64) (out : Array Std.U64 2#usize) :
   Result (Array Std.U64 2#usize)
@@ -90,7 +90,7 @@ def shr_into_index_mut
   Array.update out 0#usize i
 
 /-- [scalars::shl_into_index_mut]:
-    Source: 'tests/src/scalars.rs', lines 62:0-64:1 -/
+    Source: 'tests/src/scalars.rs', lines 63:0-65:1 -/
 def shl_into_index_mut
   (x : Std.U64) (out : Array Std.U64 2#usize) :
   Result (Array Std.U64 2#usize)
@@ -99,44 +99,44 @@ def shl_into_index_mut
   Array.update out 0#usize i
 
 /-- [scalars::add_and]:
-    Source: 'tests/src/scalars.rs', lines 66:0-68:1 -/
+    Source: 'tests/src/scalars.rs', lines 67:0-69:1 -/
 def add_and (a : Std.U32) (b : Std.U32) : Result Std.U32 := do
   let i ← lift (b &&& a)
   let i1 ← lift (b &&& a)
   i + i1
 
 /-- [scalars::u32_use_rotate_right]:
-    Source: 'tests/src/scalars.rs', lines 70:0-72:1 -/
+    Source: 'tests/src/scalars.rs', lines 71:0-73:1 -/
 def u32_use_rotate_right (x : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.rotate_right x 2#u32)
 
 /-- [scalars::i32_use_rotate_right]:
-    Source: 'tests/src/scalars.rs', lines 74:0-76:1 -/
+    Source: 'tests/src/scalars.rs', lines 75:0-77:1 -/
 def i32_use_rotate_right (x : Std.I32) : Result Std.I32 := do
   ok (core.num.I32.rotate_right x 2#u32)
 
 /-- [scalars::u32_use_rotate_left]:
-    Source: 'tests/src/scalars.rs', lines 78:0-80:1 -/
+    Source: 'tests/src/scalars.rs', lines 79:0-81:1 -/
 def u32_use_rotate_left (x : Std.U32) : Result Std.U32 := do
   ok (core.num.U32.rotate_left x 2#u32)
 
 /-- [scalars::i32_use_rotate_left]:
-    Source: 'tests/src/scalars.rs', lines 82:0-84:1 -/
+    Source: 'tests/src/scalars.rs', lines 83:0-85:1 -/
 def i32_use_rotate_left (x : Std.I32) : Result Std.I32 := do
   ok (core.num.I32.rotate_left x 2#u32)
 
 /-- [scalars::u32_default]:
-    Source: 'tests/src/scalars.rs', lines 86:0-88:1 -/
+    Source: 'tests/src/scalars.rs', lines 87:0-89:1 -/
 def u32_default : Result Std.U32 := do
   ok (core.default.DefaultU32.default)
 
 /-- [scalars::i32_default]:
-    Source: 'tests/src/scalars.rs', lines 90:0-92:1 -/
+    Source: 'tests/src/scalars.rs', lines 91:0-93:1 -/
 def i32_default : Result Std.I32 := do
   ok (core.default.DefaultI32.default)
 
 /-- [scalars::match_usize]:
-    Source: 'tests/src/scalars.rs', lines 94:0-99:1 -/
+    Source: 'tests/src/scalars.rs', lines 95:0-100:1 -/
 def match_usize (x : Std.Usize) : Result Bool := do
   match x.val with
   | 0 => ok true
@@ -145,7 +145,7 @@ def match_usize (x : Std.Usize) : Result Bool := do
   | _ => ok false
 
 /-- [scalars::match_isize]:
-    Source: 'tests/src/scalars.rs', lines 101:0-106:1 -/
+    Source: 'tests/src/scalars.rs', lines 102:0-107:1 -/
 def match_isize (x : Std.Isize) : Result Std.Isize := do
   match x.val with
   | 0 => ok 0#isize
@@ -154,39 +154,39 @@ def match_isize (x : Std.Isize) : Result Std.Isize := do
   | _ => x + 1#isize
 
 /-- [scalars::u32_as_u16]:
-    Source: 'tests/src/scalars.rs', lines 108:0-110:1 -/
+    Source: 'tests/src/scalars.rs', lines 109:0-111:1 -/
 def u32_as_u16 (x : Std.U32) : Result Std.U16 := do
   ok (UScalar.cast .U16 x)
 
 /-- [scalars::u16_as_u32]:
-    Source: 'tests/src/scalars.rs', lines 112:0-114:1 -/
+    Source: 'tests/src/scalars.rs', lines 113:0-115:1 -/
 def u16_as_u32 (x : Std.U16) : Result Std.U32 := do
   ok (UScalar.cast .U32 x)
 
 /-- [scalars::u32_as_i16]:
-    Source: 'tests/src/scalars.rs', lines 116:0-118:1 -/
+    Source: 'tests/src/scalars.rs', lines 117:0-119:1 -/
 def u32_as_i16 (x : Std.U32) : Result Std.I16 := do
   ok (UScalar.hcast .I16 x)
 
 /-- [scalars::i16_as_u32]:
-    Source: 'tests/src/scalars.rs', lines 120:0-122:1 -/
+    Source: 'tests/src/scalars.rs', lines 121:0-123:1 -/
 def i16_as_u32 (x : Std.I16) : Result Std.U32 := do
   ok (IScalar.hcast .U32 x)
 
 /-- [scalars::u32_use_bits]:
-    Source: 'tests/src/scalars.rs', lines 124:0-126:1
+    Source: 'tests/src/scalars.rs', lines 125:0-127:1
     Visibility: public -/
 def u32_use_bits : Result Std.U32 := do
   ok core.num.U32.BITS
 
 /-- [scalars::i32_use_bits]:
-    Source: 'tests/src/scalars.rs', lines 128:0-130:1
+    Source: 'tests/src/scalars.rs', lines 129:0-131:1
     Visibility: public -/
 def i32_use_bits : Result Std.U32 := do
   ok core.num.I32.BITS
 
 /-- [scalars::test_is_multiple_of_true]:
-    Source: 'tests/src/scalars.rs', lines 137:0-139:1
+    Source: 'tests/src/scalars.rs', lines 138:0-140:1
     Visibility: public -/
 def test_is_multiple_of_true : Result Unit := do
   let b ← core.num.Usize.is_multiple_of 12#usize 4#usize
@@ -196,7 +196,7 @@ def test_is_multiple_of_true : Result Unit := do
 #guard (test_is_multiple_of_true).reducesTo ()
 
 /-- [scalars::test_is_multiple_of_false]:
-    Source: 'tests/src/scalars.rs', lines 142:0-144:1
+    Source: 'tests/src/scalars.rs', lines 143:0-145:1
     Visibility: public -/
 def test_is_multiple_of_false : Result Unit := do
   let b ← core.num.Usize.is_multiple_of 7#usize 3#usize
@@ -206,7 +206,7 @@ def test_is_multiple_of_false : Result Unit := do
 #guard (test_is_multiple_of_false).reducesTo ()
 
 /-- [scalars::test_is_multiple_of_zero_divisor]:
-    Source: 'tests/src/scalars.rs', lines 147:0-151:1
+    Source: 'tests/src/scalars.rs', lines 148:0-152:1
     Visibility: public -/
 def test_is_multiple_of_zero_divisor : Result Unit := do
   let b ← core.num.Usize.is_multiple_of 0#usize 0#usize
@@ -218,7 +218,7 @@ def test_is_multiple_of_zero_divisor : Result Unit := do
 #guard (test_is_multiple_of_zero_divisor).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_u8]:
-    Source: 'tests/src/scalars.rs', lines 158:0-161:1
+    Source: 'tests/src/scalars.rs', lines 159:0-162:1
     Visibility: public -/
 def test_is_power_of_two_u8 : Result Unit := do
   let b ← core.num.U8.is_power_of_two 64#u8
@@ -230,7 +230,7 @@ def test_is_power_of_two_u8 : Result Unit := do
 #guard (test_is_power_of_two_u8).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_u16]:
-    Source: 'tests/src/scalars.rs', lines 164:0-167:1
+    Source: 'tests/src/scalars.rs', lines 165:0-168:1
     Visibility: public -/
 def test_is_power_of_two_u16 : Result Unit := do
   let b ← core.num.U16.is_power_of_two 256#u16
@@ -242,7 +242,7 @@ def test_is_power_of_two_u16 : Result Unit := do
 #guard (test_is_power_of_two_u16).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_u32]:
-    Source: 'tests/src/scalars.rs', lines 170:0-174:1
+    Source: 'tests/src/scalars.rs', lines 171:0-175:1
     Visibility: public -/
 def test_is_power_of_two_u32 : Result Unit := do
   let b ← core.num.U32.is_power_of_two 1#u32
@@ -256,7 +256,7 @@ def test_is_power_of_two_u32 : Result Unit := do
 #guard (test_is_power_of_two_u32).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_u64]:
-    Source: 'tests/src/scalars.rs', lines 177:0-180:1
+    Source: 'tests/src/scalars.rs', lines 178:0-181:1
     Visibility: public -/
 def test_is_power_of_two_u64 : Result Unit := do
   let b ← core.num.U64.is_power_of_two 0#u64
@@ -268,7 +268,7 @@ def test_is_power_of_two_u64 : Result Unit := do
 #guard (test_is_power_of_two_u64).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_u128]:
-    Source: 'tests/src/scalars.rs', lines 183:0-185:1
+    Source: 'tests/src/scalars.rs', lines 184:0-186:1
     Visibility: public -/
 def test_is_power_of_two_u128 : Result Unit := do
   let b ← core.num.U128.is_power_of_two 2#u128
@@ -278,7 +278,7 @@ def test_is_power_of_two_u128 : Result Unit := do
 #guard (test_is_power_of_two_u128).reducesTo ()
 
 /-- [scalars::test_is_power_of_two_usize]:
-    Source: 'tests/src/scalars.rs', lines 188:0-191:1
+    Source: 'tests/src/scalars.rs', lines 189:0-192:1
     Visibility: public -/
 def test_is_power_of_two_usize : Result Unit := do
   let b ← core.num.Usize.is_power_of_two 8#usize
@@ -290,7 +290,7 @@ def test_is_power_of_two_usize : Result Unit := do
 #guard (test_is_power_of_two_usize).reducesTo ()
 
 /-- [scalars::test_try_from_usize_u32_ok]:
-    Source: 'tests/src/scalars.rs', lines 198:0-200:1
+    Source: 'tests/src/scalars.rs', lines 199:0-201:1
     Visibility: public -/
 def test_try_from_usize_u32_ok : Result Unit := do
   let r ←
@@ -302,7 +302,7 @@ def test_try_from_usize_u32_ok : Result Unit := do
 #guard (test_try_from_usize_u32_ok).reducesTo ()
 
 /-- [scalars::checked_div]:
-    Source: 'tests/src/scalars.rs', lines 206:0-211:1 -/
+    Source: 'tests/src/scalars.rs', lines 207:0-212:1 -/
 def checked_div
   (a : Std.U32) (b : Std.U32) : Result (core.result.Result Std.U32 Unit) := do
   if b = 0#u32
@@ -311,7 +311,7 @@ def checked_div
        ok (core.result.Result.Ok i)
 
 /-- [scalars::use_question_mark]:
-    Source: 'tests/src/scalars.rs', lines 213:0-216:1 -/
+    Source: 'tests/src/scalars.rs', lines 214:0-217:1 -/
 def use_question_mark
   (a : Std.U32) (b : Std.U32) : Result (core.result.Result Std.U32 Unit) := do
   let r ← checked_div a b
@@ -325,7 +325,7 @@ def use_question_mark
       Std.U32 (core.convert.FromSame Unit) residual
 
 /-- [scalars::test_question_mark_ok]:
-    Source: 'tests/src/scalars.rs', lines 219:0-223:1
+    Source: 'tests/src/scalars.rs', lines 220:0-224:1
     Visibility: public -/
 def test_question_mark_ok : Result Unit := do
   let r ← use_question_mark 10#u32 2#u32
@@ -338,7 +338,7 @@ def test_question_mark_ok : Result Unit := do
 #guard (test_question_mark_ok).reducesTo ()
 
 /-- [scalars::test_question_mark_err]:
-    Source: 'tests/src/scalars.rs', lines 226:0-229:1
+    Source: 'tests/src/scalars.rs', lines 227:0-230:1
     Visibility: public -/
 def test_question_mark_err : Result Unit := do
   let r ← use_question_mark 10#u32 0#u32
@@ -347,5 +347,1033 @@ def test_question_mark_err : Result Unit := do
 
 /- Unit test for [scalars::test_question_mark_err] -/
 #guard (test_question_mark_err).reducesTo ()
+
+/-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
+
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | core_result_Result
+  | core_num_error_TryFromIntError
+  | core_ops_control_flow_ControlFlow
+  | core_fmt_Formatter
+  | core_fmt_Error
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.core_result_Result, ρ => core.result.Result
+      (Aeneas.Deep.tyAt ρ.types 0) (Aeneas.Deep.tyAt ρ.types 1)
+    | TypeName.core_num_error_TryFromIntError, _ => core.num.error.TryFromIntError
+    | TypeName.core_ops_control_flow_ControlFlow, ρ => core.ops.control_flow.ControlFlow
+      (Aeneas.Deep.tyAt ρ.types 0) (Aeneas.Deep.tyAt ρ.types 1)
+    | TypeName.core_fmt_Formatter, _ => core.fmt.Formatter
+    | TypeName.core_fmt_Error, _ => core.fmt.Error
+  variants
+    | TypeName.core_result_Result => []
+    | TypeName.core_num_error_TryFromIntError => []
+    | TypeName.core_ops_control_flow_ControlFlow => []
+    | TypeName.core_fmt_Formatter => []
+    | TypeName.core_fmt_Error => []
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | u32_use_wrapping_add
+  | i32_use_wrapping_add
+  | u32_use_wrapping_sub
+  | i32_use_wrapping_sub
+  | u32_use_shift_right
+  | i32_use_shift_right
+  | u32_use_shift_left
+  | i32_use_shift_left
+  | u32_use_wrapping_shl
+  | i32_use_wrapping_shl
+  | u32_use_wrapping_shr
+  | i32_use_wrapping_shr
+  | shr_into_index_mut
+  | shl_into_index_mut
+  | add_and
+  | u32_use_rotate_right
+  | i32_use_rotate_right
+  | u32_use_rotate_left
+  | i32_use_rotate_left
+  | u32_default
+  | i32_default
+  | match_usize
+  | match_isize
+  | u32_as_u16
+  | u16_as_u32
+  | u32_as_i16
+  | i16_as_u32
+  | u32_use_bits
+  | i32_use_bits
+  | test_is_multiple_of_true
+  | test_is_multiple_of_false
+  | test_is_multiple_of_zero_divisor
+  | test_is_power_of_two_u8
+  | test_is_power_of_two_u16
+  | test_is_power_of_two_u32
+  | test_is_power_of_two_u64
+  | test_is_power_of_two_u128
+  | test_is_power_of_two_usize
+  | test_try_from_usize_u32_ok
+  | checked_div
+  | use_question_mark
+  | test_question_mark_ok
+  | test_question_mark_err
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.u32_use_wrapping_add =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_wrapping_add⟩
+    | FunName.i32_use_wrapping_add =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_wrapping_add⟩
+    | FunName.u32_use_wrapping_sub =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_wrapping_sub⟩
+    | FunName.i32_use_wrapping_sub =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_wrapping_sub⟩
+    | FunName.u32_use_shift_right => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_shift_right⟩
+    | FunName.i32_use_shift_right => ⟨⟨[(.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_shift_right⟩
+    | FunName.u32_use_shift_left => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_shift_left⟩
+    | FunName.i32_use_shift_left => ⟨⟨[(.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_shift_left⟩
+    | FunName.u32_use_wrapping_shl =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_wrapping_shl⟩
+    | FunName.i32_use_wrapping_shl =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.u .U32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_wrapping_shl⟩
+    | FunName.u32_use_wrapping_shr =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_wrapping_shr⟩
+    | FunName.i32_use_wrapping_shr =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.u .U32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_wrapping_shr⟩
+    | FunName.shr_into_index_mut =>
+      ⟨⟨[(.scalar (.u .U64)), (.array (.scalar (.u .U64)) (.lit 2 (by decide)))],
+      (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide))))⟩,
+      fun _ => shr_into_index_mut⟩
+    | FunName.shl_into_index_mut =>
+      ⟨⟨[(.scalar (.u .U64)), (.array (.scalar (.u .U64)) (.lit 2 (by decide)))],
+      (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide))))⟩,
+      fun _ => shl_into_index_mut⟩
+    | FunName.add_and => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => add_and⟩
+    | FunName.u32_use_rotate_right => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_rotate_right⟩
+    | FunName.i32_use_rotate_right => ⟨⟨[(.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_rotate_right⟩
+    | FunName.u32_use_rotate_left => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u32_use_rotate_left⟩
+    | FunName.i32_use_rotate_left => ⟨⟨[(.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => i32_use_rotate_left⟩
+    | FunName.u32_default => ⟨⟨[], (.result (.scalar (.u .U32)))⟩,
+      fun _ => u32_default⟩
+    | FunName.i32_default => ⟨⟨[], (.result (.scalar (.i .I32)))⟩,
+      fun _ => i32_default⟩
+    | FunName.match_usize => ⟨⟨[(.scalar (.u .Usize))], (.result .bool)⟩,
+      fun _ => match_usize⟩
+    | FunName.match_isize => ⟨⟨[(.scalar (.i .Isize))],
+      (.result (.scalar (.i .Isize)))⟩, fun _ => match_isize⟩
+    | FunName.u32_as_u16 => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U16)))⟩, fun _ => u32_as_u16⟩
+    | FunName.u16_as_u32 => ⟨⟨[(.scalar (.u .U16))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => u16_as_u32⟩
+    | FunName.u32_as_i16 => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.i .I16)))⟩, fun _ => u32_as_i16⟩
+    | FunName.i16_as_u32 => ⟨⟨[(.scalar (.i .I16))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => i16_as_u32⟩
+    | FunName.u32_use_bits => ⟨⟨[], (.result (.scalar (.u .U32)))⟩,
+      fun _ => u32_use_bits⟩
+    | FunName.i32_use_bits => ⟨⟨[], (.result (.scalar (.u .U32)))⟩,
+      fun _ => i32_use_bits⟩
+    | FunName.test_is_multiple_of_true => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_multiple_of_true⟩
+    | FunName.test_is_multiple_of_false => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_multiple_of_false⟩
+    | FunName.test_is_multiple_of_zero_divisor => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_multiple_of_zero_divisor⟩
+    | FunName.test_is_power_of_two_u8 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_u8⟩
+    | FunName.test_is_power_of_two_u16 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_u16⟩
+    | FunName.test_is_power_of_two_u32 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_u32⟩
+    | FunName.test_is_power_of_two_u64 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_u64⟩
+    | FunName.test_is_power_of_two_u128 => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_u128⟩
+    | FunName.test_is_power_of_two_usize => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_is_power_of_two_usize⟩
+    | FunName.test_try_from_usize_u32_ok => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_try_from_usize_u32_ok⟩
+    | FunName.checked_div => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))⟩,
+      fun _ => checked_div⟩
+    | FunName.use_question_mark =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))⟩,
+      fun _ => use_question_mark⟩
+    | FunName.test_question_mark_ok => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_question_mark_ok⟩
+    | FunName.test_question_mark_err => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_question_mark_err⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+/-- [scalars::u32_use_wrapping_add]:
+    Source: 'tests/src/scalars.rs', lines 6:0-8:1 -/
+def u32_use_wrapping_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_add")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.wrapping_add i i1 : Std.U32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem u32_use_wrapping_add.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_use_wrapping_add x y =
+    Aeneas.Deep.Expr.denote (u32_use_wrapping_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_wrapping_add]:
+    Source: 'tests/src/scalars.rs', lines 10:0-12:1 -/
+def i32_use_wrapping_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::wrapping_add")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.I32) =>
+                  (core.num.I32.wrapping_add i i1 : Std.I32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem i32_use_wrapping_add.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_use_wrapping_add x y =
+    Aeneas.Deep.Expr.denote (i32_use_wrapping_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_wrapping_sub]:
+    Source: 'tests/src/scalars.rs', lines 14:0-16:1 -/
+def u32_use_wrapping_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_sub")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.wrapping_sub i i1 : Std.U32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem u32_use_wrapping_sub.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_use_wrapping_sub x y =
+    Aeneas.Deep.Expr.denote (u32_use_wrapping_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_wrapping_sub]:
+    Source: 'tests/src/scalars.rs', lines 18:0-20:1 -/
+def i32_use_wrapping_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::wrapping_sub")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.I32) =>
+                  (core.num.I32.wrapping_sub i i1 : Std.I32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem i32_use_wrapping_sub.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_use_wrapping_sub x y =
+    Aeneas.Deep.Expr.denote (i32_use_wrapping_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_shift_right]:
+    Source: 'tests/src/scalars.rs', lines 22:0-24:1 -/
+def u32_use_shift_right.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.scalarBinop (.shr (.i .I32)) (.u .U32) (.var .zero)
+    (.iscalarLit .I32 2 (by decide)))
+
+theorem u32_use_shift_right.deep_eq (x : Std.U32) :
+  u32_use_shift_right x =
+    Aeneas.Deep.Expr.denote (u32_use_shift_right.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_shift_right]:
+    Source: 'tests/src/scalars.rs', lines 26:0-28:1 -/
+def i32_use_shift_right.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.scalarBinop (.shr (.i .I32)) (.i .I32) (.var .zero)
+    (.iscalarLit .I32 2 (by decide)))
+
+theorem i32_use_shift_right.deep_eq (x : Std.I32) :
+  i32_use_shift_right x =
+    Aeneas.Deep.Expr.denote (i32_use_shift_right.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_shift_left]:
+    Source: 'tests/src/scalars.rs', lines 30:0-32:1 -/
+def u32_use_shift_left.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.scalarBinop (.shl (.i .I32)) (.u .U32) (.var .zero)
+    (.iscalarLit .I32 2 (by decide)))
+
+theorem u32_use_shift_left.deep_eq (x : Std.U32) :
+  u32_use_shift_left x =
+    Aeneas.Deep.Expr.denote (u32_use_shift_left.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_shift_left]:
+    Source: 'tests/src/scalars.rs', lines 34:0-36:1 -/
+def i32_use_shift_left.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.scalarBinop (.shl (.i .I32)) (.i .I32) (.var .zero)
+    (.iscalarLit .I32 2 (by decide)))
+
+theorem i32_use_shift_left.deep_eq (x : Std.I32) :
+  i32_use_shift_left x =
+    Aeneas.Deep.Expr.denote (i32_use_shift_left.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_wrapping_shl]:
+    Source: 'tests/src/scalars.rs', lines 38:0-40:1 -/
+def u32_use_wrapping_shl.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_shl")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.wrapping_shl i i1 : Std.U32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem u32_use_wrapping_shl.deep_eq (x : Std.U32) (s : Std.U32) :
+  u32_use_wrapping_shl x s =
+    Aeneas.Deep.Expr.denote (u32_use_wrapping_shl.deep)
+      (x ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_wrapping_shl]:
+    Source: 'tests/src/scalars.rs', lines 42:0-44:1 -/
+def i32_use_wrapping_shl.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.u .U32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::wrapping_shl")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.u .U32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.U32) =>
+                  (core.num.I32.wrapping_shl i i1 : Std.I32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem i32_use_wrapping_shl.deep_eq (x : Std.I32) (s : Std.U32) :
+  i32_use_wrapping_shl x s =
+    Aeneas.Deep.Expr.denote (i32_use_wrapping_shl.deep)
+      (x ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_wrapping_shr]:
+    Source: 'tests/src/scalars.rs', lines 46:0-48:1 -/
+def u32_use_wrapping_shr.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::wrapping_shr")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.wrapping_shr i i1 : Std.U32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem u32_use_wrapping_shr.deep_eq (x : Std.U32) (s : Std.U32) :
+  u32_use_wrapping_shr x s =
+    Aeneas.Deep.Expr.denote (u32_use_wrapping_shr.deep)
+      (x ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_wrapping_shr]:
+    Source: 'tests/src/scalars.rs', lines 50:0-52:1 -/
+def i32_use_wrapping_shr.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.u .U32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::wrapping_shr")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.u .U32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.U32) =>
+                  (core.num.I32.wrapping_shr i i1 : Std.I32))) (.var .zero))
+      (.var (.succ .zero))))
+
+theorem i32_use_wrapping_shr.deep_eq (x : Std.I32) (s : Std.U32) :
+  i32_use_wrapping_shr x s =
+    Aeneas.Deep.Expr.denote (i32_use_wrapping_shr.deep)
+      (x ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::shr_into_index_mut]:
+    Source: 'tests/src/scalars.rs', lines 58:0-60:1 -/
+def shr_into_index_mut.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.array (.scalar (.u .U64)) (.lit 2 (by decide)))]
+    (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide)))) :=
+  (.bind
+    (.scalarBinop (.shr (.i .I32)) (.u .U64) (.var .zero)
+      (.iscalarLit .I32 20 (by decide))) .var
+  (.call (.prim .arrayUpdate) [(.scalar (.u .U64))] [(.lit 2 (by decide))] [(.array (.scalar (.u .U64)) (.lit 2 (by decide))), (.scalar (.u .Usize)), (.scalar (.u .U64))] (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide)))) rfl rfl
+    (.cons (.var (.succ (.succ .zero)))
+      (.cons (.uscalarLit .Usize 0 (by decide)) (.cons (.var .zero) .nil)))))
+
+theorem shr_into_index_mut.deep_eq (x : Std.U64) (out : Array Std.U64 2#usize)
+  :
+  shr_into_index_mut x out =
+    Aeneas.Deep.Expr.denote (shr_into_index_mut.deep)
+      (x ::ₑ out ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::shl_into_index_mut]:
+    Source: 'tests/src/scalars.rs', lines 63:0-65:1 -/
+def shl_into_index_mut.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.array (.scalar (.u .U64)) (.lit 2 (by decide)))]
+    (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide)))) :=
+  (.bind
+    (.scalarBinop (.shl (.i .I32)) (.u .U64) (.var .zero)
+      (.iscalarLit .I32 20 (by decide))) .var
+  (.call (.prim .arrayUpdate) [(.scalar (.u .U64))] [(.lit 2 (by decide))] [(.array (.scalar (.u .U64)) (.lit 2 (by decide))), (.scalar (.u .Usize)), (.scalar (.u .U64))] (.result (.array (.scalar (.u .U64)) (.lit 2 (by decide)))) rfl rfl
+    (.cons (.var (.succ (.succ .zero)))
+      (.cons (.uscalarLit .Usize 0 (by decide)) (.cons (.var .zero) .nil)))))
+
+theorem shl_into_index_mut.deep_eq (x : Std.U64) (out : Array Std.U64 2#usize)
+  :
+  shl_into_index_mut x out =
+    Aeneas.Deep.Expr.denote (shl_into_index_mut.deep)
+      (x ::ₑ out ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::add_and]:
+    Source: 'tests/src/scalars.rs', lines 67:0-69:1 -/
+def add_and.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.bind
+    (.call (.prim .lift) [(.scalar (.u .U32))] [] [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.scalarBitop .and (.u .U32) (.var (.succ .zero)) (.var .zero))
+        .nil)) .var
+  (.bind
+    (.call (.prim .lift) [(.scalar (.u .U32))] [] [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.scalarBitop .and (.u .U32) (.var (.succ (.succ .zero)))
+               (.var (.succ .zero))) .nil)) .var
+  (.scalarBinop .add (.u .U32) (.var (.succ .zero)) (.var .zero))))
+
+theorem add_and.deep_eq (a : Std.U32) (b : Std.U32) :
+  add_and a b =
+    Aeneas.Deep.Expr.denote (add_and.deep)
+      (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_rotate_right]:
+    Source: 'tests/src/scalars.rs', lines 71:0-73:1 -/
+def u32_use_rotate_right.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::rotate_right")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.rotate_right i i1 : Std.U32))) (.var .zero))
+      (.uscalarLit .U32 2 (by decide))))
+
+theorem u32_use_rotate_right.deep_eq (x : Std.U32) :
+  u32_use_rotate_right x =
+    Aeneas.Deep.Expr.denote (u32_use_rotate_right.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_rotate_right]:
+    Source: 'tests/src/scalars.rs', lines 75:0-77:1 -/
+def i32_use_rotate_right.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::rotate_right")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.u .U32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.U32) =>
+                  (core.num.I32.rotate_right i i1 : Std.I32))) (.var .zero))
+      (.uscalarLit .U32 2 (by decide))))
+
+theorem i32_use_rotate_right.deep_eq (x : Std.I32) :
+  i32_use_rotate_right x =
+    Aeneas.Deep.Expr.denote (i32_use_rotate_right.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_rotate_left]:
+    Source: 'tests/src/scalars.rs', lines 79:0-81:1 -/
+def u32_use_rotate_left.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::rotate_left")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.scalar (.u .U32))))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.rotate_left i i1 : Std.U32))) (.var .zero))
+      (.uscalarLit .U32 2 (by decide))))
+
+theorem u32_use_rotate_left.deep_eq (x : Std.U32) :
+  u32_use_rotate_left x =
+    Aeneas.Deep.Expr.denote (u32_use_rotate_left.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_rotate_left]:
+    Source: 'tests/src/scalars.rs', lines 83:0-85:1 -/
+def i32_use_rotate_left.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::rotate_left")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.u .U32)) (.scalar (.i .I32))))
+                  (fun (i : Std.I32) (i1 : Std.U32) =>
+                  (core.num.I32.rotate_left i i1 : Std.I32))) (.var .zero))
+      (.uscalarLit .U32 2 (by decide))))
+
+theorem i32_use_rotate_left.deep_eq (x : Std.I32) :
+  i32_use_rotate_left x =
+    Aeneas.Deep.Expr.denote (i32_use_rotate_left.deep)
+      (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_default]:
+    Source: 'tests/src/scalars.rs', lines 87:0-89:1 -/
+def u32_default.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.leaf (.fn "core::default::{impl core::default::Default for u32}::default")
+      (.scalar (.u .U32)) (core.default.DefaultU32.default : Std.U32)))
+
+theorem u32_default.deep_eq :
+  u32_default =
+    Aeneas.Deep.Expr.denote (u32_default.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_default]:
+    Source: 'tests/src/scalars.rs', lines 91:0-93:1 -/
+def i32_default.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
+  (.ok
+    (.leaf (.fn "core::default::{impl core::default::Default for i32}::default")
+      (.scalar (.i .I32)) (core.default.DefaultI32.default : Std.I32)))
+
+theorem i32_default.deep_eq :
+  i32_default =
+    Aeneas.Deep.Expr.denote (i32_default.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::match_usize]:
+    Source: 'tests/src/scalars.rs', lines 95:0-100:1 -/
+def match_usize.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize))] (.result .bool) :=
+  (.shallow (.result .bool) (fun «deep env» =>
+    let x := Aeneas.Deep.Var.get .zero «deep env»
+    (match x.val with
+     | 0 => ok true
+     | 1 => ok true
+     | 2 => ok true
+     | _ => ok false : Result Bool)))
+
+theorem match_usize.deep_eq (x : Std.Usize) :
+  match_usize x =
+    Aeneas.Deep.Expr.denote (match_usize.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::match_isize]:
+    Source: 'tests/src/scalars.rs', lines 102:0-107:1 -/
+def match_isize.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .Isize))] (.result (.scalar (.i .Isize))) :=
+  (.shallow (.result (.scalar (.i .Isize))) (fun «deep env» =>
+    let x := Aeneas.Deep.Var.get .zero «deep env»
+    (match x.val with
+     | 0 => ok 0#isize
+     | -1 => ok 0#isize
+     | 2 => ok 0#isize
+     | _ => x + 1#isize : Result Std.Isize)))
+
+theorem match_isize.deep_eq (x : Std.Isize) :
+  match_isize x =
+    Aeneas.Deep.Expr.denote (match_isize.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_as_u16]:
+    Source: 'tests/src/scalars.rs', lines 109:0-111:1 -/
+def u32_as_u16.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U16))) :=
+  (.ok (.cast (.u .U32) (.u .U16) (.var .zero)))
+
+theorem u32_as_u16.deep_eq (x : Std.U32) :
+  u32_as_u16 x =
+    Aeneas.Deep.Expr.denote (u32_as_u16.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u16_as_u32]:
+    Source: 'tests/src/scalars.rs', lines 113:0-115:1 -/
+def u16_as_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16))] (.result (.scalar (.u .U32))) :=
+  (.ok (.cast (.u .U16) (.u .U32) (.var .zero)))
+
+theorem u16_as_u32.deep_eq (x : Std.U16) :
+  u16_as_u32 x =
+    Aeneas.Deep.Expr.denote (u16_as_u32.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_as_i16]:
+    Source: 'tests/src/scalars.rs', lines 117:0-119:1 -/
+def u32_as_i16.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.i .I16))) :=
+  (.ok (.cast (.u .U32) (.i .I16) (.var .zero)))
+
+theorem u32_as_i16.deep_eq (x : Std.U32) :
+  u32_as_i16 x =
+    Aeneas.Deep.Expr.denote (u32_as_i16.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i16_as_u32]:
+    Source: 'tests/src/scalars.rs', lines 121:0-123:1 -/
+def i16_as_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I16))] (.result (.scalar (.u .U32))) :=
+  (.ok (.cast (.i .I16) (.u .U32) (.var .zero)))
+
+theorem i16_as_u32.deep_eq (x : Std.I16) :
+  i16_as_u32 x =
+    Aeneas.Deep.Expr.denote (i16_as_u32.deep) (x ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::u32_use_bits]:
+    Source: 'tests/src/scalars.rs', lines 125:0-127:1
+    Visibility: public -/
+def u32_use_bits.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.leaf (.global "core::num::{u32}::BITS") (.scalar (.u .U32))
+      (core.num.U32.BITS : Std.U32)))
+
+theorem u32_use_bits.deep_eq :
+  u32_use_bits =
+    Aeneas.Deep.Expr.denote (u32_use_bits.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::i32_use_bits]:
+    Source: 'tests/src/scalars.rs', lines 129:0-131:1
+    Visibility: public -/
+def i32_use_bits.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
+  (.ok
+    (.leaf (.global "core::num::{i32}::BITS") (.scalar (.u .U32))
+      (core.num.I32.BITS : Std.U32)))
+
+theorem i32_use_bits.deep_eq :
+  i32_use_bits =
+    Aeneas.Deep.Expr.denote (i32_use_bits.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_multiple_of_true]:
+    Source: 'tests/src/scalars.rs', lines 138:0-140:1
+    Visibility: public -/
+def test_is_multiple_of_true.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.app (.leaf (.fn "core::num::{usize}::is_multiple_of")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result .bool)))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.is_multiple_of i i1 : Result Bool)))
+      (.uscalarLit .Usize 12 (by decide))) (.uscalarLit .Usize 4 (by decide)))
+    .var
+  (.assert (.bool (.var .zero))))
+
+theorem test_is_multiple_of_true.deep_eq :
+  test_is_multiple_of_true =
+    Aeneas.Deep.Expr.denote (test_is_multiple_of_true.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_multiple_of_false]:
+    Source: 'tests/src/scalars.rs', lines 143:0-145:1
+    Visibility: public -/
+def test_is_multiple_of_false.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.app (.leaf (.fn "core::num::{usize}::is_multiple_of")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result .bool)))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.is_multiple_of i i1 : Result Bool)))
+      (.uscalarLit .Usize 7 (by decide))) (.uscalarLit .Usize 3 (by decide)))
+    .var
+  (.assert (.not (.bool (.var .zero)))))
+
+theorem test_is_multiple_of_false.deep_eq :
+  test_is_multiple_of_false =
+    Aeneas.Deep.Expr.denote (test_is_multiple_of_false.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_multiple_of_zero_divisor]:
+    Source: 'tests/src/scalars.rs', lines 148:0-152:1
+    Visibility: public -/
+def test_is_multiple_of_zero_divisor.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.app (.leaf (.fn "core::num::{usize}::is_multiple_of")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result .bool)))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.is_multiple_of i i1 : Result Bool)))
+      (.uscalarLit .Usize 0 (by decide))) (.uscalarLit .Usize 0 (by decide)))
+    .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.app (.leaf (.fn "core::num::{usize}::is_multiple_of")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result .bool)))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.is_multiple_of i i1 : Result Bool)))
+      (.uscalarLit .Usize 5 (by decide))) (.uscalarLit .Usize 0 (by decide)))
+    .var
+  (.assert (.not (.bool (.var .zero)))))))
+
+theorem test_is_multiple_of_zero_divisor.deep_eq :
+  test_is_multiple_of_zero_divisor =
+    Aeneas.Deep.Expr.denote (test_is_multiple_of_zero_divisor.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_u8]:
+    Source: 'tests/src/scalars.rs', lines 159:0-162:1
+    Visibility: public -/
+def test_is_power_of_two_u8.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u8}::is_power_of_two")
+            (.arrow (.scalar (.u .U8)) (.result .bool)) (fun (i : Std.U8) =>
+            (core.num.U8.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U8 64 (by decide))) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{u8}::is_power_of_two")
+            (.arrow (.scalar (.u .U8)) (.result .bool)) (fun (i : Std.U8) =>
+            (core.num.U8.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U8 65 (by decide))) .var
+  (.assert (.not (.bool (.var .zero)))))))
+
+theorem test_is_power_of_two_u8.deep_eq :
+  test_is_power_of_two_u8 =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_u8.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_u16]:
+    Source: 'tests/src/scalars.rs', lines 165:0-168:1
+    Visibility: public -/
+def test_is_power_of_two_u16.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u16}::is_power_of_two")
+            (.arrow (.scalar (.u .U16)) (.result .bool)) (fun (i : Std.U16) =>
+            (core.num.U16.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U16 256 (by decide))) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{u16}::is_power_of_two")
+            (.arrow (.scalar (.u .U16)) (.result .bool)) (fun (i : Std.U16) =>
+            (core.num.U16.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U16 255 (by decide))) .var
+  (.assert (.not (.bool (.var .zero)))))))
+
+theorem test_is_power_of_two_u16.deep_eq :
+  test_is_power_of_two_u16 =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_u16.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_u32]:
+    Source: 'tests/src/scalars.rs', lines 171:0-175:1
+    Visibility: public -/
+def test_is_power_of_two_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::is_power_of_two")
+            (.arrow (.scalar (.u .U32)) (.result .bool)) (fun (i : Std.U32) =>
+            (core.num.U32.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U32 1 (by decide))) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::is_power_of_two")
+            (.arrow (.scalar (.u .U32)) (.result .bool)) (fun (i : Std.U32) =>
+            (core.num.U32.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U32 1024 (by decide))) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::is_power_of_two")
+            (.arrow (.scalar (.u .U32)) (.result .bool)) (fun (i : Std.U32) =>
+            (core.num.U32.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U32 1023 (by decide))) .var
+  (.assert (.not (.bool (.var .zero)))))))))
+
+theorem test_is_power_of_two_u32.deep_eq :
+  test_is_power_of_two_u32 =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_u32.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_u64]:
+    Source: 'tests/src/scalars.rs', lines 178:0-181:1
+    Visibility: public -/
+def test_is_power_of_two_u64.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u64}::is_power_of_two")
+            (.arrow (.scalar (.u .U64)) (.result .bool)) (fun (i : Std.U64) =>
+            (core.num.U64.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U64 0 (by decide))) .var
+  (.bind (.assert (.not (.bool (.var .zero)))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{u64}::is_power_of_two")
+            (.arrow (.scalar (.u .U64)) (.result .bool)) (fun (i : Std.U64) =>
+            (core.num.U64.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U64 3 (by decide))) .var
+  (.assert (.not (.bool (.var .zero)))))))
+
+theorem test_is_power_of_two_u64.deep_eq :
+  test_is_power_of_two_u64 =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_u64.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_u128]:
+    Source: 'tests/src/scalars.rs', lines 184:0-186:1
+    Visibility: public -/
+def test_is_power_of_two_u128.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u128}::is_power_of_two")
+            (.arrow (.scalar (.u .U128)) (.result .bool))
+            (fun (i : Std.U128) =>
+            (core.num.U128.is_power_of_two i : Result Bool)))
+      (.uscalarLit .U128 2 (by decide))) .var
+  (.assert (.bool (.var .zero))))
+
+theorem test_is_power_of_two_u128.deep_eq :
+  test_is_power_of_two_u128 =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_u128.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_is_power_of_two_usize]:
+    Source: 'tests/src/scalars.rs', lines 189:0-192:1
+    Visibility: public -/
+def test_is_power_of_two_usize.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{usize}::is_power_of_two")
+            (.arrow (.scalar (.u .Usize)) (.result .bool))
+            (fun (i : Std.Usize) =>
+            (core.num.Usize.is_power_of_two i : Result Bool)))
+      (.uscalarLit .Usize 8 (by decide))) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::num::{usize}::is_power_of_two")
+            (.arrow (.scalar (.u .Usize)) (.result .bool))
+            (fun (i : Std.Usize) =>
+            (core.num.Usize.is_power_of_two i : Result Bool)))
+      (.uscalarLit .Usize 0 (by decide))) .var
+  (.assert (.not (.bool (.var .zero)))))))
+
+theorem test_is_power_of_two_usize.deep_eq :
+  test_is_power_of_two_usize =
+    Aeneas.Deep.Expr.denote (test_is_power_of_two_usize.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_try_from_usize_u32_ok]:
+    Source: 'tests/src/scalars.rs', lines 199:0-201:1
+    Visibility: public -/
+def test_try_from_usize_u32_ok.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::convert::num::ptr_try_from_impls::{impl core::convert::TryFrom<usize, core::num::error::TryFromIntError> for u32}::try_from")
+            (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), (.adt (.crate TypeName.core_num_error_TryFromIntError) [] [])] [])))
+            (fun (i : Std.Usize) =>
+            (core.convert.num.ptr_try_from_impls.TryFromU32Usize.try_from i :
+              Result (core.result.Result Std.U32
+              core.num.error.TryFromIntError))))
+      (.uscalarLit .Usize 5 (by decide))) .var
+  (.bind
+    (.app (.leaf (.fn "core::result::{core::result::Result<T, E>}::is_ok")
+            (.arrow (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), (.adt (.crate TypeName.core_num_error_TryFromIntError) [] [])] []) (.result .bool))
+            (fun (r1 : core.result.Result Std.U32
+              core.num.error.TryFromIntError) =>
+            (core.result.Result.is_ok r1 : Result Bool))) (.var .zero)) .var
+  (.assert (.bool (.var .zero)))))
+
+theorem test_try_from_usize_u32_ok.deep_eq :
+  test_try_from_usize_u32_ok =
+    Aeneas.Deep.Expr.denote (test_try_from_usize_u32_ok.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::checked_div]:
+    Source: 'tests/src/scalars.rs', lines 207:0-212:1 -/
+def checked_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))
+  :=
+  (.ite (.eq (.var (.succ .zero)) (.uscalarLit .U32 0 (by decide)))
+  (.ok
+    (.app (.leaf (.ctor "core::result::Result::Err")
+            (.arrow .unit (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))
+            (fun (t : Unit) =>
+            (core.result.Result.Err t : core.result.Result Std.U32 Unit)))
+      .unitLit))
+  (.bind (.scalarBinop .div (.u .U32) (.var .zero) (.var (.succ .zero))) .var
+  (.ok
+    (.app (.leaf (.ctor "core::result::Result::Ok")
+            (.arrow (.scalar (.u .U32)) (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))
+            (fun (i1 : Std.U32) =>
+            (core.result.Result.Ok i1 : core.result.Result Std.U32 Unit)))
+      (.var .zero)))))
+
+theorem checked_div.deep_eq (a : Std.U32) (b : Std.U32) :
+  checked_div a b =
+    Aeneas.Deep.Expr.denote (checked_div.deep)
+      (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::use_question_mark]:
+    Source: 'tests/src/scalars.rs', lines 214:0-217:1 -/
+def use_question_mark.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[Never], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []))
+  :=
+  (.bind
+    (.call (.crate FunName.checked_div) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] [])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))) .var
+  (.bind
+    (.app (.leaf (.fn "core::result::{impl core::ops::try_trait::Try for core::result::Result<T, E>}::branch")
+            (.arrow (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []) (.result (.adt (.crate TypeName.core_ops_control_flow_ControlFlow) [(.adt (.crate TypeName.core_result_Result) [(.var 0), .unit] []), (.scalar (.u .U32))] [])))
+            (fun (r1 : core.result.Result Std.U32 Unit) =>
+            (core.result.Result.Insts.CoreOpsTry.branch r1 : Result
+              (core.ops.control_flow.ControlFlow (core.result.Result Never
+              Unit) Std.U32)))) (.var .zero)) .var
+  (.shallow (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] [])) (fun «deep env» =>
+    let cf := Aeneas.Deep.Var.get .zero «deep env»
+    let r := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+    let a := Aeneas.Deep.Var.get (.succ (.succ .zero)) «deep env»
+    let b := Aeneas.Deep.Var.get (.succ (.succ (.succ .zero))) «deep env»
+    (match cf with
+     | core.ops.control_flow.ControlFlow.Continue val =>
+       do
+       let i ← val + 1#u32
+       ok (core.result.Result.Ok i)
+     | core.ops.control_flow.ControlFlow.Break residual =>
+       core.result.Result.Insts.CoreOpsTry_traitFromResidualResult.from_residual
+         Std.U32 (core.convert.FromSame Unit) residual : Result
+      (core.result.Result Std.U32 Unit))))))
+
+theorem use_question_mark.deep_eq (a : Std.U32) (b : Std.U32) :
+  use_question_mark a b =
+    Aeneas.Deep.Expr.denote (use_question_mark.deep)
+      (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_question_mark_ok]:
+    Source: 'tests/src/scalars.rs', lines 220:0-224:1
+    Visibility: public -/
+def test_question_mark_ok.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.use_question_mark) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] [])) rfl rfl
+      (.cons (.uscalarLit .U32 10 (by decide))
+        (.cons (.uscalarLit .U32 2 (by decide)) .nil))) .var
+  (.bind
+    (.app (.leaf (.fn "core::result::{core::result::Result<T, E>}::is_ok")
+            (.arrow (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []) (.result .bool))
+            (fun (r1 : core.result.Result Std.U32 Unit) =>
+            (core.result.Result.is_ok r1 : Result Bool))) (.var .zero)) .var
+  (.bind (.assert (.bool (.var .zero))) .ignore
+  (.bind
+    (.app (.leaf (.fn "core::result::{core::result::Result<T, E>}::unwrap")
+            (.arrow (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []) (.result (.scalar (.u .U32))))
+            (fun (r1 : core.result.Result Std.U32 Unit) =>
+            (core.result.Result.unwrap core.fmt.DebugUnit r1 : Result Std.U32)))
+      (.var (.succ .zero))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U32 6 (by decide))))))))
+
+theorem test_question_mark_ok.deep_eq :
+  test_question_mark_ok =
+    Aeneas.Deep.Expr.denote (test_question_mark_ok.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [scalars::test_question_mark_err]:
+    Source: 'tests/src/scalars.rs', lines 227:0-230:1
+    Visibility: public -/
+def test_question_mark_err.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.call (.crate FunName.use_question_mark) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] [])) rfl rfl
+      (.cons (.uscalarLit .U32 10 (by decide))
+        (.cons (.uscalarLit .U32 0 (by decide)) .nil))) .var
+  (.bind
+    (.app (.leaf (.fn "core::result::{core::result::Result<T, E>}::is_ok")
+            (.arrow (.adt (.crate TypeName.core_result_Result) [(.scalar (.u .U32)), .unit] []) (.result .bool))
+            (fun (r1 : core.result.Result Std.U32 Unit) =>
+            (core.result.Result.is_ok r1 : Result Bool))) (.var .zero)) .var
+  (.assert (.not (.bool (.var .zero))))))
+
+theorem test_question_mark_err.deep_eq :
+  test_question_mark_err =
+    Aeneas.Deep.Expr.denote (test_question_mark_err.deep) (Aeneas.Deep.Env.nil)
+  := by deep_rfl
 
 end scalars

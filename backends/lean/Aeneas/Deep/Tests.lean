@@ -1,240 +1,361 @@
 module
-import Aeneas.Deep.Basic
-import Aeneas.Deep.Tactic
-import Aeneas.Deep.Tests.Shallow
+public import Aeneas.Deep.Basic
+public import Aeneas.Deep.Tactic
+public import Aeneas.Deep.Tests.Shallow
+public section
 
-/-! Hand-written deep terms for the definitions of `Aeneas.Deep.Tests.Shallow`, with the
-denotation theorems. This is the phase 1 spike of the deep printing mode: it checks that
-the denotation of every construct reduces to what the elaborator produces for the shallow
-code, across a module boundary. -/
+/-! # Tests for the deep embedding
 
-open Aeneas Aeneas.Std Result ControlFlow Error
-open Aeneas.Deep
+Hand-written deep terms, in the shape the printer generates them, with their denotation
+theorems proved by reflexivity. The first section is what the printer generates once per
+crate: the enumerations of the type, function and global names and their instances. -/
+
+open Aeneas Aeneas.Std Result Error
+open Aeneas.Deep.Tests.Shallow
 
 namespace Aeneas.Deep.Tests
-open Shallow
 
-/- Shallow operators, written the way the deep printer would print them -/
-abbrev addU32 : Std.U32 → Std.U32 → Result Std.U32 := HAdd.hAdd
-abbrev subU32 : Std.U32 → Std.U32 → Result Std.U32 := HSub.hSub
-abbrev mulU32 : Std.U32 → Std.U32 → Result Std.U32 := HMul.hMul
-abbrev addI32 : Std.I32 → Std.I32 → Result Std.I32 := HAdd.hAdd
-abbrev subI32 : Std.I32 → Std.I32 → Result Std.I32 := HSub.hSub
+/-! ## The closed world of the crate -/
 
-/-! ## Contract checks
+inductive TypeName where
+  | CList
+  | Pair
 
-To look at the elaborated shallow terms, uncomment:
-```
-set_option pp.explicit true in #print sum_loop.body
-set_option pp.explicit true in #print list_nth_mut
-```
--/
+instance : TypeNames TypeName where
+  denote
+    | .CList, ρ => CList (tyAt ρ.types 0)
+    | .Pair, ρ => Pair (tyAt ρ.types 0) (tyAt ρ.types 1)
+  variants
+    | .CList => [[.var 0, .adt (.crate .CList) [.var 0] []], []]
+    | .Pair => [[.var 0, .var 1]]
 
-/-! ## Bind chain -/
+instance : CtorFn TypeName (.crate .CList) 0 := ⟨fun _ => fun x tl => CList.CCons x tl⟩
+instance : CtorFn TypeName (.crate .CList) 1 := ⟨fun _ => CList.CNil⟩
+instance : ElimFn TypeName (.crate .CList) := ⟨fun _ => fun l alts => CList.casesOn l alts.1 alts.2.1⟩
 
-def mul2_add1.deep : Expr [Std.U32] (Result Std.U32) :=
-  .bind (.binop "add" addU32 (.var .zero) (.var .zero)) .var
-    (.binop "add" addU32 (.var .zero) (.lit 1#u32))
+instance : CtorFn TypeName (.crate .Pair) 0 := ⟨fun _ => fun x y => Pair.mk x y⟩
+instance : ProjFn TypeName (.crate .Pair) 0 := ⟨fun _ => fun p => p.x⟩
+instance : ProjFn TypeName (.crate .Pair) 1 := ⟨fun _ => fun p => p.y⟩
+instance : ElimFn TypeName (.crate .Pair) := ⟨fun _ => fun p alts => Pair.casesOn p alts.1⟩
+
+local notation "U32T" => Ty.scalar (ScalarTy.u UScalarTy.U32)
+local notation "I32T" => Ty.scalar (ScalarTy.i IScalarTy.I32)
+
+inductive FunName where
+  | mul2_add1
+  | incr
+  | i32_id
+  | list_nth
+  | list_nth_mut
+  | sum_loop_body
+  | sum_loop
+
+instance : FunNames FunName TypeName where
+  defs
+    | .mul2_add1 => ⟨⟨[U32T], .result U32T⟩, fun _ => mul2_add1⟩
+    | .incr => ⟨⟨[U32T], .result U32T⟩, fun _ => incr⟩
+    | .i32_id => ⟨⟨[I32T], .result I32T⟩, fun _ => i32_id⟩
+    | .list_nth =>
+      ⟨⟨[.adt (.crate TypeName.CList) [.var 0] [], U32T], .result (.var 0)⟩,
+       fun ρ => @list_nth (tyAt ρ.types 0)⟩
+    | .list_nth_mut =>
+      ⟨⟨[.adt (.crate TypeName.CList) [.var 0] [], U32T],
+        .result (.tuple [.var 0, .arrow (.var 0) (.adt (.crate TypeName.CList) [.var 0] [])])⟩,
+       fun ρ => @list_nth_mut (tyAt ρ.types 0)⟩
+    | .sum_loop_body =>
+      ⟨⟨[U32T, U32T, U32T], .result (.controlFlow (.tuple [U32T, U32T]) U32T)⟩, fun _ => sum_loop.body⟩
+    | .sum_loop => ⟨⟨[U32T, U32T, U32T], .result U32T⟩, fun _ => sum_loop⟩
+
+inductive GlobalName where
+
+instance : GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+local notation "DeepExpr" => Expr TypeName FunName GlobalName
+
+/-! ## Scalars, binds, calls -/
+
+def mul2_add1.deep : DeepExpr ⟨[], []⟩ [U32T] (.result U32T) :=
+  .bind (.scalarBinop .add (.u .U32) (.var .zero) (.var .zero)) .var
+    (.scalarBinop .add (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
 
 theorem mul2_add1.deep_eq (x : Std.U32) :
-    mul2_add1 x = mul2_add1.deep.denote (x ::ₕ .nil) := by rfl
+    mul2_add1 x = mul2_add1.deep.denote (x ::ₑ .nil) := by rfl
 
-def use_mul2_add1.deep : Expr [Std.U32, Std.U32] (Result Std.U32) :=
-  .bind (.app (.call "mul2_add1" mul2_add1) (.var .zero)) .var
-    (.binop "add" addU32 (.var .zero) (.var (.succ (.succ .zero))))
+def use_mul2_add1.deep : DeepExpr ⟨[], []⟩ [U32T, U32T] (.result U32T) :=
+  .bind (.call (.crate FunName.mul2_add1) [] [] [U32T] (.result U32T) rfl rfl (.cons (.var .zero) .nil)) .var
+    (.scalarBinop .add (.u .U32) (.var .zero) (.var (.succ (.succ .zero))))
 
 theorem use_mul2_add1.deep_eq (x y : Std.U32) :
-    use_mul2_add1 x y = use_mul2_add1.deep.denote (x ::ₕ y ::ₕ .nil) := by rfl
+    use_mul2_add1 x y = use_mul2_add1.deep.denote (x ::ₑ y ::ₑ .nil) := by rfl
 
-/-! ## Ignored unit binds -/
-
-def use_incr.deep : Expr [] (Result Unit) :=
-  .bind (.app (.call "incr" incr) (.lit 0#u32)) .var
-    (.bind (.app (.call "incr" incr) (.var .zero)) .var
-      (.bind (.app (.call "incr" incr) (.var .zero)) .ignore
-        (.ok (.lit ()))))
+def use_incr.deep : DeepExpr ⟨[], []⟩ [] (.result .unit) :=
+  .bind (.call (.crate FunName.incr) [] [] [U32T] (.result U32T) rfl rfl
+          (.cons (.uscalarLit .U32 0 (by decide)) .nil)) .var
+    (.bind (.call (.crate FunName.incr) [] [] [U32T] (.result U32T) rfl rfl (.cons (.var .zero) .nil)) .var
+      (.bind (.call (.crate FunName.incr) [] [] [U32T] (.result U32T) rfl rfl (.cons (.var .zero) .nil)) .ignore
+        (.ok .unitLit)))
 
 theorem use_incr.deep_eq : use_incr = use_incr.deep.denote .nil := by rfl
 
-/-! ## If on a boolean, pure let, lambda, backward function -/
+/-! ## Generics, booleans, lambdas, tuples -/
 
-def choose.deep {T : Type} : Expr [Bool, T, T] (Result (T × (T → (T × T)))) :=
+def choose.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.bool, .var 0, .var 0]
+    (.result (.tuple [.var 0, .arrow (.var 0) (.tuple [.var 0, .var 0])])) :=
+  -- b=0, x=1, y=2
   .ite (.bool (.var .zero))
-    (.let_ (.lam .var (.pair (.var .zero) (.var (.succ (.succ (.succ .zero)))))) .var
+    (.let_ (.lam (.var 0) .var
+        -- x1=0, b=1, x=2, y=3
+        (.pair (.var .zero) (.var (.succ (.succ (.succ .zero)))))) .var
+      -- back=0, b=1, x=2, y=3
       (.ok (.pair (.var (.succ (.succ .zero))) (.var .zero))))
-    (.let_ (.lam .var (.pair (.var (.succ (.succ .zero))) (.var .zero))) .var
+    (.let_ (.lam (.var 0) .var
+        -- y1=0, b=1, x=2, y=3
+        (.pair (.var (.succ (.succ .zero))) (.var .zero))) .var
       (.ok (.pair (.var (.succ (.succ (.succ .zero)))) (.var .zero))))
 
 theorem choose.deep_eq {T : Type} (b : Bool) (x y : T) :
-    choose b x y = choose.deep.denote (b ::ₕ x ::ₕ y ::ₕ .nil) := by rfl
+    choose b x y = choose.deep.denote (b ::ₑ x ::ₑ y ::ₑ .nil) := by rfl
 
-/-! ## Recursive function with an `if` on scalar equality -/
+/-! ## Recursion, signed scalars: `unfold` then `rfl` -/
 
-def i32_id.deep : Expr [Std.I32] (Result Std.I32) :=
-  .ite (.eq (.var .zero) (.lit 0#i32))
-    (.ok (.lit 0#i32))
-    (.bind (.binop "sub" subI32 (.var .zero) (.lit 1#i32)) .var
-      (.bind (.app (.call "i32_id" i32_id) (.var .zero)) .var
-        (.binop "add" addI32 (.var .zero) (.lit 1#i32))))
+def i32_id.deep : DeepExpr ⟨[], []⟩ [I32T] (.result I32T) :=
+  .ite (.eq (.var .zero) (.iscalarLit .I32 0 (by decide)))
+    (.ok (.iscalarLit .I32 0 (by decide)))
+    (.bind (.scalarBinop .sub (.i .I32) (.var .zero) (.iscalarLit .I32 1 (by decide))) .var
+      (.bind (.call (.crate FunName.i32_id) [] [] [I32T] (.result I32T) rfl rfl (.cons (.var .zero) .nil)) .var
+        (.scalarBinop .add (.i .I32) (.var .zero) (.iscalarLit .I32 1 (by decide)))))
 
 theorem i32_id.deep_eq (i : Std.I32) :
-    i32_id i = i32_id.deep.denote (i ::ₕ .nil) := by
-  unfold i32_id; rfl
+    i32_id i = i32_id.deep.denote (i ::ₑ .nil) := by
+  unfold i32_id; deep_rfl
 
-/-! ## Match on a user ADT, recursion -/
+/-! ## Matches, constructors and calls of the closed world, at type arguments -/
 
-@[reducible] def CList.deepElim {T : Type} : Elim (CList T) [[T, CList T], []] :=
-  fun l alts => CList.casesOn l alts.1 alts.2.1
-
-def list_nth.deep {T : Type} : Expr [CList T, Std.U32] (Result T) :=
-  .match_ (.var .zero) CList.deepElim
-    (.cons -- CCons x tl: x=0, tl=1, l=2, i=3
-      (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+def list_nth.deep {T : Type} :
+    DeepExpr ⟨[T], []⟩ [.adt (.crate TypeName.CList) [.var 0] [], U32T] (.result (.var 0)) :=
+  .match_ (.crate TypeName.CList) [.var 0] [] [[.var 0, .adt (.crate TypeName.CList) [.var 0] []], []] rfl (.var .zero)
+    (.cons -- x=0, tl=1, l=2, i=3
+      (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.uscalarLit .U32 0 (by decide)))
         (.ok (.var .zero))
-        (.bind (.binop "sub" subU32 (.var (.succ (.succ (.succ .zero)))) (.lit 1#u32)) .var
+        (.bind (.scalarBinop .sub (.u .U32) (.var (.succ (.succ (.succ .zero))))
+                 (.uscalarLit .U32 1 (by decide))) .var
           -- i1=0, x=1, tl=2, l=3, i=4
-          (.app2 (.call "list_nth" list_nth) (.var (.succ (.succ .zero))) (.var .zero))))
-      (.cons -- CNil
-        (.fail panic)
-        .nil))
+          (.call (.crate FunName.list_nth) [.var 0] [] [.adt (.crate TypeName.CList) [.var 0] [], U32T] (.result (.var 0))
+            rfl rfl (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil)))))
+      (.cons (.fail (.var 0) panic) .nil))
 
 theorem list_nth.deep_eq {T : Type} (l : CList T) (i : Std.U32) :
-    list_nth l i = list_nth.deep.denote (l ::ₕ i ::ₕ .nil) := by
+    list_nth l i = list_nth.deep.denote (l ::ₑ i ::ₑ .nil) := by
   unfold list_nth; deep_rfl
 
 theorem list_nth.deep_eq_meta {T : Type} (l : CList T) (i : Std.U32) :
-    list_nth l i = list_nth.deep.denote (l ::ₕ i ::ₕ .nil) := by
+    list_nth l i = list_nth.deep.denote (l ::ₑ i ::ₑ .nil) := by
   unfold list_nth; deep_rfl_meta
 
-/-! ## Match, tuple pattern in a monadic let, nested lets under a lambda -/
-
-def list_nth_mut.deep {T : Type} : Expr [CList T, Std.U32] (Result (T × (T → CList T))) :=
-  .match_ (.var .zero) CList.deepElim
-    (.cons -- CCons x tl: x=0, tl=1, l=2, i=3
-      (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
-        -- let back := fun t => CList.CCons t tl   (t=0, x=1, tl=2, l=3, i=4)
-        (.let_ (.lam .var (.app2 (.ctor "CList.CCons" CList.CCons) (.var .zero) (.var (.succ (.succ .zero))))) .var
+def list_nth_mut.deep {T : Type} :
+    DeepExpr ⟨[T], []⟩ [.adt (.crate TypeName.CList) [.var 0] [], U32T]
+      (.result (.tuple [.var 0, .arrow (.var 0) (.adt (.crate TypeName.CList) [.var 0] [])])) :=
+  .match_ (.crate TypeName.CList) [.var 0] [] [[.var 0, .adt (.crate TypeName.CList) [.var 0] []], []] rfl (.var .zero)
+    (.cons -- x=0, tl=1, l=2, i=3
+      (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.uscalarLit .U32 0 (by decide)))
+        (.let_ (.lam (.var 0) .var
+            -- t=0, x=1, tl=2, l=3, i=4
+            (.ctor (.crate TypeName.CList) 0 [.var 0] [] [.var 0, .adt (.crate TypeName.CList) [.var 0] []] rfl
+              (.cons (.var .zero) (.cons (.var (.succ (.succ .zero))) .nil)))) .var
           -- back=0, x=1, tl=2, l=3, i=4
           (.ok (.pair (.var (.succ .zero)) (.var .zero))))
-        (.bind (.binop "sub" subU32 (.var (.succ (.succ (.succ .zero)))) (.lit 1#u32)) .var
+        (.bind (.scalarBinop .sub (.u .U32) (.var (.succ (.succ (.succ .zero))))
+                 (.uscalarLit .U32 1 (by decide))) .var
           -- i1=0, x=1, tl=2, l=3, i=4
-          (.bind (.app2 (.call "list_nth_mut" list_nth_mut) (.var (.succ (.succ .zero))) (.var .zero))
-            (.pair .var .var)
+          (.bind (.call (.crate FunName.list_nth_mut) [.var 0] [] [.adt (.crate TypeName.CList) [.var 0] [], U32T]
+                    (.result (.tuple [.var 0, .arrow (.var 0) (.adt (.crate TypeName.CList) [.var 0] [])]))
+                    rfl rfl (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil)))
+            (.tuple (.cons .var (.cons .var .nil)))
             -- x1=0, back'=1, i1=2, x=3, tl=4, l=5, i=6
-            (.let_
-              (.lam .var
+            (.let_ (.lam (.var 0) .var
                 -- t=0, x1=1, back'=2, i1=3, x=4, tl=5, l=6, i=7
                 (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
                   -- tl1=0, t=1, x1=2, back'=3, i1=4, x=5, tl=6, l=7, i=8
-                  (.app2 (.ctor "CList.CCons" CList.CCons)
-                    (.var (.succ (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))))
-              .var
+                  (.ctor (.crate TypeName.CList) 0 [.var 0] [] [.var 0, .adt (.crate TypeName.CList) [.var 0] []] rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+                      (.cons (.var .zero) .nil))))) .var
               -- back=0, x1=1, back'=2, i1=3, x=4, tl=5, l=6, i=7
               (.ok (.pair (.var (.succ .zero)) (.var .zero)))))))
-      (.cons (.fail panic) .nil))
+      (.cons (.fail (.tuple [.var 0, .arrow (.var 0) (.adt (.crate TypeName.CList) [.var 0] [])]) panic) .nil))
 
 theorem list_nth_mut.deep_eq {T : Type} (l : CList T) (i : Std.U32) :
-    list_nth_mut l i = list_nth_mut.deep.denote (l ::ₕ i ::ₕ .nil) := by
+    list_nth_mut l i = list_nth_mut.deep.denote (l ::ₑ i ::ₑ .nil) := by
   unfold list_nth_mut; deep_rfl
 
 theorem list_nth_mut.deep_eq_meta {T : Type} (l : CList T) (i : Std.U32) :
-    list_nth_mut l i = list_nth_mut.deep.denote (l ::ₕ i ::ₕ .nil) := by
+    list_nth_mut l i = list_nth_mut.deep.denote (l ::ₑ i ::ₑ .nil) := by
   unfold list_nth_mut; deep_rfl_meta
+
+def mk_cons.deep {T : Type} :
+    DeepExpr ⟨[T], []⟩ [.var 0, .adt (.crate TypeName.CList) [.var 0] []] (.adt (.crate TypeName.CList) [.var 0] []) :=
+  .ctor (.crate TypeName.CList) 0 [.var 0] [] [.var 0, .adt (.crate TypeName.CList) [.var 0] []] rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem mk_cons.deep_eq {T : Type} (x : T) (tl : CList T) :
+    mk_cons x tl = mk_cons.deep.denote (x ::ₑ tl ::ₑ .nil) := by deep_rfl
 
 /-! ## Loops: `<` on scalars, control flow constructors, tuple lambda, `loop` -/
 
 def sum_loop.body.deep :
-    Expr [Std.U32, Std.U32, Std.U32] (Result (ControlFlow (Std.U32 × Std.U32) Std.U32)) :=
+    DeepExpr ⟨[], []⟩ [U32T, U32T, U32T] (.result (.controlFlow (.tuple [U32T, U32T]) U32T)) :=
   -- max=0, i=1, s=2
   .ite (.lt (.var (.succ .zero)) (.var .zero))
-    (.bind (.binop "add" addU32 (.var (.succ (.succ .zero))) (.var (.succ .zero))) .var
+    (.bind (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero))) (.var (.succ .zero))) .var
       -- s1=0, max=1, i=2, s=3
-      (.bind (.binop "add" addU32 (.var (.succ (.succ .zero))) (.lit 1#u32)) .var
+      (.bind (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero))) (.uscalarLit .U32 1 (by decide))) .var
         -- i1=0, s1=1, max=2, i=3, s=4
-        (.ok (.app (.ctor "cont" ControlFlow.cont) (.pair (.var .zero) (.var (.succ .zero)))))))
-    (.ok (.app (.ctor "done" ControlFlow.done) (.var (.succ (.succ .zero)))))
+        (.ok (.continue_ (.tuple [U32T, U32T]) U32T (.pair (.var .zero) (.var (.succ .zero)))))))
+    (.ok (.break_ (.tuple [U32T, U32T]) U32T (.var (.succ (.succ .zero)))))
 
 theorem sum_loop.body.deep_eq (max i s : Std.U32) :
-    sum_loop.body max i s = sum_loop.body.deep.denote (max ::ₕ i ::ₕ s ::ₕ .nil) := by rfl
+    sum_loop.body max i s = sum_loop.body.deep.denote (max ::ₑ i ::ₑ s ::ₑ .nil) := by rfl
 
-def sum_loop.deep : Expr [Std.U32, Std.U32, Std.U32] (Result Std.U32) :=
+def sum_loop.deep : DeepExpr ⟨[], []⟩ [U32T, U32T, U32T] (.result U32T) :=
   .loop
-    (.lam (.pair .var .var)
+    (.lam (.tuple [U32T, U32T]) (.tuple (.cons .var (.cons .var .nil)))
       -- i1=0, s1=1, max=2, i=3, s=4
-      (.app3 (.call "sum_loop.body" sum_loop.body) (.var (.succ (.succ .zero))) (.var .zero) (.var (.succ .zero))))
+      (.call (.crate FunName.sum_loop_body) [] [] [U32T, U32T, U32T]
+        (.result (.controlFlow (.tuple [U32T, U32T]) U32T)) rfl rfl
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))
     (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero))))
 
 theorem sum_loop.deep_eq (max i s : Std.U32) :
-    sum_loop max i s = sum_loop.deep.denote (max ::ₕ i ::ₕ s ::ₕ .nil) := by rfl
+    sum_loop max i s = sum_loop.deep.denote (max ::ₑ i ::ₑ s ::ₑ .nil) := by rfl
 
-def sum.deep : Expr [Std.U32] (Result Std.U32) :=
-  .bind (.app3 (.call "sum_loop" sum_loop) (.var .zero) (.lit 0#u32) (.lit 0#u32)) .var
-    (.binop "mul" mulU32 (.var .zero) (.lit 2#u32))
+def sum.deep : DeepExpr ⟨[], []⟩ [U32T] (.result U32T) :=
+  .bind (.call (.crate FunName.sum_loop) [] [] [U32T, U32T, U32T] (.result U32T) rfl rfl
+          (.cons (.var .zero) (.cons (.uscalarLit .U32 0 (by decide))
+            (.cons (.uscalarLit .U32 0 (by decide)) .nil)))) .var
+    (.scalarBinop .mul (.u .U32) (.var .zero) (.uscalarLit .U32 2 (by decide)))
 
 theorem sum.deep_eq (max : Std.U32) :
-    sum max = sum.deep.denote (max ::ₕ .nil) := by rfl
+    sum max = sum.deep.denote (max ::ₑ .nil) := by rfl
 
-/-! ## Deep terms are inspectable: a trivial structural function -/
-
-mutual
-  def _root_.Aeneas.Deep.Expr.numBinds {Γ : List Type} {τ : Type} (e : Expr Γ τ) : Nat :=
-    match e with
-    | .bind _ _ k => 1 + k.numBinds
-    | .let_ e _ k => e.numBinds + k.numBinds
-    | .app f a => f.numBinds + a.numBinds
-    | .lam _ b => b.numBinds
-    | .ite c t e => c.numBinds + t.numBinds + e.numBinds
-    | .match_ s _ brs => s.numBinds + brs.numBinds
-    | .loop b i => b.numBinds + i.numBinds
-    | _ => 0
-  termination_by structural e
-  def _root_.Aeneas.Deep.Cond.numBinds {Γ : List Type} (c : Cond Γ) : Nat :=
-    match c with
-    | .bool b => b.numBinds
-    | .eq (inst := _inst) a b => a.numBinds + b.numBinds
-    | .lt (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
-    | .le (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
-    | .gt (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
-    | .ge (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
-  termination_by structural c
-  def _root_.Aeneas.Deep.Branches.numBinds {Γ : List Type} {shape : List (List Type)} {τ : Type}
-      (brs : Branches Γ shape τ) : Nat :=
-    match brs with
-    | .nil => 0
-    | .cons b bs => b.numBinds + bs.numBinds
-  termination_by structural brs
-end
-
-set_option linter.hashCommand false in
-#guard (list_nth_mut.deep (T := Unit)).numBinds == 2
-set_option linter.hashCommand false in
-#guard sum_loop.body.deep.numBinds == 2
-example : (list_nth_mut.deep (T := Unit)).numBinds = 2 := by rfl
-
-
-/-! ## Struct patterns (printed as single-branch matches)
+/-! ## Structures: patterns (single-branch matches), projections, constructors
 
 Matches with a default branch (`| _ => ...`) are *not* supported: Lean compiles them to an
 auxiliary `_sparseCasesOn` definition built on `T.rec` with a non-constant motive, which is not
 definitionally equal to the `T.casesOn` of a deep eliminator. The printer uses the escape hatch
 for them. -/
 
-@[reducible] def Pair.deepElim {T1 T2 : Type} : Elim (Pair T1 T2) [[T1, T2]] :=
-  fun p alts => Pair.casesOn p alts.1
-
-def pair_sum.deep : Expr [Pair Std.U32 Std.U32] (Result Std.U32) :=
-  .match_ (.var .zero) Pair.deepElim
-    (.cons (.binop "add" addU32 (.var .zero) (.var (.succ .zero))) .nil)
+def pair_sum.deep : DeepExpr ⟨[], []⟩ [.adt (.crate TypeName.Pair) [U32T, U32T] []] (.result U32T) :=
+  .match_ (.crate TypeName.Pair) [U32T, U32T] [] [[U32T, U32T]] rfl (.var .zero)
+    (.cons (.scalarBinop .add (.u .U32) (.var .zero) (.var (.succ .zero))) .nil)
 
 theorem pair_sum.deep_eq (p : Pair Std.U32 Std.U32) :
-    pair_sum p = pair_sum.deep.denote (p ::ₕ .nil) := by deep_rfl
+    pair_sum p = pair_sum.deep.denote (p ::ₑ .nil) := by deep_rfl
 
-def pair_sum_mono.deep : Expr [Pair Std.U32 Std.U32] (Result Std.U32) :=
+def pair_sum_mono.deep : DeepExpr ⟨[], []⟩ [.adt (.crate TypeName.Pair) [U32T, U32T] []] (.result U32T) :=
   .bind (.ok (.var .zero)) .var
-    (.match_ (.var .zero) Pair.deepElim
-      (.cons (.binop "add" addU32 (.var .zero) (.var (.succ .zero))) .nil))
+    (.match_ (.crate TypeName.Pair) [U32T, U32T] [] [[U32T, U32T]] rfl (.var .zero)
+      (.cons (.scalarBinop .add (.u .U32) (.var .zero) (.var (.succ .zero))) .nil))
 
 theorem pair_sum_mono.deep_eq (p : Pair Std.U32 Std.U32) :
-    pair_sum_mono p = pair_sum_mono.deep.denote (p ::ₕ .nil) := by deep_rfl
+    pair_sum_mono p = pair_sum_mono.deep.denote (p ::ₑ .nil) := by deep_rfl
+
+def pair_fst.deep : DeepExpr ⟨[], []⟩ [.adt (.crate TypeName.Pair) [U32T, U32T] []] U32T :=
+  .proj (.crate TypeName.Pair) 0 [U32T, U32T] [] U32T rfl (.var .zero)
+
+theorem pair_fst.deep_eq (p : Pair Std.U32 Std.U32) :
+    pair_fst p = pair_fst.deep.denote (p ::ₑ .nil) := by deep_rfl
+
+def mk_pair.deep : DeepExpr ⟨[], []⟩ [U32T, U32T] (.adt (.crate TypeName.Pair) [U32T, U32T] []) :=
+  .ctor (.crate TypeName.Pair) 0 [U32T, U32T] [] [U32T, U32T] rfl (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem mk_pair.deep_eq (x y : Std.U32) :
+    mk_pair x y = mk_pair.deep.denote (x ::ₑ y ::ₑ .nil) := by deep_rfl
+
+/-! ## Primitives and builtin types -/
+
+def arr_get.deep : DeepExpr ⟨[], []⟩ [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)] (.result U32T) :=
+  .call (.prim .arrayIndex) [U32T] [.lit 4 (by decide)]
+    [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)] (.result U32T) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem arr_get.deep_eq (a : Array Std.U32 4#usize) (i : Std.Usize) :
+    arr_get a i = arr_get.deep.denote (a ::ₑ i ::ₑ .nil) := by deep_rfl
+
+def lift_add.deep : DeepExpr ⟨[], []⟩ [U32T, U32T] (.result U32T) :=
+  .call (.prim .lift) [U32T] [] [U32T] (.result U32T) rfl rfl
+    (.cons (.scalarBitop .and (.u .U32) (.var .zero) (.var (.succ .zero))) .nil)
+
+theorem lift_add.deep_eq (x y : Std.U32) :
+    lift_add x y = lift_add.deep.denote (x ::ₑ y ::ₑ .nil) := by deep_rfl
+
+def opt_or.deep : DeepExpr ⟨[], []⟩ [.adt (.builtin .option) [U32T] [], U32T] U32T :=
+  .match_ (.builtin .option) [U32T] [] [[], [U32T]] rfl (.var .zero)
+    (.cons (.var (.succ .zero))
+    (.cons (.var .zero)
+    .nil))
+
+theorem opt_or.deep_eq (o : Option Std.U32) (d : Std.U32) :
+    opt_or o d = opt_or.deep.denote (o ::ₑ d ::ₑ .nil) := by deep_rfl
+
+def mk_some.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.var 0] (.adt (.builtin .option) [.var 0] []) :=
+  .ctor (.builtin .option) 1 [.var 0] [] [.var 0] rfl (.cons (.var .zero) .nil)
+
+theorem mk_some.deep_eq {T : Type} (x : T) :
+    mk_some x = mk_some.deep.denote (x ::ₑ .nil) := by deep_rfl
+
+def vec_len.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.adt (.builtin .vec) [.var 0] []] (.scalar (.u .Usize)) :=
+  .call (.prim .vecLen) [.var 0] [] [.adt (.builtin .vec) [.var 0] []] (.scalar (.u .Usize)) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem vec_len.deep_eq {T : Type} (v : alloc.vec.Vec T) :
+    vec_len v = vec_len.deep.denote (v ::ₑ .nil) := by deep_rfl
+
+/-! ## Deep terms are inspectable: a trivial structural function -/
+
+mutual
+  def _root_.Aeneas.Deep.Expr.numBinds {N F G : Type} [TypeNames N] [FunNames F N]
+      [GlobalNames G N] {σ : TyEnv} {Γ : List (Ty N)} {τ : Ty N} (e : Expr N F G σ Γ τ) : Nat :=
+    match e with
+    | .bind _ _ k => 1 + k.numBinds
+    | .let_ e _ k => e.numBinds + k.numBinds
+    | .app f a => f.numBinds + a.numBinds
+    | .lam _ _ b => b.numBinds
+    | .ite c t e => c.numBinds + t.numBinds + e.numBinds
+    | .match_ _ (inst := _) _ _ _ _ s brs => s.numBinds + brs.numBinds
+    | .ctor _ _ (inst := _) _ _ _ _ args => args.numBinds
+    | .call _ _ _ _ _ _ _ args => args.numBinds
+    | .tuple es => es.numBinds
+    | .loop b i => b.numBinds + i.numBinds
+    | _ => 0
+  termination_by structural e
+  def _root_.Aeneas.Deep.Exprs.numBinds {N F G : Type} [TypeNames N] [FunNames F N]
+      [GlobalNames G N] {σ : TyEnv} {Γ : List (Ty N)} {tys : List (Ty N)}
+      (es : Exprs N F G σ Γ tys) : Nat :=
+    match es with
+    | .nil => 0
+    | .cons e es => e.numBinds + es.numBinds
+  termination_by structural es
+  def _root_.Aeneas.Deep.Cond.numBinds {N F G : Type} [TypeNames N] [FunNames F N]
+      [GlobalNames G N] {σ : TyEnv} {Γ : List (Ty N)} (c : Cond N F G σ Γ) : Nat :=
+    match c with
+    | .bool b => b.numBinds
+    | .not c => c.numBinds
+    | .eq (inst := _inst) a b => a.numBinds + b.numBinds
+    | .lt (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
+    | .le (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
+    | .gt (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
+    | .ge (ord := _ord) (inst := _inst) a b => a.numBinds + b.numBinds
+  termination_by structural c
+  def _root_.Aeneas.Deep.Branches.numBinds {N F G : Type} [TypeNames N] [FunNames F N]
+      [GlobalNames G N] {σ : TyEnv} {Γ : List (Ty N)} {shape : List (List (Ty N))} {τ : Ty N}
+      (brs : Branches N F G σ Γ shape τ) : Nat :=
+    match brs with
+    | .nil => 0
+    | .cons b bs => b.numBinds + bs.numBinds
+  termination_by structural brs
+end
+
+example : (list_nth_mut.deep (T := Unit)).numBinds = 2 := by rfl
+example : sum_loop.body.deep.numBinds = 2 := by rfl
 
 end Aeneas.Deep.Tests

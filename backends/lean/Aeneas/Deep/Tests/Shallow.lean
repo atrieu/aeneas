@@ -112,4 +112,28 @@ def pair_sum_mono (p : Pair Std.U32 Std.U32) : Result Std.U32 := do
   let ⟨ a, b ⟩ ← ok p
   a + b
 
+/-! Constructors and projections -/
+
+def pair_fst (p : Pair Std.U32 Std.U32) : Std.U32 := p.x
+
+def mk_pair (x : Std.U32) (y : Std.U32) : Pair Std.U32 Std.U32 := { x := x, y := y }
+
+def mk_cons {T : Type _} (x : T) (tl : CList T) : CList T := CList.CCons x tl
+
+/-! Primitives and builtin types -/
+
+def arr_get (a : Array Std.U32 4#usize) (i : Std.Usize) : Result Std.U32 :=
+  Array.index_usize a i
+
+def lift_add (x : Std.U32) (y : Std.U32) : Result Std.U32 := lift (x &&& y)
+
+def opt_or (o : Option Std.U32) (d : Std.U32) : Std.U32 :=
+  match o with
+  | none => d
+  | some x => x
+
+def mk_some {T : Type _} (x : T) : Option T := some x
+
+def vec_len {T : Type _} (v : alloc.vec.Vec T) : Std.Usize := alloc.vec.Vec.len v
+
 end Aeneas.Deep.Tests.Shallow

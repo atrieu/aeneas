@@ -199,355 +199,523 @@ def use_v (T : Type _) (N : Std.Usize) : Result Std.Usize := do
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | Pair
+  | Wrap
+  | V
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.Pair, ρ => Pair (Aeneas.Deep.tyAt ρ.types 0)
+      (Aeneas.Deep.tyAt ρ.types 1)
+    | TypeName.Wrap, ρ => Wrap (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.V, ρ => V (Aeneas.Deep.tyAt ρ.types 0)
+      (ρ.consts.getD 0 (Std.Usize.ofNat 0))
+  variants
+    | TypeName.Pair => [[(.var 0), (.var 1)]]
+    | TypeName.Wrap => [[(.var 0)]]
+    | TypeName.V => [[(.array (.var 0) (.var 0))]]
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Pair) 0 :=
+  ⟨fun _ => fun a0 a1 => Pair.mk a0 a1⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Pair) 0 :=
+  ⟨fun _ => fun x => x.x⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Pair) 1 :=
+  ⟨fun _ => fun x => x.y⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Pair) :=
+  ⟨fun _ => fun x alts => Pair.casesOn x alts.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Wrap) 0 :=
+  ⟨fun _ => fun a0 => Wrap.mk a0⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Wrap) 0 :=
+  ⟨fun _ => fun x => x.value⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Wrap) :=
+  ⟨fun _ => fun x alts => Wrap.casesOn x alts.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.V) 0 :=
+  ⟨fun _ => fun a0 => V.mk a0⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.V) 0 :=
+  ⟨fun _ => fun x => x.x⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.V) :=
+  ⟨fun _ => fun x alts => V.casesOn x alts.1⟩
+
+/-- The functions of the crate -/
+inductive FunName where
+  | incr
+  | mk_pair0
+  | mk_pair1
+  | unwrap_y
+  | get_z1
+  | add
+  | get_z2
+  | use_v
+  | Wrap_new
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.incr => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => incr⟩
+    | FunName.mk_pair0 => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]))⟩,
+      fun _ => mk_pair0⟩
+    | FunName.mk_pair1 => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []))⟩,
+      fun _ => mk_pair1⟩
+    | FunName.unwrap_y => ⟨⟨[], (.result (.scalar (.i .I32)))⟩,
+      fun _ => unwrap_y⟩
+    | FunName.get_z1 => ⟨⟨[], (.result (.scalar (.i .I32)))⟩,
+      fun _ => get_z1⟩
+    | FunName.add => ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.scalar (.i .I32)))⟩, fun _ => add⟩
+    | FunName.get_z2 => ⟨⟨[], (.result (.scalar (.i .I32)))⟩,
+      fun _ => get_z2⟩
+    | FunName.use_v => ⟨⟨[], (.result (.scalar (.u .Usize)))⟩,
+      fun ρ => @use_v (Aeneas.Deep.tyAt ρ.types 0)
+        (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+    | FunName.Wrap_new => ⟨⟨[(.var 0)],
+      (.result (.adt (.crate TypeName.Wrap) [(.var 0)] []))⟩,
+      fun ρ => @Wrap.new (Aeneas.Deep.tyAt ρ.types 0)⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+  | X0
+  | X1
+  | X2
+  | X3
+  | P0
+  | P1
+  | P2
+  | P3
+  | Y
+  | YVAL
+  | Q1
+  | Q2
+  | Q3
+  | S1
+  | S2
+  | S3
+  | S4
+  | get_z1_Z1
+  | V_LEN
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs
+    | GlobalName.X0 => ⟨(.scalar (.u .U32)), fun _ => X0⟩
+    | GlobalName.X1 => ⟨(.scalar (.u .U32)), fun _ => X1⟩
+    | GlobalName.X2 => ⟨(.scalar (.u .U32)), fun _ => X2⟩
+    | GlobalName.X3 => ⟨(.result (.scalar (.u .U32))), fun _ => X3⟩
+    | GlobalName.P0 =>
+      ⟨(.result (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))])),
+      fun _ => P0⟩
+    | GlobalName.P1 =>
+      ⟨(.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])),
+      fun _ => P1⟩
+    | GlobalName.P2 => ⟨(.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]),
+      fun _ => P2⟩
+    | GlobalName.P3 =>
+      ⟨(.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []),
+      fun _ => P3⟩
+    | GlobalName.Y =>
+      ⟨(.result (.adt (.crate TypeName.Wrap) [(.scalar (.i .I32))] [])),
+      fun _ => Y⟩
+    | GlobalName.YVAL => ⟨(.result (.scalar (.i .I32))), fun _ => YVAL⟩
+    | GlobalName.Q1 => ⟨(.scalar (.i .I32)), fun _ => Q1⟩
+    | GlobalName.Q2 => ⟨(.scalar (.i .I32)), fun _ => Q2⟩
+    | GlobalName.Q3 => ⟨(.result (.scalar (.i .I32))), fun _ => Q3⟩
+    | GlobalName.S1 => ⟨(.scalar (.u .U32)), fun _ => S1⟩
+    | GlobalName.S2 => ⟨(.result (.scalar (.u .U32))), fun _ => S2⟩
+    | GlobalName.S3 =>
+      ⟨(.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []),
+      fun _ => S3⟩
+    | GlobalName.S4 =>
+      ⟨(.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])),
+      fun _ => S4⟩
+    | GlobalName.get_z1_Z1 => ⟨(.scalar (.i .I32)), fun _ => get_z1.Z1⟩
+    | GlobalName.V_LEN => ⟨(.scalar (.u .Usize)),
+      fun ρ => @V.LEN (Aeneas.Deep.tyAt ρ.types 0)
+        (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+
 /-- [constants::X0]
     Source: 'tests/src/constants.rs', lines 7:0-7:22
     Visibility: public -/
-def X0.deep : Aeneas.Deep.Expr [] Std.U32 :=
-  (.lit 0#u32)
+def X0.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.u .U32)) :=
+  (.uscalarLit .U32 0 (by decide))
 
 theorem X0.deep_eq :
-  X0 = Aeneas.Deep.Expr.denote (X0.deep) (Aeneas.Deep.HList.nil)
+  X0 = Aeneas.Deep.Expr.denote (X0.deep) (Aeneas.Deep.Env.nil)
   := by unfold X0; deep_rfl
 
 /-- [constants::X1]
     Source: 'tests/src/constants.rs', lines 9:0-9:29
     Visibility: public -/
-def X1.deep : Aeneas.Deep.Expr [] Std.U32 :=
-  (.leaf (.global "core::num::{u32}::MAX") (core.num.U32.MAX : Std.U32))
+def X1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.u .U32)) :=
+  (.leaf (.global "core::num::{u32}::MAX") (.scalar (.u .U32))
+    (core.num.U32.MAX : Std.U32))
 
 theorem X1.deep_eq :
-  X1 = Aeneas.Deep.Expr.denote (X1.deep) (Aeneas.Deep.HList.nil)
+  X1 = Aeneas.Deep.Expr.denote (X1.deep) (Aeneas.Deep.Env.nil)
   := by unfold X1; deep_rfl
 
 /-- [constants::X2]
     Source: 'tests/src/constants.rs', lines 12:0-15:2
     Visibility: public -/
-def X2.deep : Aeneas.Deep.Expr [] Std.U32 :=
-  (.lit 3#u32)
+def X2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.u .U32)) :=
+  (.uscalarLit .U32 3 (by decide))
 
 theorem X2.deep_eq :
-  X2 = Aeneas.Deep.Expr.denote (X2.deep) (Aeneas.Deep.HList.nil)
+  X2 = Aeneas.Deep.Expr.denote (X2.deep) (Aeneas.Deep.Env.nil)
   := by unfold X2; deep_rfl
 
 /-- [constants::incr]:
     Source: 'tests/src/constants.rs', lines 19:0-21:1
     Visibility: public -/
-def incr.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.app (.app (.leaf (.binop "panic.+::<u32>")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (i + i1 : Result Std.U32))) (.var .zero)) (.lit 1#u32))
+def incr.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.scalarBinop .add (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
 
 theorem incr.deep_eq (n : Std.U32) :
-  incr n = Aeneas.Deep.Expr.denote (incr.deep) (n ::ₕ Aeneas.Deep.HList.nil)
+  incr n = Aeneas.Deep.Expr.denote (incr.deep) (n ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::X3]
     Source: 'tests/src/constants.rs', lines 17:0-17:29
     Visibility: public -/
-def X3.deep : Aeneas.Deep.Expr [] (Result Std.U32) :=
-  (.app (.leaf (.fn "constants::incr") (fun (i : Std.U32) =>
-          (incr i : Result Std.U32))) (.lit 32#u32))
+def X3.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
+  (.call (.crate FunName.incr) [] [] [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+    (.cons (.uscalarLit .U32 32 (by decide)) .nil))
 
 theorem X3.deep_eq :
-  X3 = Aeneas.Deep.Expr.denote (X3.deep) (Aeneas.Deep.HList.nil)
+  X3 = Aeneas.Deep.Expr.denote (X3.deep) (Aeneas.Deep.Env.nil)
   := by unfold X3; deep_rfl
 
 /-- [constants::mk_pair0]:
     Source: 'tests/src/constants.rs', lines 25:0-27:1
     Visibility: public -/
 def mk_pair0.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result (Std.U32 × Std.U32)) :=
-  (.ok (.pair (.var .zero) (.var (.succ .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))])) :=
+  (.ok (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem mk_pair0.deep_eq (x : Std.U32) (y : Std.U32) :
   mk_pair0 x y =
     Aeneas.Deep.Expr.denote (mk_pair0.deep)
-      (x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [constants::Pair]
-    Source: 'tests/src/constants.rs', lines 38:0-41:1 -/
-@[reducible] def Pair.deepElim {T1 : Type _} {T2 : Type _} :
-  Aeneas.Deep.Elim (Pair T1 T2) [[T1, T2]] :=
-  fun x alts => Pair.casesOn x alts.1
 
 /-- [constants::mk_pair1]:
     Source: 'tests/src/constants.rs', lines 29:0-31:1
     Visibility: public -/
 def mk_pair1.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result (Pair Std.U32 Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []))
+  :=
   (.ok
-    (.app (.app (.leaf (.ctor "constants::Pair")
-                  (fun (i : Std.U32) (i1 : Std.U32) =>
-                  ({ x := i, y := i1 } : Pair Std.U32 Std.U32))) (.var .zero))
-      (.var (.succ .zero))))
+    (.ctor (.crate TypeName.Pair) 0 [(.scalar (.u .U32)), (.scalar (.u .U32))] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem mk_pair1.deep_eq (x : Std.U32) (y : Std.U32) :
   mk_pair1 x y =
     Aeneas.Deep.Expr.denote (mk_pair1.deep)
-      (x ::ₕ y ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::P0]
     Source: 'tests/src/constants.rs', lines 33:0-33:42
     Visibility: public -/
-def P0.deep : Aeneas.Deep.Expr [] (Result (Std.U32 × Std.U32)) :=
-  (.app (.app (.leaf (.fn "constants::mk_pair0")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (mk_pair0 i i1 : Result (Std.U32 × Std.U32)))) (.lit 0#u32))
-    (.lit 1#u32))
+def P0.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))])) :=
+  (.call (.crate FunName.mk_pair0) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))])) rfl rfl
+    (.cons (.uscalarLit .U32 0 (by decide))
+      (.cons (.uscalarLit .U32 1 (by decide)) .nil)))
 
 theorem P0.deep_eq :
-  P0 = Aeneas.Deep.Expr.denote (P0.deep) (Aeneas.Deep.HList.nil)
+  P0 = Aeneas.Deep.Expr.denote (P0.deep) (Aeneas.Deep.Env.nil)
   := by unfold P0; deep_rfl
 
 /-- [constants::P1]
     Source: 'tests/src/constants.rs', lines 34:0-34:46
     Visibility: public -/
-def P1.deep : Aeneas.Deep.Expr [] (Result (Pair Std.U32 Std.U32)) :=
-  (.app (.app (.leaf (.fn "constants::mk_pair1")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (mk_pair1 i i1 : Result (Pair Std.U32 Std.U32)))) (.lit 0#u32))
-    (.lit 1#u32))
+def P1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []))
+  :=
+  (.call (.crate FunName.mk_pair1) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])) rfl rfl
+    (.cons (.uscalarLit .U32 0 (by decide))
+      (.cons (.uscalarLit .U32 1 (by decide)) .nil)))
 
 theorem P1.deep_eq :
-  P1 = Aeneas.Deep.Expr.denote (P1.deep) (Aeneas.Deep.HList.nil)
+  P1 = Aeneas.Deep.Expr.denote (P1.deep) (Aeneas.Deep.Env.nil)
   := by unfold P1; deep_rfl
 
 /-- [constants::P2]
     Source: 'tests/src/constants.rs', lines 35:0-35:34
     Visibility: public -/
-def P2.deep : Aeneas.Deep.Expr [] (Std.U32 × Std.U32) :=
-  (.pair (.lit 0#u32) (.lit 1#u32))
+def P2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) :=
+  (.tuple
+    (.cons (.uscalarLit .U32 0 (by decide))
+      (.cons (.uscalarLit .U32 1 (by decide)) .nil)))
 
 theorem P2.deep_eq :
-  P2 = Aeneas.Deep.Expr.denote (P2.deep) (Aeneas.Deep.HList.nil)
+  P2 = Aeneas.Deep.Expr.denote (P2.deep) (Aeneas.Deep.Env.nil)
   := by unfold P2; deep_rfl
 
 /-- [constants::P3]
     Source: 'tests/src/constants.rs', lines 36:0-36:51
     Visibility: public -/
-def P3.deep : Aeneas.Deep.Expr [] (Pair Std.U32 Std.U32) :=
-  (.app (.app (.leaf (.ctor "constants::Pair")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                ({ x := i, y := i1 } : Pair Std.U32 Std.U32))) (.lit 0#u32))
-    (.lit 1#u32))
+def P3.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])
+  :=
+  (.ctor (.crate TypeName.Pair) 0 [(.scalar (.u .U32)), (.scalar (.u .U32))] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] rfl
+    (.cons (.uscalarLit .U32 0 (by decide))
+      (.cons (.uscalarLit .U32 1 (by decide)) .nil)))
 
 theorem P3.deep_eq :
-  P3 = Aeneas.Deep.Expr.denote (P3.deep) (Aeneas.Deep.HList.nil)
+  P3 = Aeneas.Deep.Expr.denote (P3.deep) (Aeneas.Deep.Env.nil)
   := by unfold P3; deep_rfl
-
-/-- Deep eliminator for [constants::Wrap]
-    Source: 'tests/src/constants.rs', lines 51:0-53:1 -/
-@[reducible] def Wrap.deepElim {T : Type _} : Aeneas.Deep.Elim (Wrap T) [[T]]
-  :=
-  fun x alts => Wrap.casesOn x alts.1
 
 /-- [constants::{constants::Wrap<T>}::new]:
     Source: 'tests/src/constants.rs', lines 56:4-58:5
     Visibility: public -/
-def Wrap.new.deep {T : Type _} : Aeneas.Deep.Expr [T] (Result (Wrap T)) :=
+def Wrap.new.deep {T : Type _} :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ [(.var 0)]
+    (.result (.adt (.crate TypeName.Wrap) [(.var 0)] [])) :=
   (.ok
-    (.app (.leaf (.ctor "constants::Wrap") (fun (t : T) =>
-            ({ value := t } : Wrap T))) (.var .zero)))
+    (.ctor (.crate TypeName.Wrap) 0 [(.var 0)] [] [(.var 0)] rfl
+      (.cons (.var .zero) .nil)))
 
 theorem Wrap.new.deep_eq {T : Type _} (value : T) :
   Wrap.new value =
-    Aeneas.Deep.Expr.denote (Wrap.new.deep) (value ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (Wrap.new.deep) (value ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::Y]
     Source: 'tests/src/constants.rs', lines 43:0-43:38
     Visibility: public -/
-def Y.deep : Aeneas.Deep.Expr [] (Result (Wrap Std.I32)) :=
-  (.app (.leaf (.fn "constants::{constants::Wrap<T>}::new")
-          (fun (i : Std.I32) => (Wrap.new i : Result (Wrap Std.I32))))
-    (.lit 2#i32))
+def Y.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.adt (.crate TypeName.Wrap) [(.scalar (.i .I32))] [])) :=
+  (.call (.crate FunName.Wrap_new) [(.scalar (.i .I32))] [] [(.scalar (.i .I32))] (.result (.adt (.crate TypeName.Wrap) [(.scalar (.i .I32))] [])) rfl rfl
+    (.cons (.iscalarLit .I32 2 (by decide)) .nil))
 
 theorem Y.deep_eq :
-  Y = Aeneas.Deep.Expr.denote (Y.deep) (Aeneas.Deep.HList.nil)
+  Y = Aeneas.Deep.Expr.denote (Y.deep) (Aeneas.Deep.Env.nil)
   := by unfold Y; deep_rfl
 
 /-- [constants::unwrap_y]:
     Source: 'tests/src/constants.rs', lines 45:0-47:1
     Visibility: public -/
-def unwrap_y.deep : Aeneas.Deep.Expr [] (Result Std.I32) :=
-  (.bind (.leaf (.global "constants::Y") (Y : Result (Wrap Std.I32))) .var
+def unwrap_y.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
+  (.bind
+    (.global GlobalName.Y [] [] (.result (.adt (.crate TypeName.Wrap) [(.scalar (.i .I32))] [])) rfl)
+    .var
   (.ok
-    (.app (.leaf (.proj "value") (fun (w1 : Wrap Std.I32) =>
-            (w1.value : Std.I32))) (.var .zero))))
+    (.proj (.crate TypeName.Wrap) 0 [(.scalar (.i .I32))] [] (.scalar (.i .I32)) rfl
+      (.var .zero))))
 
 theorem unwrap_y.deep_eq :
-  unwrap_y = Aeneas.Deep.Expr.denote (unwrap_y.deep) (Aeneas.Deep.HList.nil)
+  unwrap_y = Aeneas.Deep.Expr.denote (unwrap_y.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::YVAL]
     Source: 'tests/src/constants.rs', lines 49:0-49:33
     Visibility: public -/
-def YVAL.deep : Aeneas.Deep.Expr [] (Result Std.I32) :=
-  (.leaf (.fn "constants::unwrap_y") (unwrap_y : Result Std.I32))
+def YVAL.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
+  (.call (.crate FunName.unwrap_y) [] [] [] (.result (.scalar (.i .I32))) rfl rfl
+    .nil)
 
 theorem YVAL.deep_eq :
-  YVAL = Aeneas.Deep.Expr.denote (YVAL.deep) (Aeneas.Deep.HList.nil)
+  YVAL = Aeneas.Deep.Expr.denote (YVAL.deep) (Aeneas.Deep.Env.nil)
   := by unfold YVAL; deep_rfl
 
 /-- [constants::get_z1::Z1]
     Source: 'tests/src/constants.rs', lines 64:4-64:22 -/
-def get_z1.Z1.deep : Aeneas.Deep.Expr [] Std.I32 :=
-  (.lit 3#i32)
+def get_z1.Z1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.i .I32)) :=
+  (.iscalarLit .I32 3 (by decide))
 
 theorem get_z1.Z1.deep_eq :
-  get_z1.Z1 = Aeneas.Deep.Expr.denote (get_z1.Z1.deep) (Aeneas.Deep.HList.nil)
+  get_z1.Z1 = Aeneas.Deep.Expr.denote (get_z1.Z1.deep) (Aeneas.Deep.Env.nil)
   := by unfold get_z1.Z1; deep_rfl
 
 /-- [constants::get_z1]:
     Source: 'tests/src/constants.rs', lines 63:0-66:1
     Visibility: public -/
-def get_z1.deep : Aeneas.Deep.Expr [] (Result Std.I32) :=
-  (.ok (.leaf (.global "constants::get_z1::Z1") (get_z1.Z1 : Std.I32)))
+def get_z1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
+  (.ok (.global GlobalName.get_z1_Z1 [] [] (.scalar (.i .I32)) rfl))
 
 theorem get_z1.deep_eq :
-  get_z1 = Aeneas.Deep.Expr.denote (get_z1.deep) (Aeneas.Deep.HList.nil)
+  get_z1 = Aeneas.Deep.Expr.denote (get_z1.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::add]:
     Source: 'tests/src/constants.rs', lines 68:0-70:1
     Visibility: public -/
-def add.deep : Aeneas.Deep.Expr [Std.I32, Std.I32] (Result Std.I32) :=
-  (.app (.app (.leaf (.binop "panic.+::<i32>")
-                (fun (i : Std.I32) (i1 : Std.I32) =>
-                (i + i1 : Result Std.I32))) (.var .zero)) (.var (.succ .zero)))
+def add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) :=
+  (.scalarBinop .add (.i .I32) (.var .zero) (.var (.succ .zero)))
 
 theorem add.deep_eq (a : Std.I32) (b : Std.I32) :
   add a b =
-    Aeneas.Deep.Expr.denote (add.deep) (a ::ₕ b ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (add.deep) (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::Q1]
     Source: 'tests/src/constants.rs', lines 76:0-76:22
     Visibility: public -/
-def Q1.deep : Aeneas.Deep.Expr [] Std.I32 :=
-  (.lit 5#i32)
+def Q1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.i .I32)) :=
+  (.iscalarLit .I32 5 (by decide))
 
 theorem Q1.deep_eq :
-  Q1 = Aeneas.Deep.Expr.denote (Q1.deep) (Aeneas.Deep.HList.nil)
+  Q1 = Aeneas.Deep.Expr.denote (Q1.deep) (Aeneas.Deep.Env.nil)
   := by unfold Q1; deep_rfl
 
 /-- [constants::Q2]
     Source: 'tests/src/constants.rs', lines 77:0-77:23
     Visibility: public -/
-def Q2.deep : Aeneas.Deep.Expr [] Std.I32 :=
-  (.leaf (.global "constants::Q1") (Q1 : Std.I32))
+def Q2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.i .I32)) :=
+  (.global GlobalName.Q1 [] [] (.scalar (.i .I32)) rfl)
 
 theorem Q2.deep_eq :
-  Q2 = Aeneas.Deep.Expr.denote (Q2.deep) (Aeneas.Deep.HList.nil)
+  Q2 = Aeneas.Deep.Expr.denote (Q2.deep) (Aeneas.Deep.Env.nil)
   := by unfold Q2; deep_rfl
 
 /-- [constants::Q3]
     Source: 'tests/src/constants.rs', lines 78:0-78:31
     Visibility: public -/
-def Q3.deep : Aeneas.Deep.Expr [] (Result Std.I32) :=
-  (.app (.app (.leaf (.fn "constants::add")
-                (fun (i : Std.I32) (i1 : Std.I32) =>
-                (add i i1 : Result Std.I32)))
-    (.leaf (.global "constants::Q2") (Q2 : Std.I32))) (.lit 3#i32))
+def Q3.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
+  (.call (.crate FunName.add) [] [] [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) rfl rfl
+    (.cons (.global GlobalName.Q2 [] [] (.scalar (.i .I32)) rfl)
+      (.cons (.iscalarLit .I32 3 (by decide)) .nil)))
 
 theorem Q3.deep_eq :
-  Q3 = Aeneas.Deep.Expr.denote (Q3.deep) (Aeneas.Deep.HList.nil)
+  Q3 = Aeneas.Deep.Expr.denote (Q3.deep) (Aeneas.Deep.Env.nil)
   := by unfold Q3; deep_rfl
 
 /-- [constants::get_z2]:
     Source: 'tests/src/constants.rs', lines 72:0-74:1
     Visibility: public -/
-def get_z2.deep : Aeneas.Deep.Expr [] (Result Std.I32) :=
-  (.bind (.leaf (.fn "constants::get_z1") (get_z1 : Result Std.I32)) .var
-  (.bind (.leaf (.global "constants::Q3") (Q3 : Result Std.I32)) .var
+def get_z2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.i .I32))) :=
   (.bind
-    (.app (.app (.leaf (.fn "constants::add")
-                  (fun (i2 : Std.I32) (i3 : Std.I32) =>
-                  (add i2 i3 : Result Std.I32))) (.var (.succ .zero)))
-      (.var .zero)) .var
-  (.app (.app (.leaf (.fn "constants::add")
-                (fun (i3 : Std.I32) (i4 : Std.I32) =>
-                (add i3 i4 : Result Std.I32)))
-    (.leaf (.global "constants::Q1") (Q1 : Std.I32))) (.var .zero)))))
+    (.call (.crate FunName.get_z1) [] [] [] (.result (.scalar (.i .I32))) rfl rfl
+      .nil) .var
+  (.bind (.global GlobalName.Q3 [] [] (.result (.scalar (.i .I32))) rfl) .var
+  (.bind
+    (.call (.crate FunName.add) [] [] [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) rfl rfl
+      (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))) .var
+  (.call (.crate FunName.add) [] [] [(.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.scalar (.i .I32))) rfl rfl
+    (.cons (.global GlobalName.Q1 [] [] (.scalar (.i .I32)) rfl)
+      (.cons (.var .zero) .nil))))))
 
 theorem get_z2.deep_eq :
-  get_z2 = Aeneas.Deep.Expr.denote (get_z2.deep) (Aeneas.Deep.HList.nil)
+  get_z2 = Aeneas.Deep.Expr.denote (get_z2.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [constants::S1]
     Source: 'tests/src/constants.rs', lines 82:0-82:23
     Visibility: public -/
-def S1.deep : Aeneas.Deep.Expr [] Std.U32 :=
-  (.lit 6#u32)
+def S1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.u .U32)) :=
+  (.uscalarLit .U32 6 (by decide))
 
 theorem S1.deep_eq :
-  S1 = Aeneas.Deep.Expr.denote (S1.deep) (Aeneas.Deep.HList.nil)
+  S1 = Aeneas.Deep.Expr.denote (S1.deep) (Aeneas.Deep.Env.nil)
   := by unfold S1; deep_rfl
 
 /-- [constants::S2]
     Source: 'tests/src/constants.rs', lines 83:0-83:30
     Visibility: public -/
-def S2.deep : Aeneas.Deep.Expr [] (Result Std.U32) :=
-  (.app (.leaf (.fn "constants::incr") (fun (i : Std.U32) =>
-          (incr i : Result Std.U32)))
-    (.leaf (.global "constants::S1") (S1 : Std.U32)))
+def S2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
+  (.call (.crate FunName.incr) [] [] [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+    (.cons (.global GlobalName.S1 [] [] (.scalar (.u .U32)) rfl) .nil))
 
 theorem S2.deep_eq :
-  S2 = Aeneas.Deep.Expr.denote (S2.deep) (Aeneas.Deep.HList.nil)
+  S2 = Aeneas.Deep.Expr.denote (S2.deep) (Aeneas.Deep.Env.nil)
   := by unfold S2; deep_rfl
 
 /-- [constants::S3]
     Source: 'tests/src/constants.rs', lines 84:0-84:35
     Visibility: public -/
-def S3.deep : Aeneas.Deep.Expr [] (Pair Std.U32 Std.U32) :=
-  (.leaf (.global "constants::P3") (P3 : Pair Std.U32 Std.U32))
+def S3.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])
+  :=
+  (.global GlobalName.P3 [] [] (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []) rfl)
 
 theorem S3.deep_eq :
-  S3 = Aeneas.Deep.Expr.denote (S3.deep) (Aeneas.Deep.HList.nil)
+  S3 = Aeneas.Deep.Expr.denote (S3.deep) (Aeneas.Deep.Env.nil)
   := by unfold S3; deep_rfl
 
 /-- [constants::S4]
     Source: 'tests/src/constants.rs', lines 85:0-85:47
     Visibility: public -/
-def S4.deep : Aeneas.Deep.Expr [] (Result (Pair Std.U32 Std.U32)) :=
-  (.app (.app (.leaf (.fn "constants::mk_pair1")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (mk_pair1 i i1 : Result (Pair Std.U32 Std.U32)))) (.lit 7#u32))
-    (.lit 8#u32))
+def S4.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] []))
+  :=
+  (.call (.crate FunName.mk_pair1) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.adt (.crate TypeName.Pair) [(.scalar (.u .U32)), (.scalar (.u .U32))] [])) rfl rfl
+    (.cons (.uscalarLit .U32 7 (by decide))
+      (.cons (.uscalarLit .U32 8 (by decide)) .nil)))
 
 theorem S4.deep_eq :
-  S4 = Aeneas.Deep.Expr.denote (S4.deep) (Aeneas.Deep.HList.nil)
+  S4 = Aeneas.Deep.Expr.denote (S4.deep) (Aeneas.Deep.Env.nil)
   := by unfold S4; deep_rfl
-
-/-- Deep eliminator for [constants::V]
-    Source: 'tests/src/constants.rs', lines 88:0-90:1 -/
-@[reducible] def V.deepElim {T : Type _} {N : Std.Usize} :
-  Aeneas.Deep.Elim (V T N) [[Array T N]] :=
-  fun x alts => V.casesOn x alts.1
 
 /-- [constants::{constants::V<T, N>}::LEN]
     Source: 'tests/src/constants.rs', lines 93:4-93:29
     Visibility: public -/
-def V.LEN.deep (T : Type _) (N : Std.Usize) : Aeneas.Deep.Expr [] Std.Usize :=
-  (.lit N)
+def V.LEN.deep (T : Type _) (N : Std.Usize) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], [N]⟩ []
+    (.scalar (.u .Usize)) :=
+  (.lit (.scalar (.u .Usize)) N)
 
 theorem V.LEN.deep_eq (T : Type _) (N : Std.Usize) :
-  V.LEN T N = Aeneas.Deep.Expr.denote (V.LEN.deep T N) (Aeneas.Deep.HList.nil)
+  V.LEN T N = Aeneas.Deep.Expr.denote (V.LEN.deep T N) (Aeneas.Deep.Env.nil)
   := by unfold V.LEN; deep_rfl
 
 /-- [constants::use_v]:
     Source: 'tests/src/constants.rs', lines 96:0-98:1
     Visibility: public -/
 def use_v.deep (T : Type _) (N : Std.Usize) :
-  Aeneas.Deep.Expr [] (Result Std.Usize) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], [N]⟩ []
+    (.result (.scalar (.u .Usize))) :=
   (.ok
-    (.leaf (.global "constants::{constants::V<T, N>}::LEN")
-      (V.LEN T N : Std.Usize)))
+    (.global GlobalName.V_LEN [(.var 0)] [(.var 0)] (.scalar (.u .Usize)) rfl))
 
 theorem use_v.deep_eq (T : Type _) (N : Std.Usize) :
-  use_v T N = Aeneas.Deep.Expr.denote (use_v.deep T N) (Aeneas.Deep.HList.nil)
+  use_v T N = Aeneas.Deep.Expr.denote (use_v.deep T N) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end constants

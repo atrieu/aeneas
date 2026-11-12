@@ -107,16 +107,34 @@ Rules when touching this mode:
    `sorry` or an error: the printer must keep total coverage. Add the construct to the
    "Limitations" list of `documentation/deep-embedding.md` if it cannot be mirrored
    (default match branches and scalar-literal matches are the known cases).
-3. **Leaves reuse the shallow printer**, eta-expanded over their arguments
+3. **Types are descriptors** (`Aeneas.Deep.Ty TypeName`, printed by `deep_ty`), over the
+   per-crate `TypeName` enumeration printed by `extract_closed_world` (which also prints
+   the `FunName` and `GlobalName` enumerations and their instances). A type the
+   descriptors can not express must be escaped into a type variable of the term (the
+   `deep_tyenv` escape mechanism), never printed as a shallow type: the term's header is
+   printed after a first pass over the body collects the escapes. The builtin types and
+   functions the library describes (`Aeneas.Deep.BuiltinTy`, `Aeneas.Deep.Prim` in
+   `Aeneas/Deep/Basic.lean`) are mapped from their Lean names in `builtin_type_refs` and
+   `prim_table`: to add one, add the constructor and its description to the library
+   (checking the constructors, fields and their order against the Lean model), then the
+   table entry, then a hand-written test in `Aeneas/Deep/Tests.lean`.
+4. **Leaves reuse the shallow printer**, eta-expanded over their arguments
    (`extract_deep_eta_leaf`). Do not hand-print Lean syntax for a leaf: any notation or
-   coercion difference breaks the theorem.
-4. **Do not trust the `ty` field of application nodes** of the pure AST for type
+   coercion difference breaks the theorem. The ADT nodes (`ctor`, `proj`, `match_`) carry
+   their instantiated field types with an `rfl` proof: print the types from the
+   declaration (`type_decl_get_instantiated_fields_types`), not from the arguments;
+   likewise the `call` nodes print the signature instantiated with the generic arguments
+   of the call (`fun_sig_substitute`).
+5. **Do not trust the `ty` field of application nodes** of the pure AST for type
    annotations: thread the expected type from the enclosing binder or signature.
-5. **Test** with the deep-enabled test files (`//@ [lean] aeneas-args=-deep` in
+6. **Test** with the deep-enabled test files (`//@ [lean] aeneas-args=-deep` in
    `tests/src/demo.rs`, `loops.rs`, `adt.rs`, `traits.rs`, `closures.rs`,
-   `switch_test.rs`, `joins.rs`, `hashmap.rs`, `constants.rs`, `loops-rec.rs`):
-   regenerate them with `gmake test-<file>.rs`, then `lake build <Module>` in `tests/lean`.
-   A regression shows up as a `(kernel) declaration type mismatch` on a `.deep_eq` theorem.
+   `switch_test.rs`, `joins.rs`, `hashmap.rs`, `constants.rs`, `loops-rec.rs`,
+   `cast_signed.rs`, `scalars.rs`, `bool-cmp.rs`, `overflowing-ops.rs`,
+   `uint-div-ops.rs`): regenerate them with `gmake test-<file>.rs`, then
+   `lake build <Module>` in `tests/lean`. A regression shows up as a
+   `(kernel) declaration type mismatch` on a `.deep_eq` theorem, or as an elaboration
+   error on a `rfl` proof of a `ctor`/`proj`/`match_` node.
 
 ## Error Handling: Always Use PPX Macros
 

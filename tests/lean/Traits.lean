@@ -646,60 +646,174 @@ def use_foo2
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | Wrapper
+  | Foo
+  | String
+  | core_result_Result
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.Wrapper, ρ => Wrapper (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.Foo, ρ => Foo (Aeneas.Deep.tyAt ρ.types 0)
+      (Aeneas.Deep.tyAt ρ.types 1)
+    | TypeName.String, _ => String
+    | TypeName.core_result_Result, ρ => core.result.Result
+      (Aeneas.Deep.tyAt ρ.types 0) (Aeneas.Deep.tyAt ρ.types 1)
+  variants
+    | TypeName.Wrapper => [[(.var 0)]]
+    | TypeName.Foo => [[(.var 0), (.var 1)]]
+    | TypeName.String => []
+    | TypeName.core_result_Result => []
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Wrapper) 0 :=
+  ⟨fun _ => fun a0 => Wrapper.mk a0⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Wrapper) 0 :=
+  ⟨fun _ => fun x => x.x⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Wrapper) :=
+  ⟨fun _ => fun x alts => Wrapper.casesOn x alts.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Foo) 0 :=
+  ⟨fun _ => fun a0 a1 => Foo.mk a0 a1⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Foo) 0 :=
+  ⟨fun _ => fun x => x.x⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Foo) 1 :=
+  ⟨fun _ => fun x => x.y⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Foo) :=
+  ⟨fun _ => fun x alts => Foo.casesOn x alts.1⟩
+
+/-- The functions of the crate -/
+inductive FunName where
+  | test_bool_trait_bool
+  | test_bool_trait_option
+  | h0
+  | h1
+  | test_where1
+  | BoolTrait_ret_true_default
+  | Bool_Insts_TraitsBoolTrait_get_bool
+  | core_option_Option_Insts_TraitsBoolTrait_get_bool
+  | U64_Insts_TraitsToU64_to_u64
+  | U64_Insts_TraitsToTypeBool_to_type
+  | Bool_Insts_TraitsWithConstTyU8U6432_f
+  | U32_Insts_TraitsChildTrait2U32U32_convert
+  | TestType_test_TestType1_Insts_TraitsTestTypeTestTestTrait_test
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.test_bool_trait_bool => ⟨⟨[.bool], (.result .bool)⟩,
+      fun _ => test_bool_trait_bool⟩
+    | FunName.test_bool_trait_option =>
+      ⟨⟨[(.adt (.builtin .option) [(.var 0)] [])], (.result .bool)⟩,
+      fun ρ => @test_bool_trait_option (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.h0 => ⟨⟨[(.scalar (.u .U64))],
+      (.result (.scalar (.u .U64)))⟩, fun _ => h0⟩
+    | FunName.h1 =>
+      ⟨⟨[(.adt (.crate TypeName.Wrapper) [(.scalar (.u .U64))] [])],
+      (.result (.scalar (.u .U64)))⟩, fun _ => h1⟩
+    | FunName.test_where1 => ⟨⟨[(.var 0)], (.result .unit)⟩,
+      fun ρ => @test_where1 (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.BoolTrait_ret_true_default => ⟨⟨[(.var 0)],
+      (.result .bool)⟩,
+      fun ρ => @BoolTrait.ret_true.default (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.Bool_Insts_TraitsBoolTrait_get_bool => ⟨⟨[.bool],
+      (.result .bool)⟩, fun _ => Bool.Insts.TraitsBoolTrait.get_bool⟩
+    | FunName.core_option_Option_Insts_TraitsBoolTrait_get_bool =>
+      ⟨⟨[(.adt (.builtin .option) [(.var 0)] [])], (.result .bool)⟩,
+      fun ρ => @core.option.Option.Insts.TraitsBoolTrait.get_bool
+        (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.U64_Insts_TraitsToU64_to_u64 => ⟨⟨[(.scalar (.u .U64))],
+      (.result (.scalar (.u .U64)))⟩,
+      fun _ => U64.Insts.TraitsToU64.to_u64⟩
+    | FunName.U64_Insts_TraitsToTypeBool_to_type =>
+      ⟨⟨[(.scalar (.u .U64))], (.result .bool)⟩,
+      fun _ => U64.Insts.TraitsToTypeBool.to_type⟩
+    | FunName.Bool_Insts_TraitsWithConstTyU8U6432_f =>
+      ⟨⟨[(.scalar (.u .U64)), (.array (.scalar (.u .U8)) (.lit 32 (by decide)))],
+      (.result (.scalar (.u .U64)))⟩,
+      fun _ => Bool.Insts.TraitsWithConstTyU8U6432.f⟩
+    | FunName.U32_Insts_TraitsChildTrait2U32U32_convert =>
+      ⟨⟨[(.scalar (.u .U32))], (.result (.scalar (.u .U32)))⟩,
+      fun _ => U32.Insts.TraitsChildTrait2U32U32.convert⟩
+    | FunName.TestType_test_TestType1_Insts_TraitsTestTypeTestTestTrait_test =>
+      ⟨⟨[(.scalar (.u .U64))], (.result .bool)⟩,
+      fun _ => TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+  | WithConstTy_LEN2_default
+  | Bool_Insts_TraitsWithConstTyU8U6432_LEN1
+  | Array_Insts_TraitsTrait_LEN
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs
+    | GlobalName.WithConstTy_LEN2_default => ⟨(.scalar (.u .Usize)),
+      fun ρ => @WithConstTy.LEN2.default (Aeneas.Deep.tyAt ρ.types 0)
+        (Aeneas.Deep.tyAt ρ.types 1) (Aeneas.Deep.tyAt ρ.types 2)
+        (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+    | GlobalName.Bool_Insts_TraitsWithConstTyU8U6432_LEN1 =>
+      ⟨(.scalar (.u .Usize)),
+      fun _ => Bool.Insts.TraitsWithConstTyU8U6432.LEN1⟩
+    | GlobalName.Array_Insts_TraitsTrait_LEN => ⟨(.scalar (.u .Usize)),
+      fun ρ => @Array.Insts.TraitsTrait.LEN (Aeneas.Deep.tyAt ρ.types 0)
+        (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+
 /-- [traits::BoolTrait::ret_true]:
     Source: 'tests/src/traits.rs', lines 9:4-11:5
     Visibility: public -/
 def BoolTrait.ret_true.default.deep {Self : Type _} :
-  Aeneas.Deep.Expr [Self] (Result Bool) :=
-  (.ok (.lit true))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[Self], []⟩ [(.var 0)]
+    (.result .bool) :=
+  (.ok (.boolLit true))
 
 theorem BoolTrait.ret_true.default.deep_eq {Self : Type _} (self : Self) :
   BoolTrait.ret_true.default self =
     Aeneas.Deep.Expr.denote (BoolTrait.ret_true.default.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::BoolTrait for bool}::get_bool]:
     Source: 'tests/src/traits.rs', lines 15:4-17:5
     Visibility: public -/
 def Bool.Insts.TraitsBoolTrait.get_bool.deep :
-  Aeneas.Deep.Expr [Bool] (Result Bool) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result .bool) :=
   (.ok (.var .zero))
 
 theorem Bool.Insts.TraitsBoolTrait.get_bool.deep_eq (self : Bool) :
   Bool.Insts.TraitsBoolTrait.get_bool self =
     Aeneas.Deep.Expr.denote (Bool.Insts.TraitsBoolTrait.get_bool.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_bool_trait_bool]:
     Source: 'tests/src/traits.rs', lines 20:0-22:1
     Visibility: public -/
-def test_bool_trait_bool.deep : Aeneas.Deep.Expr [Bool] (Result Bool) :=
+def test_bool_trait_bool.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result .bool) :=
   (.bind
-    (.app (.leaf (.fn "traits::{impl traits::BoolTrait for bool}::get_bool")
-            (fun (b : Bool) =>
-            (Bool.Insts.TraitsBoolTrait.get_bool b : Result Bool)))
-      (.var .zero)) .var
+    (.call (.crate FunName.Bool_Insts_TraitsBoolTrait_get_bool) [] [] [.bool] (.result .bool) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite (.bool (.var .zero))
-  (.app (.leaf (.fn "traits::BoolTrait::ret_true") (fun (b1 : Bool) =>
-          (BoolTrait.ret_true.default b1 : Result Bool))) (.var (.succ .zero)))
-  (.ok (.lit false))))
+  (.call (.crate FunName.BoolTrait_ret_true_default) [.bool] [] [.bool] (.result .bool) rfl rfl
+    (.cons (.var (.succ .zero)) .nil))
+  (.ok (.boolLit false))))
 
 theorem test_bool_trait_bool.deep_eq (x : Bool) :
   test_bool_trait_bool x =
     Aeneas.Deep.Expr.denote (test_bool_trait_bool.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::BoolTrait for core::option::Option<T>}::get_bool]:
     Source: 'tests/src/traits.rs', lines 26:4-31:5
     Visibility: public -/
 def core.option.Option.Insts.TraitsBoolTrait.get_bool.deep {T : Type _} :
-  Aeneas.Deep.Expr [Option T] (Result Bool) :=
-  (.match_ (.var .zero) Aeneas.Deep.Option.deepElim
-  (.cons (.ok (.lit false))
-  (.cons (.ok (.lit true))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.builtin .option) [(.var 0)] [])] (.result .bool) :=
+  (.match_ (.builtin .option) [(.var 0)] [] [[], [(.var 0)]] rfl (.var .zero)
+  (.cons (.ok (.boolLit false))
+  (.cons (.ok (.boolLit true))
   .nil)))
 
 theorem core.option.Option.Insts.TraitsBoolTrait.get_bool.deep_eq {T : Type _}
@@ -707,194 +821,210 @@ theorem core.option.Option.Insts.TraitsBoolTrait.get_bool.deep_eq {T : Type _}
   core.option.Option.Insts.TraitsBoolTrait.get_bool self =
     Aeneas.Deep.Expr.denote
       (core.option.Option.Insts.TraitsBoolTrait.get_bool.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_bool_trait_option]:
     Source: 'tests/src/traits.rs', lines 34:0-36:1
     Visibility: public -/
 def test_bool_trait_option.deep {T : Type _} :
-  Aeneas.Deep.Expr [Option T] (Result Bool) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.builtin .option) [(.var 0)] [])] (.result .bool) :=
   (.bind
-    (.app (.leaf (.fn "traits::{impl traits::BoolTrait for core::option::Option<T>}::get_bool")
-            (fun (o : Option T) =>
-            (core.option.Option.Insts.TraitsBoolTrait.get_bool o : Result Bool)))
-      (.var .zero)) .var
+    (.call (.crate FunName.core_option_Option_Insts_TraitsBoolTrait_get_bool) [(.var 0)] [] [(.adt (.builtin .option) [(.var 0)] [])] (.result .bool) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite (.bool (.var .zero))
-  (.app (.leaf (.fn "traits::BoolTrait::ret_true") (fun (o : Option T) =>
-          (BoolTrait.ret_true.default o : Result Bool))) (.var (.succ .zero)))
-  (.ok (.lit false))))
+  (.call (.crate FunName.BoolTrait_ret_true_default) [(.adt (.builtin .option) [(.var 0)] [])] [] [(.adt (.builtin .option) [(.var 0)] [])] (.result .bool) rfl rfl
+    (.cons (.var (.succ .zero)) .nil))
+  (.ok (.boolLit false))))
 
 theorem test_bool_trait_option.deep_eq {T : Type _} (x : Option T) :
   test_bool_trait_option x =
     Aeneas.Deep.Expr.denote (test_bool_trait_option.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_bool_trait]:
     Source: 'tests/src/traits.rs', lines 38:0-40:1
     Visibility: public -/
 def test_bool_trait.deep {T : Type _} (BoolTraitInst : BoolTrait T) :
-  Aeneas.Deep.Expr [T] (Result Bool) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).get_bool") (fun (t : T) =>
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ [(.var 0)]
+    (.result .bool) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).get_bool")
+          (.arrow (.var 0) (.result .bool)) (fun (t : T) =>
           (BoolTraitInst.get_bool t : Result Bool))) (.var .zero))
 
 theorem test_bool_trait.deep_eq {T : Type _} (BoolTraitInst : BoolTrait T)
   (x : T) :
   test_bool_trait BoolTraitInst x =
     Aeneas.Deep.Expr.denote (test_bool_trait.deep BoolTraitInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::ToU64 for u64}::to_u64]:
     Source: 'tests/src/traits.rs', lines 47:4-49:5
     Visibility: public -/
 def U64.Insts.TraitsToU64.to_u64.deep :
-  Aeneas.Deep.Expr [Std.U64] (Result Std.U64) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64))] (.result (.scalar (.u .U64))) :=
   (.ok (.var .zero))
 
 theorem U64.Insts.TraitsToU64.to_u64.deep_eq (self : Std.U64) :
   U64.Insts.TraitsToU64.to_u64 self =
     Aeneas.Deep.Expr.denote (U64.Insts.TraitsToU64.to_u64.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::ToU64 for (A, A)}::to_u64]:
     Source: 'tests/src/traits.rs', lines 53:4-55:5
     Visibility: public -/
 def Pair.Insts.TraitsToU64.to_u64.deep {A : Type _} (ToU64Inst : ToU64 A) :
-  Aeneas.Deep.Expr [(A × A)] (Result Std.U64) :=
-  (.let_ (.var .zero) (.pair .var .var)
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[A], []⟩
+    [(.tuple [(.var 0), (.var 0)])] (.result (.scalar (.u .U64))) :=
+  (.let_ (.var .zero) (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t2 : A) =>
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64")
+            (.arrow (.var 0) (.result (.scalar (.u .U64)))) (fun (t2 : A) =>
             (ToU64Inst.to_u64 t2 : Result Std.U64))) (.var .zero)) .var
   (.bind
-    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t2 : A) =>
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64")
+            (.arrow (.var 0) (.result (.scalar (.u .U64)))) (fun (t2 : A) =>
             (ToU64Inst.to_u64 t2 : Result Std.U64)))
       (.var (.succ (.succ .zero)))) .var
-  (.app (.app (.leaf (.binop "panic.+::<u64>")
-                (fun (i2 : Std.U64) (i3 : Std.U64) =>
-                (i2 + i3 : Result Std.U64))) (.var (.succ .zero)))
-    (.var .zero)))))
+  (.scalarBinop .add (.u .U64) (.var (.succ .zero)) (.var .zero)))))
 
 theorem Pair.Insts.TraitsToU64.to_u64.deep_eq
   {A : Type _} (ToU64Inst : ToU64 A) (self : (A × A)) :
   Pair.Insts.TraitsToU64.to_u64 ToU64Inst self =
     Aeneas.Deep.Expr.denote (Pair.Insts.TraitsToU64.to_u64.deep ToU64Inst)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::f]:
     Source: 'tests/src/traits.rs', lines 58:0-60:1
     Visibility: public -/
 def f.deep {T : Type _} (ToU64Inst : ToU64 T) :
-  Aeneas.Deep.Expr [(T × T)] (Result Std.U64) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.tuple [(.var 0), (.var 0)])] (.result (.scalar (.u .U64))) :=
   (.app (.leaf (.fn "traits::{impl traits::ToU64 for (A, A)}::to_u64")
+          (.arrow (.tuple [(.var 0), (.var 0)]) (.result (.scalar (.u .U64))))
           (fun (p : (T × T)) =>
           (Pair.Insts.TraitsToU64.to_u64 ToU64Inst p : Result Std.U64)))
     (.var .zero))
 
 theorem f.deep_eq {T : Type _} (ToU64Inst : ToU64 T) (x : (T × T)) :
   f ToU64Inst x =
-    Aeneas.Deep.Expr.denote (f.deep ToU64Inst) (x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (f.deep ToU64Inst) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::g]:
     Source: 'tests/src/traits.rs', lines 62:0-67:1
     Visibility: public -/
 def g.deep {T : Type _} (ToU64PairInst : ToU64 (T × T)) :
-  Aeneas.Deep.Expr [(T × T)] (Result Std.U64) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (p : (T × T)) =>
-          (ToU64PairInst.to_u64 p : Result Std.U64))) (.var .zero))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.tuple [(.var 0), (.var 0)])] (.result (.scalar (.u .U64))) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_u64")
+          (.arrow (.tuple [(.var 0), (.var 0)]) (.result (.scalar (.u .U64))))
+          (fun (p : (T × T)) => (ToU64PairInst.to_u64 p : Result Std.U64)))
+    (.var .zero))
 
 theorem g.deep_eq {T : Type _} (ToU64PairInst : ToU64 (T × T)) (x : (T × T))
   :
   g ToU64PairInst x =
     Aeneas.Deep.Expr.denote (g.deep ToU64PairInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::h0]:
     Source: 'tests/src/traits.rs', lines 69:0-71:1
     Visibility: public -/
-def h0.deep : Aeneas.Deep.Expr [Std.U64] (Result Std.U64) :=
-  (.app (.leaf (.fn "traits::{impl traits::ToU64 for u64}::to_u64")
-          (fun (i : Std.U64) =>
-          (U64.Insts.TraitsToU64.to_u64 i : Result Std.U64))) (.var .zero))
+def h0.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64))] (.result (.scalar (.u .U64))) :=
+  (.call (.crate FunName.U64_Insts_TraitsToU64_to_u64) [] [] [(.scalar (.u .U64))] (.result (.scalar (.u .U64))) rfl rfl
+    (.cons (.var .zero) .nil))
 
 theorem h0.deep_eq (x : Std.U64) :
-  h0 x = Aeneas.Deep.Expr.denote (h0.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  h0 x = Aeneas.Deep.Expr.denote (h0.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [traits::Wrapper]
-    Source: 'tests/src/traits.rs', lines 73:0-75:1 -/
-@[reducible] def Wrapper.deepElim {T : Type _} :
-  Aeneas.Deep.Elim (Wrapper T) [[T]] :=
-  fun x alts => Wrapper.casesOn x alts.1
 
 /-- [traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64]:
     Source: 'tests/src/traits.rs', lines 78:4-80:5
     Visibility: public -/
 def Wrapper.Insts.TraitsToU64.to_u64.deep {T : Type _} (ToU64Inst : ToU64 T) :
-  Aeneas.Deep.Expr [Wrapper T] (Result Std.U64) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t : T) =>
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.Wrapper) [(.var 0)] [])]
+    (.result (.scalar (.u .U64))) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_u64")
+          (.arrow (.var 0) (.result (.scalar (.u .U64)))) (fun (t : T) =>
           (ToU64Inst.to_u64 t : Result Std.U64)))
-    (.app (.leaf (.proj "x") (fun (w : Wrapper T) => (w.x : T))) (.var .zero)))
+    (.proj (.crate TypeName.Wrapper) 0 [(.var 0)] [] (.var 0) rfl (.var .zero)))
 
 theorem Wrapper.Insts.TraitsToU64.to_u64.deep_eq
   {T : Type _} (ToU64Inst : ToU64 T) (self : Wrapper T) :
   Wrapper.Insts.TraitsToU64.to_u64 ToU64Inst self =
     Aeneas.Deep.Expr.denote (Wrapper.Insts.TraitsToU64.to_u64.deep ToU64Inst)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::h1]:
     Source: 'tests/src/traits.rs', lines 83:0-85:1
     Visibility: public -/
-def h1.deep : Aeneas.Deep.Expr [Wrapper Std.U64] (Result Std.U64) :=
+def h1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.Wrapper) [(.scalar (.u .U64))] [])]
+    (.result (.scalar (.u .U64))) :=
   (.app (.leaf (.fn "traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64")
+          (.arrow (.adt (.crate TypeName.Wrapper) [(.scalar (.u .U64))] []) (.result (.scalar (.u .U64))))
           (fun (w : Wrapper Std.U64) =>
           (Wrapper.Insts.TraitsToU64.to_u64 U64.Insts.TraitsToU64 w : Result
             Std.U64))) (.var .zero))
 
 theorem h1.deep_eq (x : Wrapper Std.U64) :
-  h1 x = Aeneas.Deep.Expr.denote (h1.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  h1 x = Aeneas.Deep.Expr.denote (h1.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::h2]:
     Source: 'tests/src/traits.rs', lines 87:0-89:1
     Visibility: public -/
 def h2.deep {T : Type _} (ToU64Inst : ToU64 T) :
-  Aeneas.Deep.Expr [Wrapper T] (Result Std.U64) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.Wrapper) [(.var 0)] [])]
+    (.result (.scalar (.u .U64))) :=
   (.app (.leaf (.fn "traits::{impl traits::ToU64 for traits::Wrapper<T>}::to_u64")
+          (.arrow (.adt (.crate TypeName.Wrapper) [(.var 0)] []) (.result (.scalar (.u .U64))))
           (fun (w : Wrapper T) =>
           (Wrapper.Insts.TraitsToU64.to_u64 ToU64Inst w : Result Std.U64)))
     (.var .zero))
 
 theorem h2.deep_eq {T : Type _} (ToU64Inst : ToU64 T) (x : Wrapper T) :
   h2 ToU64Inst x =
-    Aeneas.Deep.Expr.denote (h2.deep ToU64Inst) (x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (h2.deep ToU64Inst) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::ToType<bool> for u64}::to_type]:
     Source: 'tests/src/traits.rs', lines 96:4-98:5
     Visibility: public -/
 def U64.Insts.TraitsToTypeBool.to_type.deep :
-  Aeneas.Deep.Expr [Std.U64] (Result Bool) :=
-  (.ok (.decide (.gt (.var .zero) (.lit 0#u64))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64))] (.result .bool) :=
+  (.ok (.decide (.gt (.var .zero) (.uscalarLit .U64 0 (by decide)))))
 
 theorem U64.Insts.TraitsToTypeBool.to_type.deep_eq (self : Std.U64) :
   U64.Insts.TraitsToTypeBool.to_type self =
     Aeneas.Deep.Expr.denote (U64.Insts.TraitsToTypeBool.to_type.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::h3]:
     Source: 'tests/src/traits.rs', lines 107:0-109:1
     Visibility: public -/
 def h3.deep {T1 : Type _} {T2 : Type _} (OfTypeInst : OfType T1) (ToTypeInst :
-  ToType T2 T1) : Aeneas.Deep.Expr [T2] (Result T1) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).of_type") (fun (t : T2) =>
+  ToType T2 T1) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T1, T2], []⟩ [(.var 1)]
+    (.result (.var 0)) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).of_type")
+          (.arrow (.var 1) (.result (.var 0))) (fun (t : T2) =>
           (OfTypeInst.of_type ToTypeInst t : Result T1))) (.var .zero))
 
 theorem h3.deep_eq
@@ -902,15 +1032,18 @@ theorem h3.deep_eq
   T1) (y : T2) :
   h3 OfTypeInst ToTypeInst y =
     Aeneas.Deep.Expr.denote (h3.deep OfTypeInst ToTypeInst)
-      (y ::ₕ Aeneas.Deep.HList.nil)
+      (y ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::h4]:
     Source: 'tests/src/traits.rs', lines 121:0-123:1
     Visibility: public -/
 def h4.deep {T1 : Type _} {T2 : Type _} (OfTypeBisInst : OfTypeBis T1 T2)
-  (ToTypeInst : ToType T2 T1) : Aeneas.Deep.Expr [T2] (Result T1) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).of_type") (fun (t : T2) =>
+  (ToTypeInst : ToType T2 T1) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T1, T2], []⟩ [(.var 1)]
+    (.result (.var 0)) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).of_type")
+          (.arrow (.var 1) (.result (.var 0))) (fun (t : T2) =>
           (OfTypeBisInst.of_type t : Result T1))) (.var .zero))
 
 theorem h4.deep_eq
@@ -918,101 +1051,111 @@ theorem h4.deep_eq
   ToType T2 T1) (y : T2) :
   h4 OfTypeBisInst ToTypeInst y =
     Aeneas.Deep.Expr.denote (h4.deep OfTypeBisInst ToTypeInst)
-      (y ::ₕ Aeneas.Deep.HList.nil)
+      (y ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}::test]:
     Source: 'tests/src/traits.rs', lines 142:12-144:13 -/
 def TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep :
-  Aeneas.Deep.Expr [TestType.test.TestType1] (Result Bool) :=
-  (.ok (.decide (.gt (.var .zero) (.lit 1#u64))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64))] (.result .bool) :=
+  (.ok (.decide (.gt (.var .zero) (.uscalarLit .U64 1 (by decide)))))
 
 theorem TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep_eq
   (self : TestType.test.TestType1) :
   TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test self =
     Aeneas.Deep.Expr.denote
       (TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{traits::TestType<T>}::test]:
     Source: 'tests/src/traits.rs', lines 129:4-150:5
     Visibility: public -/
 def TestType.test.deep {T : Type _} (ToU64Inst : ToU64 T) :
-  Aeneas.Deep.Expr [TestType T, T] (Result Bool) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.var 0), (.var 0)] (.result .bool) :=
   (.bind
-    (.app (.leaf (.fn "TraitClauseFree(0).to_u64") (fun (t : T) =>
+    (.app (.leaf (.fn "TraitClauseFree(0).to_u64")
+            (.arrow (.var 0) (.result (.scalar (.u .U64)))) (fun (t : T) =>
             (ToU64Inst.to_u64 t : Result Std.U64))) (.var (.succ .zero))) .var
-  (.ite (.gt (.var .zero) (.lit 0#u64))
-  (.app (.leaf (.fn "traits::{traits::TestType<T>}::test::{impl traits::{traits::TestType<T>}::test::TestTrait for traits::{traits::TestType<T>}::test::TestType1}::test")
-          (fun (tt : TestType.test.TestType1) =>
-          (TestType.test.TestType1.Insts.TraitsTestTypeTestTestTrait.test tt :
-            Result Bool)))
-    (.app (.leaf (.ctor "traits::{traits::TestType<T>}::test::TestType1")
-            (fun (i : Std.U64) => (i : TestType.test.TestType1))) (.lit 0#u64)))
-  (.ok (.lit false))))
+  (.ite (.gt (.var .zero) (.uscalarLit .U64 0 (by decide)))
+  (.call (.crate FunName.TestType_test_TestType1_Insts_TraitsTestTypeTestTestTrait_test) [] [] [(.scalar (.u .U64))] (.result .bool) rfl rfl
+    (.cons (.app (.leaf (.ctor "traits::{traits::TestType<T>}::test::TestType1")
+                   (.arrow (.scalar (.u .U64)) (.scalar (.u .U64)))
+                   (fun (i : Std.U64) => (i : TestType.test.TestType1)))
+             (.uscalarLit .U64 0 (by decide))) .nil))
+  (.ok (.boolLit false))))
 
 theorem TestType.test.deep_eq {T : Type _} (ToU64Inst : ToU64 T)
   (self : TestType T) (x : T) :
   TestType.test ToU64Inst self x =
     Aeneas.Deep.Expr.denote (TestType.test.deep ToU64Inst)
-      (self ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::ToType<T> for traits::BoolWrapper}::to_type]:
     Source: 'tests/src/traits.rs', lines 159:4-161:5
     Visibility: public -/
 def BoolWrapper.Insts.TraitsToType.to_type.deep {T : Type _} (ToTypeBoolTInst :
-  ToType Bool T) : Aeneas.Deep.Expr [BoolWrapper] (Result T) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).to_type") (fun (b : Bool) =>
+  ToType Bool T) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ [.bool]
+    (.result (.var 0)) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).to_type")
+          (.arrow .bool (.result (.var 0))) (fun (b : Bool) =>
           (ToTypeBoolTInst.to_type b : Result T))) (.var .zero))
 
 theorem BoolWrapper.Insts.TraitsToType.to_type.deep_eq
   {T : Type _} (ToTypeBoolTInst : ToType Bool T) (self : BoolWrapper) :
   BoolWrapper.Insts.TraitsToType.to_type ToTypeBoolTInst self =
     Aeneas.Deep.Expr.denote (BoolWrapper.Insts.TraitsToType.to_type.deep
-      ToTypeBoolTInst) (self ::ₕ Aeneas.Deep.HList.nil)
+      ToTypeBoolTInst) (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::WithConstTy::LEN2]
     Source: 'tests/src/traits.rs', lines 167:4-167:27
     Visibility: public -/
 def WithConstTy.LEN2.default.deep (Self : Type _) (Clause0_V : Type _)
-  (Clause0_W : Type _) (LEN : Std.Usize) : Aeneas.Deep.Expr [] Std.Usize :=
-  (.lit 32#usize)
+  (Clause0_W : Type _) (LEN : Std.Usize) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName
+    ⟨[Self, Clause0_V, Clause0_W], [LEN]⟩ [] (.scalar (.u .Usize)) :=
+  (.uscalarLit .Usize 32 (by decide))
 
 theorem WithConstTy.LEN2.default.deep_eq
   (Self : Type _) (Clause0_V : Type _) (Clause0_W : Type _) (LEN : Std.Usize) :
   WithConstTy.LEN2.default Self Clause0_V Clause0_W LEN =
     Aeneas.Deep.Expr.denote (WithConstTy.LEN2.default.deep Self Clause0_V
-      Clause0_W LEN) (Aeneas.Deep.HList.nil)
+      Clause0_W LEN) (Aeneas.Deep.Env.nil)
   := by unfold WithConstTy.LEN2.default; deep_rfl
 
 /-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::f]:
     Source: 'tests/src/traits.rs', lines 183:4-183:42
     Visibility: public -/
 def Bool.Insts.TraitsWithConstTyU8U6432.f.deep :
-  Aeneas.Deep.Expr [Std.U64, Array Std.U8 32#usize] (Result Std.U64) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.array (.scalar (.u .U8)) (.lit 32 (by decide)))]
+    (.result (.scalar (.u .U64))) :=
   (.ok (.var .zero))
 
 theorem Bool.Insts.TraitsWithConstTyU8U6432.f.deep_eq (i : Std.U64)
   (a : Array Std.U8 32#usize) :
   Bool.Insts.TraitsWithConstTyU8U6432.f i a =
     Aeneas.Deep.Expr.denote (Bool.Insts.TraitsWithConstTyU8U6432.f.deep)
-      (i ::ₕ a ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::WithConstTy<u8, u64, 32usize> for bool}::LEN1]
     Source: 'tests/src/traits.rs', lines 178:4-178:27
     Visibility: public -/
 def Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep :
-  Aeneas.Deep.Expr [] Std.Usize :=
-  (.lit 12#usize)
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.scalar (.u .Usize)) :=
+  (.uscalarLit .Usize 12 (by decide))
 
 theorem Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep_eq :
   Bool.Insts.TraitsWithConstTyU8U6432.LEN1 =
     Aeneas.Deep.Expr.denote (Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by unfold Bool.Insts.TraitsWithConstTyU8U6432.LEN1; deep_rfl
 
 /-- [traits::use_with_const_ty1]:
@@ -1020,15 +1163,19 @@ theorem Bool.Insts.TraitsWithConstTyU8U6432.LEN1.deep_eq :
     Visibility: public -/
 def use_with_const_ty1.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
   Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
-  Clause0_W LEN) : Aeneas.Deep.Expr [] (Result Std.Usize) :=
-  (.leaf (.other "trait_const") (WithConstTyInst.LEN1 : Result Std.Usize))
+  Clause0_W LEN) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName
+    ⟨[H, Clause0_V, Clause0_W], [LEN]⟩ [] (.result (.scalar (.u .Usize)))
+  :=
+  (.leaf (.other "trait_const") (.result (.scalar (.u .Usize)))
+    (WithConstTyInst.LEN1 : Result Std.Usize))
 
 theorem use_with_const_ty1.deep_eq
   {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
   (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) :
   use_with_const_ty1 WithConstTyInst =
     Aeneas.Deep.Expr.denote (use_with_const_ty1.deep WithConstTyInst)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::use_with_const_ty2]:
@@ -1036,15 +1183,17 @@ theorem use_with_const_ty1.deep_eq
     Visibility: public -/
 def use_with_const_ty2.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
   Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
-  Clause0_W LEN) : Aeneas.Deep.Expr [Clause0_W] (Result Unit) :=
-  (.ok (.lit ()))
+  Clause0_W LEN) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName
+    ⟨[H, Clause0_V, Clause0_W], [LEN]⟩ [(.var 2)] (.result .unit) :=
+  (.ok .unitLit)
 
 theorem use_with_const_ty2.deep_eq
   {H : Type _} {Clause0_V : Type _} {Clause0_W : Type _} {LEN : Std.Usize}
   (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) (t : Clause0_W) :
   use_with_const_ty2 WithConstTyInst t =
     Aeneas.Deep.Expr.denote (use_with_const_ty2.deep WithConstTyInst)
-      (t ::ₕ Aeneas.Deep.HList.nil)
+      (t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::use_with_const_ty3]:
@@ -1052,8 +1201,12 @@ theorem use_with_const_ty2.deep_eq
     Visibility: public -/
 def use_with_const_ty3.deep {H : Type _} {Clause0_V : Type _} {Clause0_W :
   Type _} {LEN : Std.Usize} (WithConstTyInst : WithConstTy H Clause0_V
-  Clause0_W LEN) : Aeneas.Deep.Expr [Clause0_W] (Result Std.U64) :=
+  Clause0_W LEN) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName
+    ⟨[H, Clause0_V, Clause0_W], [LEN]⟩ [(.var 2)]
+    (.result (.scalar (.u .U64))) :=
   (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.to_u64")
+          (.arrow (.var 2) (.result (.scalar (.u .U64))))
           (fun (t : Clause0_W) =>
           (WithConstTyInst.ToU64Inst.to_u64 t : Result Std.U64))) (.var .zero))
 
@@ -1062,18 +1215,20 @@ theorem use_with_const_ty3.deep_eq
   (WithConstTyInst : WithConstTy H Clause0_V Clause0_W LEN) (x : Clause0_W) :
   use_with_const_ty3 WithConstTyInst x =
     Aeneas.Deep.Expr.denote (use_with_const_ty3.deep WithConstTyInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_where1]:
     Source: 'tests/src/traits.rs', lines 196:0-196:43
     Visibility: public -/
-def test_where1.deep {T : Type _} : Aeneas.Deep.Expr [T] (Result Unit) :=
-  (.ok (.lit ()))
+def test_where1.deep {T : Type _} :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ [(.var 0)]
+    (.result .unit) :=
+  (.ok .unitLit)
 
 theorem test_where1.deep_eq {T : Type _} (_x : T) :
   test_where1 _x =
-    Aeneas.Deep.Expr.denote (test_where1.deep) (_x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (test_where1.deep) (_x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_where2]:
@@ -1081,15 +1236,16 @@ theorem test_where1.deep_eq {T : Type _} (_x : T) :
     Visibility: public -/
 def test_where2.deep {T : Type _} {Clause0_W : Type _}
   (WithConstTyTU32Clause0_W32Inst : WithConstTy T Std.U32 Clause0_W 32#usize) :
-  Aeneas.Deep.Expr [Std.U32] (Result Unit) :=
-  (.ok (.lit ()))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, Clause0_W], []⟩
+    [(.scalar (.u .U32))] (.result .unit) :=
+  (.ok .unitLit)
 
 theorem test_where2.deep_eq
   {T : Type _} {Clause0_W : Type _} (WithConstTyTU32Clause0_W32Inst :
   WithConstTy T Std.U32 Clause0_W 32#usize) (_x : Std.U32) :
   test_where2 WithConstTyTU32Clause0_W32Inst _x =
     Aeneas.Deep.Expr.denote (test_where2.deep WithConstTyTU32Clause0_W32Inst)
-      (_x ::ₕ Aeneas.Deep.HList.nil)
+      (_x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_child_trait1]:
@@ -1097,8 +1253,10 @@ theorem test_where2.deep_eq
     Visibility: public -/
 def test_child_trait1.deep {T : Type _} {Clause0_Clause0_W : Type _}
   (ChildTraitInst : ChildTrait T Clause0_Clause0_W) :
-  Aeneas.Deep.Expr [T] (Result String) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, Clause0_Clause0_W], []⟩
+    [(.var 0)] (.result (.adt (.crate TypeName.String) [] [])) :=
   (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.get_name")
+          (.arrow (.var 0) (.result (.adt (.crate TypeName.String) [] [])))
           (fun (t : T) =>
           (ChildTraitInst.ParentTrait0Inst.get_name t : Result String)))
     (.var .zero))
@@ -1108,7 +1266,7 @@ theorem test_child_trait1.deep_eq
   Clause0_Clause0_W) (x : T) :
   test_child_trait1 ChildTraitInst x =
     Aeneas.Deep.Expr.denote (test_child_trait1.deep ChildTraitInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_child_trait2]:
@@ -1116,9 +1274,10 @@ theorem test_child_trait1.deep_eq
     Visibility: public -/
 def test_child_trait2.deep {T : Type _} {Clause0_Clause0_W : Type _}
   (ChildTraitInst : ChildTrait T Clause0_Clause0_W) :
-  Aeneas.Deep.Expr [T] (Result Clause0_Clause0_W) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, Clause0_Clause0_W], []⟩
+    [(.var 0)] (.result (.var 1)) :=
   (.app (.leaf (.fn "parent(TraitClauseFree(0))::TraitClause0.get_w")
-          (fun (t : T) =>
+          (.arrow (.var 0) (.result (.var 1))) (fun (t : T) =>
           (ChildTraitInst.ParentTrait0Inst.get_w t : Result Clause0_Clause0_W)))
     (.var .zero))
 
@@ -1127,7 +1286,7 @@ theorem test_child_trait2.deep_eq
   Clause0_Clause0_W) (x : T) :
   test_child_trait2 ChildTraitInst x =
     Aeneas.Deep.Expr.denote (test_child_trait2.deep ChildTraitInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::order1]:
@@ -1135,36 +1294,42 @@ theorem test_child_trait2.deep_eq
     Visibility: public -/
 def order1.deep {T : Type _} {U : Type _} {Clause1_W : Type _}
   (ParentTrait0Inst : ParentTrait0 T Clause1_W) (ParentTrait0Inst1 :
-  ParentTrait0 U Clause1_W) : Aeneas.Deep.Expr [] (Result Unit) :=
-  (.ok (.lit ()))
+  ParentTrait0 U Clause1_W) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, U, Clause1_W], []⟩ []
+    (.result .unit) :=
+  (.ok .unitLit)
 
 theorem order1.deep_eq
   {T : Type _} {U : Type _} {Clause1_W : Type _} (ParentTrait0Inst :
   ParentTrait0 T Clause1_W) (ParentTrait0Inst1 : ParentTrait0 U Clause1_W) :
   order1 ParentTrait0Inst ParentTrait0Inst1 =
     Aeneas.Deep.Expr.denote (order1.deep ParentTrait0Inst ParentTrait0Inst1)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::ChildTrait2<u32, u32> for u32}::convert]:
     Source: 'tests/src/traits.rs', lines 276:4-278:5
     Visibility: public -/
 def U32.Insts.TraitsChildTrait2U32U32.convert.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.ok (.var .zero))
 
 theorem U32.Insts.TraitsChildTrait2U32U32.convert.deep_eq (x : Std.U32) :
   U32.Insts.TraitsChildTrait2U32U32.convert x =
     Aeneas.Deep.Expr.denote (U32.Insts.TraitsChildTrait2U32U32.convert.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::test_get_trait]:
     Source: 'tests/src/traits.rs', lines 308:0-310:1
     Visibility: public -/
 def test_get_trait.deep {T : Type _} {Clause0_W : Type _} (GetTraitInst :
-  GetTrait T Clause0_W) : Aeneas.Deep.Expr [T] (Result Clause0_W) :=
-  (.app (.leaf (.fn "TraitClauseFree(0).get_w") (fun (t : T) =>
+  GetTrait T Clause0_W) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, Clause0_W], []⟩
+    [(.var 0)] (.result (.var 1)) :=
+  (.app (.leaf (.fn "TraitClauseFree(0).get_w")
+          (.arrow (.var 0) (.result (.var 1))) (fun (t : T) =>
           (GetTraitInst.get_w t : Result Clause0_W))) (.var .zero))
 
 theorem test_get_trait.deep_eq
@@ -1172,97 +1337,105 @@ theorem test_get_trait.deep_eq
   (x : T) :
   test_get_trait GetTraitInst x =
     Aeneas.Deep.Expr.denote (test_get_trait.deep GetTraitInst)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::{impl traits::Trait for [T; N]}::LEN]
     Source: 'tests/src/traits.rs', lines 318:4-318:25
     Visibility: public -/
 def Array.Insts.TraitsTrait.LEN.deep (T : Type _) (N : Std.Usize) :
-  Aeneas.Deep.Expr [] Std.Usize :=
-  (.lit N)
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], [N]⟩ []
+    (.scalar (.u .Usize)) :=
+  (.lit (.scalar (.u .Usize)) N)
 
 theorem Array.Insts.TraitsTrait.LEN.deep_eq (T : Type _) (N : Std.Usize) :
   Array.Insts.TraitsTrait.LEN T N =
     Aeneas.Deep.Expr.denote (Array.Insts.TraitsTrait.LEN.deep T N)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by unfold Array.Insts.TraitsTrait.LEN; deep_rfl
 
 /-- [traits::{impl traits::Trait for traits::Wrapper<T>}::LEN]
     Source: 'tests/src/traits.rs', lines 322:4-322:25
     Visibility: public -/
 def Wrapper.Insts.TraitsTrait.LEN.deep {T : Type _} (TraitInst : Trait T) :
-  Aeneas.Deep.Expr [] Std.Usize :=
-  (.lit 0#usize)
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ []
+    (.scalar (.u .Usize)) :=
+  (.uscalarLit .Usize 0 (by decide))
 
 theorem Wrapper.Insts.TraitsTrait.LEN.deep_eq
   {T : Type _} (TraitInst : Trait T) :
   Wrapper.Insts.TraitsTrait.LEN TraitInst =
     Aeneas.Deep.Expr.denote (Wrapper.Insts.TraitsTrait.LEN.deep TraitInst)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by unfold Wrapper.Insts.TraitsTrait.LEN; deep_rfl
 
 /-- [traits::use_wrapper_len]:
     Source: 'tests/src/traits.rs', lines 325:0-327:1
     Visibility: public -/
 def use_wrapper_len.deep {T : Type _} (TraitInst : Trait T) :
-  Aeneas.Deep.Expr [] (Result Std.Usize) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ []
+    (.result (.scalar (.u .Usize))) :=
   (.ok
     (.leaf (.global "traits::{impl traits::Trait for traits::Wrapper<T>}::LEN")
+      (.scalar (.u .Usize))
       (Wrapper.Insts.TraitsTrait.LEN TraitInst : Std.Usize)))
 
 theorem use_wrapper_len.deep_eq {T : Type _} (TraitInst : Trait T) :
   use_wrapper_len TraitInst =
     Aeneas.Deep.Expr.denote (use_wrapper_len.deep TraitInst)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [traits::Foo]
-    Source: 'tests/src/traits.rs', lines 329:0-332:1 -/
-@[reducible] def Foo.deepElim {T : Type _} {U : Type _} :
-  Aeneas.Deep.Elim (Foo T U) [[T, U]] :=
-  fun x alts => Foo.casesOn x alts.1
 
 /-- [traits::{traits::Foo<T, U>}::FOO]
     Source: 'tests/src/traits.rs', lines 335:4-335:43
     Visibility: public -/
 def Foo.FOO.deep {T : Type _} (U : Type _) (TraitInst : Trait T) :
-  Aeneas.Deep.Expr [] (core.result.Result T Std.I32) :=
-  (.app (.leaf (.ctor "core::result::Result::Err") (fun (i : Std.I32) =>
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, U], []⟩ []
+    (.adt (.crate TypeName.core_result_Result) [(.var 0), (.scalar (.i .I32))] [])
+  :=
+  (.app (.leaf (.ctor "core::result::Result::Err")
+          (.arrow (.scalar (.i .I32)) (.adt (.crate TypeName.core_result_Result) [(.var 0), (.scalar (.i .I32))] []))
+          (fun (i : Std.I32) =>
           (core.result.Result.Err i : core.result.Result T Std.I32)))
-    (.lit 0#i32))
+    (.iscalarLit .I32 0 (by decide)))
 
 theorem Foo.FOO.deep_eq {T : Type _} (U : Type _) (TraitInst : Trait T) :
   Foo.FOO U TraitInst =
-    Aeneas.Deep.Expr.denote (Foo.FOO.deep U TraitInst) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (Foo.FOO.deep U TraitInst) (Aeneas.Deep.Env.nil)
   := by unfold Foo.FOO; deep_rfl
 
 /-- [traits::use_foo1]:
     Source: 'tests/src/traits.rs', lines 338:0-340:1
     Visibility: public -/
 def use_foo1.deep {T : Type _} (U : Type _) (TraitInst : Trait T) :
-  Aeneas.Deep.Expr [] (Result (core.result.Result T Std.I32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, U], []⟩ []
+    (.result (.adt (.crate TypeName.core_result_Result) [(.var 0), (.scalar (.i .I32))] []))
+  :=
   (.ok
     (.leaf (.global "traits::{traits::Foo<T, U>}::FOO")
+      (.adt (.crate TypeName.core_result_Result) [(.var 0), (.scalar (.i .I32))] [])
       (Foo.FOO U TraitInst : core.result.Result T Std.I32)))
 
 theorem use_foo1.deep_eq {T : Type _} (U : Type _) (TraitInst : Trait T) :
   use_foo1 U TraitInst =
-    Aeneas.Deep.Expr.denote (use_foo1.deep U TraitInst) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (use_foo1.deep U TraitInst) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [traits::use_foo2]:
     Source: 'tests/src/traits.rs', lines 342:0-344:1
     Visibility: public -/
 def use_foo2.deep (T : Type _) {U : Type _} (TraitInst : Trait U) :
-  Aeneas.Deep.Expr [] (Result (core.result.Result U Std.I32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, U], []⟩ []
+    (.result (.adt (.crate TypeName.core_result_Result) [(.var 1), (.scalar (.i .I32))] []))
+  :=
   (.ok
     (.leaf (.global "traits::{traits::Foo<T, U>}::FOO")
+      (.adt (.crate TypeName.core_result_Result) [(.var 1), (.scalar (.i .I32))] [])
       (Foo.FOO T TraitInst : core.result.Result U Std.I32)))
 
 theorem use_foo2.deep_eq (T : Type _) {U : Type _} (TraitInst : Trait U) :
   use_foo2 T TraitInst =
-    Aeneas.Deep.Expr.denote (use_foo2.deep T TraitInst) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (use_foo2.deep T TraitInst) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end traits

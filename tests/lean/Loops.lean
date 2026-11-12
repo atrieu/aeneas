@@ -1267,2191 +1267,2641 @@ def single_break (d : Slice Std.U8) : Result Unit := do
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | List
+  | AList
+  | alloc_alloc_Global
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.List, ρ => List (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.AList, ρ => AList (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.alloc_alloc_Global, _ => alloc.alloc.Global
+  variants
+    | TypeName.List =>
+      [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []]
+    | TypeName.AList =>
+      [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []]
+    | TypeName.alloc_alloc_Global => []
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.List) 0 :=
+  ⟨fun _ => fun a0 a1 => List.Cons a0 a1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.List) 1 :=
+  ⟨fun _ => List.Nil⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.List) :=
+  ⟨fun _ => fun x alts => List.casesOn x alts.1 alts.2.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.AList) 0 :=
+  ⟨fun _ => fun a0 a1 a2 => AList.Cons a0 a1 a2⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.AList) 1 :=
+  ⟨fun _ => AList.Nil⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.AList) :=
+  ⟨fun _ => fun x alts => AList.casesOn x alts.1 alts.2.1⟩
+
+/-- The functions of the crate -/
+inductive FunName where
+  | iter
+  | iter_loop
+  | iter_loop_body
+  | sum
+  | sum_loop
+  | sum_loop_body
+  | sum_with_mut_borrows
+  | sum_with_mut_borrows_loop
+  | sum_with_mut_borrows_loop_body
+  | sum_with_shared_borrows
+  | sum_with_shared_borrows_loop
+  | sum_with_shared_borrows_loop_body
+  | sum_array
+  | sum_array_loop
+  | sum_array_loop_body
+  | clear
+  | clear_loop
+  | clear_loop_body
+  | list_mem
+  | list_mem_loop
+  | list_nth_mut
+  | list_nth_mut_loop
+  | list_nth_shared
+  | list_nth_shared_loop
+  | get_elem_mut
+  | get_elem_mut_loop
+  | get_elem_shared
+  | get_elem_shared_loop
+  | id_mut
+  | id_shared
+  | list_nth_mut_with_id
+  | list_nth_mut_with_id_loop
+  | list_nth_shared_with_id
+  | list_nth_shared_with_id_loop
+  | list_nth_mut_pair
+  | list_nth_mut_pair_loop
+  | list_nth_shared_pair
+  | list_nth_shared_pair_loop
+  | list_nth_mut_pair_merge
+  | list_nth_mut_pair_merge_loop
+  | list_nth_shared_pair_merge
+  | list_nth_shared_pair_merge_loop
+  | list_nth_mut_shared_pair
+  | list_nth_mut_shared_pair_loop
+  | list_nth_mut_shared_pair_merge
+  | list_nth_mut_shared_pair_merge_loop
+  | list_nth_shared_mut_pair
+  | list_nth_shared_mut_pair_loop
+  | list_nth_shared_mut_pair_merge
+  | list_nth_shared_mut_pair_merge_loop
+  | ignore_input_mut_borrow
+  | ignore_input_mut_borrow_loop
+  | ignore_input_mut_borrow_loop_body
+  | incr_ignore_input_mut_borrow
+  | incr_ignore_input_mut_borrow_loop
+  | incr_ignore_input_mut_borrow_loop_body
+  | ignore_input_shared_borrow
+  | ignore_input_shared_borrow_loop
+  | ignore_input_shared_borrow_loop_body
+  | issue500_1
+  | issue500_1_loop
+  | issue500_1_loop_body
+  | issue500_2
+  | issue500_2_loop
+  | issue500_2_loop_body
+  | issue500_3
+  | issue500_3_loop
+  | issue500_3_loop_body
+  | issue351
+  | issue351_loop
+  | issue270
+  | issue270_loop
+  | issue270_loop_body
+  | issue400_1
+  | issue400_1_loop
+  | issue400_1_loop_body
+  | issue400_2
+  | issue400_2_loop
+  | issue400_2_loop_body
+  | copy_carray
+  | copy_carray_loop
+  | copy_carray_loop_body
+  | iter_local_mut_borrow
+  | iter_local_mut_borrow_loop
+  | iter_local_mut_borrow_loop_body
+  | iter_local_shared_borrow
+  | iter_local_shared_borrow_loop
+  | iter_local_shared_borrow_loop_body
+  | insert_in_list
+  | insert_in_list_loop
+  | reborrow_const
+  | reborrow_const_loop
+  | reborrow_const_loop_body
+  | decode
+  | decode_loop0
+  | decode_loop0_loop0
+  | decode_loop0_body
+  | decode_loop0_loop0_body
+  | as_radix_minimized
+  | as_radix_minimized_loop
+  | as_radix_minimized_loop_body
+  | single_break
+  | single_break_loop
+  | single_break_loop_body
+  | issue500_1_bar
+  | issue500_2_bar
+  | issue270_box_get_borrow
+  | reborrow_const_reborrow
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.iter => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => iter⟩
+    | FunName.iter_loop => ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => iter_loop⟩
+    | FunName.iter_loop_body =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.controlFlow (.scalar (.u .U32)) (.scalar (.u .U32))))⟩,
+      fun _ => iter_loop.body⟩
+    | FunName.sum => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => sum⟩
+    | FunName.sum_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => sum_loop⟩
+    | FunName.sum_loop_body =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))⟩,
+      fun _ => sum_loop.body⟩
+    | FunName.sum_with_mut_borrows => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => sum_with_mut_borrows⟩
+    | FunName.sum_with_mut_borrows_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => sum_with_mut_borrows_loop⟩
+    | FunName.sum_with_mut_borrows_loop_body =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))⟩,
+      fun _ => sum_with_mut_borrows_loop.body⟩
+    | FunName.sum_with_shared_borrows => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => sum_with_shared_borrows⟩
+    | FunName.sum_with_shared_borrows_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩,
+      fun _ => sum_with_shared_borrows_loop⟩
+    | FunName.sum_with_shared_borrows_loop_body =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))⟩,
+      fun _ => sum_with_shared_borrows_loop.body⟩
+    | FunName.sum_array => ⟨⟨[(.array (.scalar (.u .U32)) (.var 0))],
+      (.result (.scalar (.u .U32)))⟩,
+      fun ρ => @sum_array (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+    | FunName.sum_array_loop =>
+      ⟨⟨[(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩,
+      fun ρ => @sum_array_loop (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+    | FunName.sum_array_loop_body =>
+      ⟨⟨[(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))],
+      (.result (.controlFlow (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.scalar (.u .U32))))⟩,
+      fun ρ => @sum_array_loop.body (ρ.consts.getD 0 (Std.Usize.ofNat 0))⟩
+    | FunName.clear => ⟨⟨[(.adt (.builtin .vec) [(.scalar (.u .U32))] [])],
+      (.result (.adt (.builtin .vec) [(.scalar (.u .U32))] []))⟩,
+      fun _ => clear⟩
+    | FunName.clear_loop =>
+      ⟨⟨[(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))],
+      (.result (.adt (.builtin .vec) [(.scalar (.u .U32))] []))⟩,
+      fun _ => clear_loop⟩
+    | FunName.clear_loop_body =>
+      ⟨⟨[(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))],
+      (.result (.controlFlow (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.adt (.builtin .vec) [(.scalar (.u .U32))] [])))⟩,
+      fun _ => clear_loop.body⟩
+    | FunName.list_mem =>
+      ⟨⟨[(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])],
+      (.result .bool)⟩, fun _ => list_mem⟩
+    | FunName.list_mem_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])],
+      (.result .bool)⟩, fun _ => list_mem_loop⟩
+    | FunName.list_nth_mut =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.var 0))⟩,
+      fun ρ => @list_nth_shared (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.var 0))⟩,
+      fun ρ => @list_nth_shared_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.get_elem_mut =>
+      ⟨⟨[(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))]))⟩,
+      fun _ => get_elem_mut⟩
+    | FunName.get_elem_mut_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])],
+      (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))]))⟩,
+      fun _ => get_elem_mut_loop⟩
+    | FunName.get_elem_shared =>
+      ⟨⟨[(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => get_elem_shared⟩
+    | FunName.get_elem_shared_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => get_elem_shared_loop⟩
+    | FunName.id_mut => ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] [])],
+      (.result (.tuple [(.adt (.crate TypeName.List) [(.var 0)] []), (.arrow (.adt (.crate TypeName.List) [(.var 0)] []) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @id_mut (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.id_shared => ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] [])],
+      (.result (.adt (.crate TypeName.List) [(.var 0)] []))⟩,
+      fun ρ => @id_shared (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_with_id =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_with_id (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_with_id_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])],
+      (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_with_id_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_with_id =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.var 0))⟩,
+      fun ρ => @list_nth_shared_with_id (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_with_id_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])],
+      (.result (.var 0))⟩,
+      fun ρ => @list_nth_shared_with_id_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_pair =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_pair (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_pair_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_pair_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_pair =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0)]))⟩,
+      fun ρ => @list_nth_shared_pair (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_pair_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0)]))⟩,
+      fun ρ => @list_nth_shared_pair_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_pair_merge =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.tuple [(.var 0), (.var 0)]) (.tuple [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] [])]))]))⟩,
+      fun ρ => @list_nth_mut_pair_merge (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_pair_merge_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_pair_merge_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_pair_merge =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0)]))⟩,
+      fun ρ => @list_nth_shared_pair_merge (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_pair_merge_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0)]))⟩,
+      fun ρ => @list_nth_shared_pair_merge_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_shared_pair =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_shared_pair (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_shared_pair_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_shared_pair_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_shared_pair_merge =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_shared_pair_merge (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_mut_shared_pair_merge_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_mut_shared_pair_merge_loop
+        (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_mut_pair =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_shared_mut_pair (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_mut_pair_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_shared_mut_pair_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_mut_pair_merge =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_shared_mut_pair_merge (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.list_nth_shared_mut_pair_merge_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))],
+      (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))⟩,
+      fun ρ => @list_nth_shared_mut_pair_merge_loop
+        (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.ignore_input_mut_borrow =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => ignore_input_mut_borrow⟩
+    | FunName.ignore_input_mut_borrow_loop => ⟨⟨[(.scalar (.u .U32))],
+      (.result .unit)⟩, fun _ => ignore_input_mut_borrow_loop⟩
+    | FunName.ignore_input_mut_borrow_loop_body => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.controlFlow (.scalar (.u .U32)) .unit))⟩,
+      fun _ => ignore_input_mut_borrow_loop.body⟩
+    | FunName.incr_ignore_input_mut_borrow =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩,
+      fun _ => incr_ignore_input_mut_borrow⟩
+    | FunName.incr_ignore_input_mut_borrow_loop => ⟨⟨[(.scalar (.u .U32))],
+      (.result .unit)⟩, fun _ => incr_ignore_input_mut_borrow_loop⟩
+    | FunName.incr_ignore_input_mut_borrow_loop_body =>
+      ⟨⟨[(.scalar (.u .U32))],
+      (.result (.controlFlow (.scalar (.u .U32)) .unit))⟩,
+      fun _ => incr_ignore_input_mut_borrow_loop.body⟩
+    | FunName.ignore_input_shared_borrow =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => ignore_input_shared_borrow⟩
+    | FunName.ignore_input_shared_borrow_loop => ⟨⟨[(.scalar (.u .U32))],
+      (.result .unit)⟩, fun _ => ignore_input_shared_borrow_loop⟩
+    | FunName.ignore_input_shared_borrow_loop_body =>
+      ⟨⟨[(.scalar (.u .U32))],
+      (.result (.controlFlow (.scalar (.u .U32)) .unit))⟩,
+      fun _ => ignore_input_shared_borrow_loop.body⟩
+    | FunName.issue500_1 => ⟨⟨[.bool], (.result .bool)⟩,
+      fun _ => issue500_1⟩
+    | FunName.issue500_1_loop => ⟨⟨[.bool], (.result .bool)⟩,
+      fun _ => issue500_1_loop⟩
+    | FunName.issue500_1_loop_body => ⟨⟨[.bool],
+      (.result (.controlFlow .bool .bool))⟩, fun _ => issue500_1_loop.body⟩
+    | FunName.issue500_2 => ⟨⟨[(.array .bool (.lit 1 (by decide)))],
+      (.result (.array .bool (.lit 1 (by decide))))⟩, fun _ => issue500_2⟩
+    | FunName.issue500_2_loop => ⟨⟨[], (.result .unit)⟩,
+      fun _ => issue500_2_loop⟩
+    | FunName.issue500_2_loop_body => ⟨⟨[],
+      (.result (.controlFlow .unit .unit))⟩, fun _ => issue500_2_loop.body⟩
+    | FunName.issue500_3 => ⟨⟨[(.array .bool (.lit 1 (by decide)))],
+      (.result (.array .bool (.lit 1 (by decide))))⟩, fun _ => issue500_3⟩
+    | FunName.issue500_3_loop => ⟨⟨[], (.result .unit)⟩,
+      fun _ => issue500_3_loop⟩
+    | FunName.issue500_3_loop_body => ⟨⟨[],
+      (.result (.controlFlow .unit .unit))⟩, fun _ => issue500_3_loop.body⟩
+    | FunName.issue351 =>
+      ⟨⟨[(.scalar (.u .U8)), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])],
+      (.result (.scalar (.u .U8)))⟩, fun _ => issue351⟩
+    | FunName.issue351_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.scalar (.u .U8))],
+      (.result (.scalar (.u .U8)))⟩, fun _ => issue351_loop⟩
+    | FunName.issue270 =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])],
+      (.result (.adt (.builtin .option) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []))⟩,
+      fun _ => issue270⟩
+    | FunName.issue270_loop =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])],
+      (.result (.adt (.crate TypeName.List) [(.scalar (.u .U8))] []))⟩,
+      fun _ => issue270_loop⟩
+    | FunName.issue270_loop_body =>
+      ⟨⟨[(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])],
+      (.result (.controlFlow (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])))⟩,
+      fun _ => issue270_loop.body⟩
+    | FunName.issue400_1 =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32)), .bool],
+      (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))]))⟩,
+      fun _ => issue400_1⟩
+    | FunName.issue400_1_loop =>
+      ⟨⟨[(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), .bool, (.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))]))⟩,
+      fun _ => issue400_1_loop⟩
+    | FunName.issue400_1_loop_body =>
+      ⟨⟨[.bool, (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])))⟩,
+      fun _ => issue400_1_loop.body⟩
+    | FunName.issue400_2 =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32)), (.slice .bool)],
+      (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))⟩,
+      fun _ => issue400_2⟩
+    | FunName.issue400_2_loop =>
+      ⟨⟨[(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.slice .bool), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))]))⟩,
+      fun _ => issue400_2_loop⟩
+    | FunName.issue400_2_loop_body =>
+      ⟨⟨[(.slice .bool), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))],
+      (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))])))⟩,
+      fun _ => issue400_2_loop.body⟩
+    | FunName.copy_carray =>
+      ⟨⟨[(.array (.scalar (.u .U32)) (.lit 2 (by decide)))],
+      (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide))))⟩,
+      fun _ => copy_carray⟩
+    | FunName.copy_carray_loop =>
+      ⟨⟨[(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))],
+      (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide))))⟩,
+      fun _ => copy_carray_loop⟩
+    | FunName.copy_carray_loop_body =>
+      ⟨⟨[(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))],
+      (.result (.controlFlow (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))))⟩,
+      fun _ => copy_carray_loop.body⟩
+    | FunName.iter_local_mut_borrow => ⟨⟨[], (.result .unit)⟩,
+      fun _ => iter_local_mut_borrow⟩
+    | FunName.iter_local_mut_borrow_loop => ⟨⟨[(.scalar (.i .I32))],
+      (.result .unit)⟩, fun _ => iter_local_mut_borrow_loop⟩
+    | FunName.iter_local_mut_borrow_loop_body => ⟨⟨[(.scalar (.i .I32))],
+      (.result (.controlFlow (.scalar (.i .I32)) .unit))⟩,
+      fun _ => iter_local_mut_borrow_loop.body⟩
+    | FunName.iter_local_shared_borrow => ⟨⟨[], (.result .unit)⟩,
+      fun _ => iter_local_shared_borrow⟩
+    | FunName.iter_local_shared_borrow_loop => ⟨⟨[], (.result .unit)⟩,
+      fun _ => iter_local_shared_borrow_loop⟩
+    | FunName.iter_local_shared_borrow_loop_body => ⟨⟨[],
+      (.result (.controlFlow .unit .unit))⟩,
+      fun _ => iter_local_shared_borrow_loop.body⟩
+    | FunName.insert_in_list =>
+      ⟨⟨[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @insert_in_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.insert_in_list_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @insert_in_list_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.reborrow_const => ⟨⟨[], (.result .unit)⟩,
+      fun _ => reborrow_const⟩
+    | FunName.reborrow_const_loop => ⟨⟨[], (.result .unit)⟩,
+      fun _ => reborrow_const_loop⟩
+    | FunName.reborrow_const_loop_body => ⟨⟨[],
+      (.result (.controlFlow .unit .unit))⟩,
+      fun _ => reborrow_const_loop.body⟩
+    | FunName.decode => ⟨⟨[(.slice (.scalar (.u .U8)))],
+      (.result (.tuple [.bool, (.slice (.scalar (.u .U8)))]))⟩,
+      fun _ => decode⟩
+    | FunName.decode_loop0 =>
+      ⟨⟨[(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))],
+      (.result (.tuple [.bool, (.slice (.scalar (.u .U8)))]))⟩,
+      fun _ => decode_loop0⟩
+    | FunName.decode_loop0_loop0 => ⟨⟨[(.scalar (.u .U8))],
+      (.result .unit)⟩, fun _ => decode_loop0_loop0⟩
+    | FunName.decode_loop0_body =>
+      ⟨⟨[(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))],
+      (.result (.controlFlow (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))])))⟩,
+      fun _ => decode_loop0.body⟩
+    | FunName.decode_loop0_loop0_body => ⟨⟨[(.scalar (.u .U8))],
+      (.result (.controlFlow .unit .unit))⟩,
+      fun _ => decode_loop0_loop0.body⟩
+    | FunName.as_radix_minimized => ⟨⟨[], (.result .unit)⟩,
+      fun _ => as_radix_minimized⟩
+    | FunName.as_radix_minimized_loop =>
+      ⟨⟨[(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))],
+      (.result .unit)⟩, fun _ => as_radix_minimized_loop⟩
+    | FunName.as_radix_minimized_loop_body =>
+      ⟨⟨[(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))],
+      (.result (.controlFlow (.scalar (.u .Usize)) .unit))⟩,
+      fun _ => as_radix_minimized_loop.body⟩
+    | FunName.single_break => ⟨⟨[(.slice (.scalar (.u .U8)))],
+      (.result .unit)⟩, fun _ => single_break⟩
+    | FunName.single_break_loop => ⟨⟨[(.slice (.scalar (.u .U8)))],
+      (.result .unit)⟩, fun _ => single_break_loop⟩
+    | FunName.single_break_loop_body => ⟨⟨[(.slice (.scalar (.u .U8)))],
+      (.result (.controlFlow .unit .unit))⟩,
+      fun _ => single_break_loop.body⟩
+    | FunName.issue500_1_bar => ⟨⟨[.bool], (.result .bool)⟩,
+      fun _ => issue500_1.bar⟩
+    | FunName.issue500_2_bar => ⟨⟨[(.array .bool (.lit 1 (by decide)))],
+      (.result (.array .bool (.lit 1 (by decide))))⟩,
+      fun _ => issue500_2.bar⟩
+    | FunName.issue270_box_get_borrow => ⟨⟨[(.var 0)],
+      (.result (.var 0))⟩,
+      fun ρ => @issue270.box_get_borrow (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.reborrow_const_reborrow => ⟨⟨[(.scalar (.u .U64))],
+      (.result (.scalar (.u .U64)))⟩, fun _ => reborrow_const.reborrow⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+  | copy_carray_CARRAY
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs
+    | GlobalName.copy_carray_CARRAY =>
+      ⟨(.array (.scalar (.u .U32)) (.lit 2 (by decide))),
+      fun _ => copy_carray.CARRAY⟩
+
 /-- [loops::iter]: loop body 0:
     Source: 'tests/src/loops.rs', lines 7:4-9:5
     Visibility: public -/
 def iter_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result (ControlFlow Std.U32 Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.controlFlow (.scalar (.u .U32)) (.scalar (.u .U32)))) :=
   (.ite (.lt (.var (.succ .zero)) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ .zero)))
-      (.lit 1#u32)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i2 : Std.U32) =>
-            (cont i2 : ControlFlow Std.U32 Std.U32))) (.var .zero))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (i1 : Std.U32) =>
-            (done i1 : ControlFlow Std.U32 Std.U32))) (.var (.succ .zero)))))
+    (.scalarBinop .add (.u .U32) (.var (.succ .zero))
+      (.uscalarLit .U32 1 (by decide))) .var
+  (.ok (.continue_ (.scalar (.u .U32)) (.scalar (.u .U32)) (.var .zero))))
+  (.ok (.break_ (.scalar (.u .U32)) (.scalar (.u .U32)) (.var (.succ .zero)))))
 
 theorem iter_loop.body.deep_eq (max : Std.U32) (i : Std.U32) :
   iter_loop.body max i =
     Aeneas.Deep.Expr.denote (iter_loop.body.deep)
-      (max ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter]: loop 0:
     Source: 'tests/src/loops.rs', lines 7:4-9:5
     Visibility: public -/
-def iter_loop.deep : Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+def iter_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.loop
-    (.lam .var
-      (.app (.app (.leaf (.fn "loops::iter^loop0^body")
-                    (fun (i2 : Std.U32) (i3 : Std.U32) =>
-                    (iter_loop.body i2 i3 : Result (ControlFlow Std.U32
-                      Std.U32)))) (.var (.succ .zero))) (.var .zero)))
+    (.lam (.scalar (.u .U32)) .var
+      (.call (.crate FunName.iter_loop_body) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) (.scalar (.u .U32)))) rfl rfl
+        (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))
     (.var (.succ .zero)))
 
 theorem iter_loop.deep_eq (max : Std.U32) (i : Std.U32) :
   iter_loop max i =
     Aeneas.Deep.Expr.denote (iter_loop.deep)
-      (max ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter]:
     Source: 'tests/src/loops.rs', lines 5:0-12:1
     Visibility: public -/
-def iter.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.app (.app (.leaf (.fn "loops::iter^loop0")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (iter_loop i i1 : Result Std.U32))) (.var .zero)) (.lit 0#u32))
+def iter.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.call (.crate FunName.iter_loop) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .U32 0 (by decide)) .nil)))
 
 theorem iter.deep_eq (max : Std.U32) :
   iter max =
-    Aeneas.Deep.Expr.denote (iter.deep) (max ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (iter.deep) (max ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum]: loop body 0:
     Source: 'tests/src/loops.rs', lines 18:4-21:5
     Visibility: public -/
 def sum_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result (ControlFlow (Std.U32 ×
-    Std.U32) Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))
+  :=
   (.ite (.lt (.var (.succ .zero)) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ (.succ .zero))))
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero)))
       (.var (.succ .zero))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ (.succ .zero))))
-      (.lit 1#u32)) .var
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero)))
+      (.uscalarLit .U32 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (p : (Std.U32 × Std.U32)) =>
-            (cont p : ControlFlow (Std.U32 × Std.U32) Std.U32)))
-      (.pair (.var .zero) (.var (.succ .zero)))))))
+    (.continue_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (i1 : Std.U32) =>
-            (done i1 : ControlFlow (Std.U32 × Std.U32) Std.U32)))
+    (.break_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
       (.var (.succ (.succ .zero))))))
 
 theorem sum_loop.body.deep_eq (max : Std.U32) (i : Std.U32) (s : Std.U32) :
   sum_loop.body max i s =
     Aeneas.Deep.Expr.denote (sum_loop.body.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum]: loop 0:
     Source: 'tests/src/loops.rs', lines 18:4-21:5
     Visibility: public -/
 def sum_loop.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.scalar (.u .U32))) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.app (.leaf (.fn "loops::sum^loop0^body")
-                          (fun (i2 : Std.U32) (i3 : Std.U32) (i4 : Std.U32) =>
-                          (sum_loop.body i2 i3 i4 : Result (ControlFlow
-                            (Std.U32 × Std.U32) Std.U32))))
-        (.var (.succ (.succ .zero)))) (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero)))))
+    (.lam (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.sum_loop_body) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32)))) rfl rfl
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+          (.cons (.var (.succ .zero)) .nil)))))
+    (.tuple
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem sum_loop.deep_eq (max : Std.U32) (i : Std.U32) (s : Std.U32) :
   sum_loop max i s =
     Aeneas.Deep.Expr.denote (sum_loop.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum]:
     Source: 'tests/src/loops.rs', lines 15:0-25:1
     Visibility: public -/
-def sum.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+def sum.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::sum^loop0")
-                        (fun (i : Std.U32) (i1 : Std.U32) (i2 : Std.U32) =>
-                        (sum_loop i i1 i2 : Result Std.U32))) (.var .zero))
-      (.lit 0#u32)) (.lit 0#u32)) .var
-  (.app (.app (.leaf (.binop "panic.*::<u32>")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (i * i1 : Result Std.U32))) (.var .zero)) (.lit 2#u32)))
+    (.call (.crate FunName.sum_loop) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .U32 0 (by decide))
+        (.cons (.uscalarLit .U32 0 (by decide)) .nil)))) .var
+  (.scalarBinop .mul (.u .U32) (.var .zero) (.uscalarLit .U32 2 (by decide))))
 
 theorem sum.deep_eq (max : Std.U32) :
-  sum max =
-    Aeneas.Deep.Expr.denote (sum.deep) (max ::ₕ Aeneas.Deep.HList.nil)
+  sum max = Aeneas.Deep.Expr.denote (sum.deep) (max ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_mut_borrows]: loop body 0:
     Source: 'tests/src/loops.rs', lines 33:4-38:5
     Visibility: public -/
 def sum_with_mut_borrows_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result (ControlFlow (Std.U32 ×
-    Std.U32) Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))
+  :=
   (.ite (.lt (.var (.succ .zero)) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ (.succ .zero))))
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero)))
       (.var (.succ .zero))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ (.succ .zero))))
-      (.lit 1#u32)) .var
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ .zero)))
+      (.uscalarLit .U32 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (p : (Std.U32 × Std.U32)) =>
-            (cont p : ControlFlow (Std.U32 × Std.U32) Std.U32)))
-      (.pair (.var .zero) (.var (.succ .zero)))))))
+    (.continue_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (i1 : Std.U32) =>
-            (done i1 : ControlFlow (Std.U32 × Std.U32) Std.U32)))
+    (.break_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
       (.var (.succ (.succ .zero))))))
 
 theorem sum_with_mut_borrows_loop.body.deep_eq (max : Std.U32) (i : Std.U32)
   (s : Std.U32) :
   sum_with_mut_borrows_loop.body max i s =
     Aeneas.Deep.Expr.denote (sum_with_mut_borrows_loop.body.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_mut_borrows]: loop 0:
     Source: 'tests/src/loops.rs', lines 33:4-38:5
     Visibility: public -/
 def sum_with_mut_borrows_loop.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.scalar (.u .U32))) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.app (.leaf (.fn "loops::sum_with_mut_borrows^loop0^body")
-                          (fun (i2 : Std.U32) (i3 : Std.U32) (i4 : Std.U32) =>
-                          (sum_with_mut_borrows_loop.body i2 i3 i4 : Result
-                            (ControlFlow (Std.U32 × Std.U32) Std.U32))))
-        (.var (.succ (.succ .zero)))) (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero)))))
+    (.lam (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.sum_with_mut_borrows_loop_body) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32)))) rfl rfl
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+          (.cons (.var (.succ .zero)) .nil)))))
+    (.tuple
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem sum_with_mut_borrows_loop.deep_eq (max : Std.U32) (i : Std.U32)
   (s : Std.U32) :
   sum_with_mut_borrows_loop max i s =
     Aeneas.Deep.Expr.denote (sum_with_mut_borrows_loop.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_mut_borrows]:
     Source: 'tests/src/loops.rs', lines 30:0-42:1
     Visibility: public -/
-def sum_with_mut_borrows.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
+def sum_with_mut_borrows.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::sum_with_mut_borrows^loop0")
-                        (fun (i : Std.U32) (i1 : Std.U32) (i2 : Std.U32) =>
-                        (sum_with_mut_borrows_loop i i1 i2 : Result Std.U32)))
-      (.var .zero)) (.lit 0#u32)) (.lit 0#u32)) .var
-  (.app (.app (.leaf (.binop "panic.*::<u32>")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (i * i1 : Result Std.U32))) (.var .zero)) (.lit 2#u32)))
+    (.call (.crate FunName.sum_with_mut_borrows_loop) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .U32 0 (by decide))
+        (.cons (.uscalarLit .U32 0 (by decide)) .nil)))) .var
+  (.scalarBinop .mul (.u .U32) (.var .zero) (.uscalarLit .U32 2 (by decide))))
 
 theorem sum_with_mut_borrows.deep_eq (max : Std.U32) :
   sum_with_mut_borrows max =
     Aeneas.Deep.Expr.denote (sum_with_mut_borrows.deep)
-      (max ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_shared_borrows]: loop body 0:
     Source: 'tests/src/loops.rs', lines 48:4-55:5
     Visibility: public -/
 def sum_with_shared_borrows_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result (ControlFlow (Std.U32 ×
-    Std.U32) Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))))
+  :=
   (.ite (.lt (.var (.succ .zero)) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var (.succ .zero)))
-      (.lit 1#u32)) .var
+    (.scalarBinop .add (.u .U32) (.var (.succ .zero))
+      (.uscalarLit .U32 1 (by decide))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i2 : Std.U32) (i3 : Std.U32) =>
-                  (i2 + i3 : Result Std.U32)))
-      (.var (.succ (.succ (.succ .zero))))) (.var .zero)) .var
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ (.succ .zero))))
+      (.var .zero)) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (p : (Std.U32 × Std.U32)) =>
-            (cont p : ControlFlow (Std.U32 × Std.U32) Std.U32)))
-      (.pair (.var (.succ .zero)) (.var .zero))))))
+    (.continue_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
+      (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (i1 : Std.U32) =>
-            (done i1 : ControlFlow (Std.U32 × Std.U32) Std.U32)))
+    (.break_ (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32))
       (.var (.succ (.succ .zero))))))
 
 theorem sum_with_shared_borrows_loop.body.deep_eq (max : Std.U32) (i : Std.U32)
   (s : Std.U32) :
   sum_with_shared_borrows_loop.body max i s =
     Aeneas.Deep.Expr.denote (sum_with_shared_borrows_loop.body.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_shared_borrows]: loop 0:
     Source: 'tests/src/loops.rs', lines 48:4-55:5
     Visibility: public -/
 def sum_with_shared_borrows_loop.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.scalar (.u .U32))) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.app (.leaf (.fn "loops::sum_with_shared_borrows^loop0^body")
-                          (fun (i2 : Std.U32) (i3 : Std.U32) (i4 : Std.U32) =>
-                          (sum_with_shared_borrows_loop.body i2 i3 i4 : Result
-                            (ControlFlow (Std.U32 × Std.U32) Std.U32))))
-        (.var (.succ (.succ .zero)))) (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero)))))
+    (.lam (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.sum_with_shared_borrows_loop_body) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.controlFlow (.tuple [(.scalar (.u .U32)), (.scalar (.u .U32))]) (.scalar (.u .U32)))) rfl rfl
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+          (.cons (.var (.succ .zero)) .nil)))))
+    (.tuple
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem sum_with_shared_borrows_loop.deep_eq (max : Std.U32) (i : Std.U32)
   (s : Std.U32) :
   sum_with_shared_borrows_loop max i s =
     Aeneas.Deep.Expr.denote (sum_with_shared_borrows_loop.deep)
-      (max ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_with_shared_borrows]:
     Source: 'tests/src/loops.rs', lines 45:0-59:1
     Visibility: public -/
-def sum_with_shared_borrows.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32)
-  :=
+def sum_with_shared_borrows.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::sum_with_shared_borrows^loop0")
-                        (fun (i : Std.U32) (i1 : Std.U32) (i2 : Std.U32) =>
-                        (sum_with_shared_borrows_loop i i1 i2 : Result Std.U32)))
-      (.var .zero)) (.lit 0#u32)) (.lit 0#u32)) .var
-  (.app (.app (.leaf (.binop "panic.*::<u32>")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (i * i1 : Result Std.U32))) (.var .zero)) (.lit 2#u32)))
+    (.call (.crate FunName.sum_with_shared_borrows_loop) [] [] [(.scalar (.u .U32)), (.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .U32 0 (by decide))
+        (.cons (.uscalarLit .U32 0 (by decide)) .nil)))) .var
+  (.scalarBinop .mul (.u .U32) (.var .zero) (.uscalarLit .U32 2 (by decide))))
 
 theorem sum_with_shared_borrows.deep_eq (max : Std.U32) :
   sum_with_shared_borrows max =
     Aeneas.Deep.Expr.denote (sum_with_shared_borrows.deep)
-      (max ::ₕ Aeneas.Deep.HList.nil)
+      (max ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_array]: loop body 0:
     Source: 'tests/src/loops.rs', lines 64:4-67:5
     Visibility: public -/
 def sum_array_loop.body.deep {N : Std.Usize} :
-  Aeneas.Deep.Expr [Array Std.U32 N, Std.Usize, Std.U32] (Result (ControlFlow
-    (Std.Usize × Std.U32) Std.U32)) :=
-  (.ite (.lt (.var (.succ .zero)) (.lit N))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], [N]⟩
+    [(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))]
+    (.result (.controlFlow (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.scalar (.u .U32))))
+  :=
+  (.ite (.lt (.var (.succ .zero)) (.lit (.scalar (.u .Usize)) N))
   (.bind
-    (.app (.app (.leaf (.fn "@arrayIndex")
-                  (fun (a1 : Array Std.U32 N) (i1 : Std.Usize) =>
-                  (Array.index_usize a1 i1 : Result Std.U32))) (.var .zero))
-      (.var (.succ .zero))) .var
+    (.call (.prim .arrayIndex) [(.scalar (.u .U32))] [(.var 0)] [(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i2 : Std.U32) (i3 : Std.U32) =>
-                  (i2 + i3 : Result Std.U32)))
-      (.var (.succ (.succ (.succ .zero))))) (.var .zero)) .var
+    (.scalarBinop .add (.u .U32) (.var (.succ (.succ (.succ .zero))))
+      (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (p : (Std.Usize × Std.U32)) =>
-            (cont p : ControlFlow (Std.Usize × Std.U32) Std.U32)))
-      (.pair (.var .zero) (.var (.succ .zero))))))))
+    (.continue_ (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.scalar (.u .U32))
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (i1 : Std.U32) =>
-            (done i1 : ControlFlow (Std.Usize × Std.U32) Std.U32)))
+    (.break_ (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.scalar (.u .U32))
       (.var (.succ (.succ .zero))))))
 
 theorem sum_array_loop.body.deep_eq {N : Std.Usize} (a : Array Std.U32 N)
   (i : Std.Usize) (s : Std.U32) :
   sum_array_loop.body a i s =
     Aeneas.Deep.Expr.denote (sum_array_loop.body.deep)
-      (a ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_array]: loop 0:
     Source: 'tests/src/loops.rs', lines 64:4-67:5
     Visibility: public -/
 def sum_array_loop.deep {N : Std.Usize} :
-  Aeneas.Deep.Expr [Array Std.U32 N, Std.Usize, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], [N]⟩
+    [(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))]
+    (.result (.scalar (.u .U32))) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.app (.leaf (.fn "loops::sum_array^loop0^body")
-                          (fun (a1 : Array Std.U32 N) (i2 : Std.Usize)
-                            (i3 : Std.U32) =>
-                          (sum_array_loop.body a1 i2 i3 : Result (ControlFlow
-                            (Std.Usize × Std.U32) Std.U32))))
-        (.var (.succ (.succ .zero)))) (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero)))))
+    (.lam (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.sum_array_loop_body) [] [(.var 0)] [(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))] (.result (.controlFlow (.tuple [(.scalar (.u .Usize)), (.scalar (.u .U32))]) (.scalar (.u .U32)))) rfl rfl
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+          (.cons (.var (.succ .zero)) .nil)))))
+    (.tuple
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem sum_array_loop.deep_eq {N : Std.Usize} (a : Array Std.U32 N)
   (i : Std.Usize) (s : Std.U32) :
   sum_array_loop a i s =
     Aeneas.Deep.Expr.denote (sum_array_loop.deep)
-      (a ::ₕ i ::ₕ s ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::sum_array]:
     Source: 'tests/src/loops.rs', lines 61:0-69:1
     Visibility: public -/
 def sum_array.deep {N : Std.Usize} :
-  Aeneas.Deep.Expr [Array Std.U32 N] (Result Std.U32) :=
-  (.app (.app (.app (.leaf (.fn "loops::sum_array^loop0")
-                      (fun (a1 : Array Std.U32 N) (i : Std.Usize)
-                        (i1 : Std.U32) =>
-                      (sum_array_loop a1 i i1 : Result Std.U32))) (.var .zero))
-    (.lit 0#usize)) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], [N]⟩
+    [(.array (.scalar (.u .U32)) (.var 0))] (.result (.scalar (.u .U32))) :=
+  (.call (.crate FunName.sum_array_loop) [] [(.var 0)] [(.array (.scalar (.u .U32)) (.var 0)), (.scalar (.u .Usize)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide))
+      (.cons (.uscalarLit .U32 0 (by decide)) .nil))))
 
 theorem sum_array.deep_eq {N : Std.Usize} (a : Array Std.U32 N) :
   sum_array a =
-    Aeneas.Deep.Expr.denote (sum_array.deep) (a ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (sum_array.deep) (a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::clear]: loop body 0:
     Source: 'tests/src/loops.rs', lines 75:4-78:5
     Visibility: public -/
 def clear_loop.body.deep :
-  Aeneas.Deep.Expr [alloc.vec.Vec Std.U32, Std.Usize] (Result (ControlFlow
-    ((alloc.vec.Vec Std.U32) × Std.Usize) (alloc.vec.Vec Std.U32))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]
+    (.result (.controlFlow (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.adt (.builtin .vec) [(.scalar (.u .U32))] [])))
+  :=
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v1 : alloc.vec.Vec Std.U32) =>
-            (alloc.vec.Vec.len v1 : Std.Usize))) (.var .zero)) .var
+    (.call (.prim .vecLen) [(.scalar (.u .U32))] [] [(.adt (.builtin .vec) [(.scalar (.u .U32))] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite (.lt (.var (.succ (.succ .zero))) (.var .zero))
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.scalar (.u .U32))] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.scalar (.u .U32)), (.arrow (.scalar (.u .U32)) (.adt (.builtin .vec) [(.scalar (.u .U32))] []))]))))
                   (fun (v1 : alloc.vec.Vec Std.U32) (i2 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice Std.U32) v1 i2 :
                     Result (Std.U32 × (Std.U32 → alloc.vec.Vec Std.U32)))))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .ignore .var)
+      (.var (.succ .zero))) (.var (.succ (.succ .zero))))
+    (.tuple (.cons .ignore (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit 1#usize)) .var
-  (.let_ (.app (.var (.succ .zero)) (.lit 0#u32)) .var
+    (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
+      (.uscalarLit .Usize 1 (by decide))) .var
+  (.let_ (.app (.var (.succ .zero)) (.uscalarLit .U32 0 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue")
-            (fun (p : ((alloc.vec.Vec Std.U32) × Std.Usize)) =>
-            (cont p : ControlFlow ((alloc.vec.Vec Std.U32) × Std.Usize)
-              (alloc.vec.Vec Std.U32))))
-      (.pair (.var .zero) (.var (.succ .zero))))))))
+    (.continue_ (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.adt (.builtin .vec) [(.scalar (.u .U32))] [])
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (v1 : alloc.vec.Vec Std.U32) =>
-            (done v1 : ControlFlow ((alloc.vec.Vec Std.U32) × Std.Usize)
-              (alloc.vec.Vec Std.U32)))) (.var (.succ .zero))))))
+    (.break_ (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.adt (.builtin .vec) [(.scalar (.u .U32))] [])
+      (.var (.succ .zero))))))
 
 theorem clear_loop.body.deep_eq (v : alloc.vec.Vec Std.U32) (i : Std.Usize) :
   clear_loop.body v i =
     Aeneas.Deep.Expr.denote (clear_loop.body.deep)
-      (v ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (v ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::clear]: loop 0:
     Source: 'tests/src/loops.rs', lines 75:4-78:5
     Visibility: public -/
 def clear_loop.deep :
-  Aeneas.Deep.Expr [alloc.vec.Vec Std.U32, Std.Usize] (Result (alloc.vec.Vec
-    Std.U32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]
+    (.result (.adt (.builtin .vec) [(.scalar (.u .U32))] [])) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.leaf (.fn "loops::clear^loop0^body")
-                    (fun (v2 : alloc.vec.Vec Std.U32) (i2 : Std.Usize) =>
-                    (clear_loop.body v2 i2 : Result (ControlFlow
-                      ((alloc.vec.Vec Std.U32) × Std.Usize) (alloc.vec.Vec
-                      Std.U32))))) (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var .zero) (.var (.succ .zero))))
+    (.lam (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.clear_loop_body) [] [] [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))] (.result (.controlFlow (.tuple [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))]) (.adt (.builtin .vec) [(.scalar (.u .U32))] []))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
+    (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem clear_loop.deep_eq (v : alloc.vec.Vec Std.U32) (i : Std.Usize) :
   clear_loop v i =
     Aeneas.Deep.Expr.denote (clear_loop.deep)
-      (v ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (v ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::clear]:
     Source: 'tests/src/loops.rs', lines 73:0-79:1
     Visibility: public -/
 def clear.deep :
-  Aeneas.Deep.Expr [alloc.vec.Vec Std.U32] (Result (alloc.vec.Vec Std.U32)) :=
-  (.app (.app (.leaf (.fn "loops::clear^loop0")
-                (fun (v1 : alloc.vec.Vec Std.U32) (i : Std.Usize) =>
-                (clear_loop v1 i : Result (alloc.vec.Vec Std.U32))))
-    (.var .zero)) (.lit 0#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.scalar (.u .U32))] [])]
+    (.result (.adt (.builtin .vec) [(.scalar (.u .U32))] [])) :=
+  (.call (.crate FunName.clear_loop) [] [] [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.scalar (.u .U32))] [])) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
 
 theorem clear.deep_eq (v : alloc.vec.Vec Std.U32) :
-  clear v =
-    Aeneas.Deep.Expr.denote (clear.deep) (v ::ₕ Aeneas.Deep.HList.nil)
+  clear v = Aeneas.Deep.Expr.denote (clear.deep) (v ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [loops::List]
-    Source: 'tests/src/loops.rs', lines 81:0-84:1 -/
-@[reducible] def List.deepElim {T : Type _} :
-  Aeneas.Deep.Elim (List T) [[T, List T], []] :=
-  fun x alts => List.casesOn x alts.1 alts.2.1
 
 /-- [loops::list_mem]: loop 0:
     Source: 'tests/src/loops.rs', lines 88:4-96:1
     Visibility: public -/
-def list_mem_loop.deep : Aeneas.Deep.Expr [Std.U32, List Std.U32] (Result Bool)
-  :=
-  (.match_ (.var (.succ .zero)) List.deepElim
+def list_mem_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])]
+    (.result .bool) :=
+  (.match_ (.crate TypeName.List) [(.scalar (.u .U32))] [] [[(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ .zero))))
-         (.ok (.lit true))
-         (.app (.app (.leaf (.fn "loops::list_mem^loop0")
-                       (fun (i : Std.U32) (l : List Std.U32) =>
-                       (list_mem_loop i l : Result Bool)))
-           (.var (.succ (.succ .zero)))) (.var (.succ .zero))))
-  (.cons (.ok (.lit false))
+         (.ok (.boolLit true))
+         (.call (.crate FunName.list_mem_loop) [] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])] (.result .bool) rfl rfl
+           (.cons (.var (.succ (.succ .zero))) (.cons (.var (.succ .zero))
+             .nil))))
+  (.cons (.ok (.boolLit false))
   .nil)))
 
 theorem list_mem_loop.deep_eq (x : Std.U32) (ls : List Std.U32) :
   list_mem_loop x ls =
     Aeneas.Deep.Expr.denote (list_mem_loop.deep)
-      (x ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_mem_loop; deep_rfl
 
 /-- [loops::list_mem]:
     Source: 'tests/src/loops.rs', lines 87:0-96:1
     Visibility: public -/
-def list_mem.deep : Aeneas.Deep.Expr [Std.U32, List Std.U32] (Result Bool) :=
-  (.app (.app (.leaf (.fn "loops::list_mem^loop0")
-                (fun (i : Std.U32) (l : List Std.U32) =>
-                (list_mem_loop i l : Result Bool))) (.var .zero))
-    (.var (.succ .zero)))
+def list_mem.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])]
+    (.result .bool) :=
+  (.call (.crate FunName.list_mem_loop) [] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.scalar (.u .U32))] [])] (.result .bool) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem list_mem.deep_eq (x : Std.U32) (ls : List Std.U32) :
   list_mem x ls =
     Aeneas.Deep.Expr.denote (list_mem.deep)
-      (x ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut]: loop 0:
     Source: 'tests/src/loops.rs', lines 99:4-108:1
     Visibility: public -/
 def list_nth_mut_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result (T × (T → List T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.ite
+           (.eq (.var (.succ (.succ (.succ .zero))))
+             (.uscalarLit .U32 0 (by decide)))
          (.ok
-           (.pair (.var .zero)
-             (.lam .var
-               (.app (.app (.leaf (.ctor "loops::List::Cons")
-                             (fun (t1 : T) (l : List T) =>
-                             (List.Cons t1 l : List T))) (.var .zero))
-                 (.var (.succ (.succ .zero)))))))
+           (.tuple
+             (.cons (.var .zero)
+               (.cons (.lam (.var 0) .var
+                        (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                          (.cons (.var .zero)
+                            (.cons (.var (.succ (.succ .zero))) .nil)))) .nil))))
          (.bind
-           (.app (.app (.leaf (.binop "panic.-::<u32>")
-                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                         (i1 - i2 : Result Std.U32)))
-             (.var (.succ (.succ (.succ .zero))))) (.lit 1#u32)) .var
+           (.scalarBinop .sub (.u .U32) (.var (.succ (.succ (.succ .zero))))
+             (.uscalarLit .U32 1 (by decide))) .var
          (.bind
-           (.app (.app (.leaf (.fn "loops::list_nth_mut^loop0")
-                         (fun (l : List T) (i2 : Std.U32) =>
-                         (list_nth_mut_loop l i2 : Result (T × (T → List
-                           T))))) (.var (.succ (.succ .zero)))) (.var .zero))
-           (.pair .var .var)
+           (.call (.crate FunName.list_nth_mut_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+             (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil)))
+           (.tuple (.cons .var (.cons .var .nil)))
          (.let_
-           (.lam .var
+           (.lam (.var 0) .var
              (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
-             (.app (.app (.leaf (.ctor "loops::List::Cons")
-                           (fun (t2 : T) (l1 : List T) =>
-                           (List.Cons t2 l1 : List T)))
-               (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
-               (.var .zero)))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero)))))))
-  (.cons (.fail panic)
+             (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+               (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+                 (.cons (.var .zero) .nil))))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))))
+  (.cons (.fail (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_loop.deep_eq {T : Type _} (ls : List T) (i : Std.U32) :
   list_nth_mut_loop ls i =
     Aeneas.Deep.Expr.denote (list_nth_mut_loop.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_loop; deep_rfl
 
 /-- [loops::list_nth_mut]:
     Source: 'tests/src/loops.rs', lines 98:0-108:1
     Visibility: public -/
 def list_nth_mut.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result (T × (T → List T))) :=
-  (.app (.app (.leaf (.fn "loops::list_nth_mut^loop0")
-                (fun (l : List T) (i1 : Std.U32) =>
-                (list_nth_mut_loop l i1 : Result (T × (T → List T)))))
-    (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.call (.crate FunName.list_nth_mut_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem list_nth_mut.deep_eq {T : Type _} (ls : List T) (i : Std.U32) :
   list_nth_mut ls i =
     Aeneas.Deep.Expr.denote (list_nth_mut.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared]: loop 0:
     Source: 'tests/src/loops.rs', lines 112:4-121:1
     Visibility: public -/
 def list_nth_shared_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result T) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.ite (.eq (.var (.succ (.succ (.succ .zero)))) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.var 0)) :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.ite
+           (.eq (.var (.succ (.succ (.succ .zero))))
+             (.uscalarLit .U32 0 (by decide)))
          (.ok (.var .zero))
          (.bind
-           (.app (.app (.leaf (.binop "panic.-::<u32>")
-                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                         (i1 - i2 : Result Std.U32)))
-             (.var (.succ (.succ (.succ .zero))))) (.lit 1#u32)) .var
-         (.app (.app (.leaf (.fn "loops::list_nth_shared^loop0")
-                       (fun (l : List T) (i2 : Std.U32) =>
-                       (list_nth_shared_loop l i2 : Result T)))
-           (.var (.succ (.succ .zero)))) (.var .zero))))
-  (.cons (.fail panic)
+           (.scalarBinop .sub (.u .U32) (.var (.succ (.succ (.succ .zero))))
+             (.uscalarLit .U32 1 (by decide))) .var
+         (.call (.crate FunName.list_nth_shared_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.var 0)) rfl rfl
+           (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil)))))
+  (.cons (.fail (.var 0) panic)
   .nil)))
 
 theorem list_nth_shared_loop.deep_eq {T : Type _} (ls : List T) (i : Std.U32) :
   list_nth_shared_loop ls i =
     Aeneas.Deep.Expr.denote (list_nth_shared_loop.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_loop; deep_rfl
 
 /-- [loops::list_nth_shared]:
     Source: 'tests/src/loops.rs', lines 111:0-121:1
     Visibility: public -/
 def list_nth_shared.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result T) :=
-  (.app (.app (.leaf (.fn "loops::list_nth_shared^loop0")
-                (fun (l : List T) (i1 : Std.U32) =>
-                (list_nth_shared_loop l i1 : Result T))) (.var .zero))
-    (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.var 0)) :=
+  (.call (.crate FunName.list_nth_shared_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.var 0)) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem list_nth_shared.deep_eq {T : Type _} (ls : List T) (i : Std.U32) :
   list_nth_shared ls i =
     Aeneas.Deep.Expr.denote (list_nth_shared.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::get_elem_mut]: loop 0:
     Source: 'tests/src/loops.rs', lines 125:4-137:1
     Visibility: public -/
 def get_elem_mut_loop.deep :
-  Aeneas.Deep.Expr [Std.Usize, List Std.Usize] (Result (Std.Usize × (Std.Usize
-    → List Std.Usize))) :=
-  (.match_ (.var (.succ .zero)) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])]
+    (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.scalar (.u .Usize))] [] [[(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ .zero))))
          (.ok
-           (.pair (.var .zero)
-             (.lam .var
-               (.app (.app (.leaf (.ctor "loops::List::Cons")
-                             (fun (i1 : Std.Usize) (l : List Std.Usize) =>
-                             (List.Cons i1 l : List Std.Usize))) (.var .zero))
-                 (.var (.succ (.succ .zero)))))))
+           (.tuple
+             (.cons (.var .zero)
+               (.cons (.lam (.scalar (.u .Usize)) .var
+                        (.ctor (.crate TypeName.List) 0 [(.scalar (.u .Usize))] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] rfl
+                          (.cons (.var .zero)
+                            (.cons (.var (.succ (.succ .zero))) .nil)))) .nil))))
          (.bind
-           (.app (.app (.leaf (.fn "loops::get_elem_mut^loop0")
-                         (fun (i : Std.Usize) (l : List Std.Usize) =>
-                         (get_elem_mut_loop i l : Result (Std.Usize ×
-                           (Std.Usize → List Std.Usize)))))
-             (.var (.succ (.succ .zero)))) (.var (.succ .zero))) (.pair .var
-           .var)
+           (.call (.crate FunName.get_elem_mut_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))])) rfl rfl
+             (.cons (.var (.succ (.succ .zero))) (.cons (.var (.succ .zero))
+               .nil))) (.tuple (.cons .var (.cons .var .nil)))
          (.let_
-           (.lam .var
+           (.lam (.scalar (.u .Usize)) .var
              (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
-             (.app (.app (.leaf (.ctor "loops::List::Cons")
-                           (fun (i2 : Std.Usize) (l1 : List Std.Usize) =>
-                           (List.Cons i2 l1 : List Std.Usize)))
-               (.var (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))))
-           .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
-  (.cons (.fail panic)
+             (.ctor (.crate TypeName.List) 0 [(.scalar (.u .Usize))] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] rfl
+               (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                 (.cons (.var .zero) .nil))))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
+  (.cons (.fail (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))]) panic)
   .nil)))
 
 theorem get_elem_mut_loop.deep_eq (x : Std.Usize) (ls : List Std.Usize) :
   get_elem_mut_loop x ls =
     Aeneas.Deep.Expr.denote (get_elem_mut_loop.deep)
-      (x ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold get_elem_mut_loop; deep_rfl
 
 /-- [loops::get_elem_mut]:
     Source: 'tests/src/loops.rs', lines 123:0-137:1
     Visibility: public -/
 def get_elem_mut.deep :
-  Aeneas.Deep.Expr [alloc.vec.Vec (List Std.Usize), Std.Usize] (Result
-    (Std.Usize × (Std.Usize → alloc.vec.Vec (List Std.Usize)))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))]))
+  :=
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []), (.arrow (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))]))))
                   (fun (v : alloc.vec.Vec (List Std.Usize)) (i : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (List Std.Usize)) v
                     i : Result ((List Std.Usize) × (List Std.Usize →
                     alloc.vec.Vec (List Std.Usize)))))) (.var .zero))
-      (.lit 0#usize)) (.pair .var .var)
+      (.uscalarLit .Usize 0 (by decide))) (.tuple (.cons .var (.cons .var
+    .nil)))
   (.bind
-    (.app (.app (.leaf (.fn "loops::get_elem_mut^loop0")
-                  (fun (i : Std.Usize) (l : List Std.Usize) =>
-                  (get_elem_mut_loop i l : Result (Std.Usize × (Std.Usize →
-                    List Std.Usize))))) (.var (.succ (.succ (.succ .zero)))))
-      (.var .zero)) (.pair .var .var)
+    (.call (.crate FunName.get_elem_mut_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))])) rfl rfl
+      (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var .zero) .nil)))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.let_
-    (.lam .var
+    (.lam (.scalar (.u .Usize)) .var
       (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
       (.app (.var (.succ (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))))
     .var
-  (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+  (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
 
 theorem get_elem_mut.deep_eq (slots : alloc.vec.Vec (List Std.Usize))
   (x : Std.Usize) :
   get_elem_mut slots x =
     Aeneas.Deep.Expr.denote (get_elem_mut.deep)
-      (slots ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+      (slots ::ₑ x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::get_elem_shared]: loop 0:
     Source: 'tests/src/loops.rs', lines 141:4-153:1
     Visibility: public -/
 def get_elem_shared_loop.deep :
-  Aeneas.Deep.Expr [Std.Usize, List Std.Usize] (Result Std.Usize) :=
-  (.match_ (.var (.succ .zero)) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])]
+    (.result (.scalar (.u .Usize))) :=
+  (.match_ (.crate TypeName.List) [(.scalar (.u .Usize))] [] [[(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ .zero))))
          (.ok (.var .zero))
-         (.app (.app (.leaf (.fn "loops::get_elem_shared^loop0")
-                       (fun (i : Std.Usize) (l : List Std.Usize) =>
-                       (get_elem_shared_loop i l : Result Std.Usize)))
-           (.var (.succ (.succ .zero)))) (.var (.succ .zero))))
-  (.cons (.fail panic)
+         (.call (.crate FunName.get_elem_shared_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.scalar (.u .Usize))) rfl rfl
+           (.cons (.var (.succ (.succ .zero))) (.cons (.var (.succ .zero))
+             .nil))))
+  (.cons (.fail (.scalar (.u .Usize)) panic)
   .nil)))
 
 theorem get_elem_shared_loop.deep_eq (x : Std.Usize) (ls : List Std.Usize) :
   get_elem_shared_loop x ls =
     Aeneas.Deep.Expr.denote (get_elem_shared_loop.deep)
-      (x ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold get_elem_shared_loop; deep_rfl
 
 /-- [loops::get_elem_shared]:
     Source: 'tests/src/loops.rs', lines 139:0-153:1
     Visibility: public -/
 def get_elem_shared.deep :
-  Aeneas.Deep.Expr [alloc.vec.Vec (List Std.Usize), Std.Usize] (Result
-    Std.Usize) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))]
+    (.result (.scalar (.u .Usize))) :=
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))))
                   (fun (v : alloc.vec.Vec (List Std.Usize)) (i : Std.Usize) =>
                   (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
                     (List Std.Usize)) v i : Result (List Std.Usize))))
-      (.var .zero)) (.lit 0#usize)) .var
-  (.app (.app (.leaf (.fn "loops::get_elem_shared^loop0")
-                (fun (i : Std.Usize) (l : List Std.Usize) =>
-                (get_elem_shared_loop i l : Result Std.Usize)))
-    (.var (.succ (.succ .zero)))) (.var .zero)))
+      (.var .zero)) (.uscalarLit .Usize 0 (by decide))) .var
+  (.call (.crate FunName.get_elem_shared_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.scalar (.u .Usize))) rfl rfl
+    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil))))
 
 theorem get_elem_shared.deep_eq (slots : alloc.vec.Vec (List Std.Usize))
   (x : Std.Usize) :
   get_elem_shared slots x =
     Aeneas.Deep.Expr.denote (get_elem_shared.deep)
-      (slots ::ₕ x ::ₕ Aeneas.Deep.HList.nil)
+      (slots ::ₑ x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::id_mut]:
     Source: 'tests/src/loops.rs', lines 155:0-157:1
     Visibility: public -/
 def id_mut.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T] (Result ((List T) × (List T → List T))) :=
-  (.ok (.pair (.var .zero) (.lam .var (.var .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] [])]
+    (.result (.tuple [(.adt (.crate TypeName.List) [(.var 0)] []), (.arrow (.adt (.crate TypeName.List) [(.var 0)] []) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.ok
+    (.tuple
+      (.cons (.var .zero)
+        (.cons (.lam (.adt (.crate TypeName.List) [(.var 0)] []) .var
+                 (.var .zero)) .nil))))
 
 theorem id_mut.deep_eq {T : Type _} (ls : List T) :
   id_mut ls =
-    Aeneas.Deep.Expr.denote (id_mut.deep) (ls ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (id_mut.deep) (ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::id_shared]:
     Source: 'tests/src/loops.rs', lines 159:0-161:1
     Visibility: public -/
-def id_shared.deep {T : Type _} : Aeneas.Deep.Expr [List T] (Result (List T))
-  :=
+def id_shared.deep {T : Type _} :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] [])]
+    (.result (.adt (.crate TypeName.List) [(.var 0)] [])) :=
   (.ok (.var .zero))
 
 theorem id_shared.deep_eq {T : Type _} (ls : List T) :
   id_shared ls =
-    Aeneas.Deep.Expr.denote (id_shared.deep) (ls ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (id_shared.deep) (ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut_with_id]: loop 0:
     Source: 'tests/src/loops.rs', lines 166:4-175:1
     Visibility: public -/
 def list_nth_mut_with_id_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.U32, List T] (Result (T × (T → List T))) :=
-  (.match_ (.var (.succ .zero)) List.deepElim
-  (.cons (.ite (.eq (.var (.succ (.succ .zero))) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])]
+    (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
+  (.cons (.ite
+           (.eq (.var (.succ (.succ .zero))) (.uscalarLit .U32 0 (by decide)))
          (.ok
-           (.pair (.var .zero)
-             (.lam .var
-               (.app (.app (.leaf (.ctor "loops::List::Cons")
-                             (fun (t1 : T) (l : List T) =>
-                             (List.Cons t1 l : List T))) (.var .zero))
-                 (.var (.succ (.succ .zero)))))))
+           (.tuple
+             (.cons (.var .zero)
+               (.cons (.lam (.var 0) .var
+                        (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                          (.cons (.var .zero)
+                            (.cons (.var (.succ (.succ .zero))) .nil)))) .nil))))
          (.bind
-           (.app (.app (.leaf (.binop "panic.-::<u32>")
-                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                         (i1 - i2 : Result Std.U32)))
-             (.var (.succ (.succ .zero)))) (.lit 1#u32)) .var
+           (.scalarBinop .sub (.u .U32) (.var (.succ (.succ .zero)))
+             (.uscalarLit .U32 1 (by decide))) .var
          (.bind
-           (.app (.app (.leaf (.fn "loops::list_nth_mut_with_id^loop0")
-                         (fun (i2 : Std.U32) (l : List T) =>
-                         (list_nth_mut_with_id_loop i2 l : Result (T × (T →
-                           List T))))) (.var .zero))
-             (.var (.succ (.succ .zero)))) (.pair .var .var)
+           (.call (.crate FunName.list_nth_mut_with_id_loop) [(.var 0)] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+             (.cons (.var .zero) (.cons (.var (.succ (.succ .zero))) .nil)))
+           (.tuple (.cons .var (.cons .var .nil)))
          (.let_
-           (.lam .var
+           (.lam (.var 0) .var
              (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
-             (.app (.app (.leaf (.ctor "loops::List::Cons")
-                           (fun (t2 : T) (l1 : List T) =>
-                           (List.Cons t2 l1 : List T)))
-               (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
-               (.var .zero)))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero)))))))
-  (.cons (.fail panic)
+             (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+               (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+                 (.cons (.var .zero) .nil))))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))))
+  (.cons (.fail (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_with_id_loop.deep_eq {T : Type _} (i : Std.U32)
   (ls : List T) :
   list_nth_mut_with_id_loop i ls =
     Aeneas.Deep.Expr.denote (list_nth_mut_with_id_loop.deep)
-      (i ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_with_id_loop; deep_rfl
 
 /-- [loops::list_nth_mut_with_id]:
     Source: 'tests/src/loops.rs', lines 164:0-175:1
     Visibility: public -/
 def list_nth_mut_with_id.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result (T × (T → List T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.leaf (.fn "loops::id_mut") (fun (l : List T) =>
-            (id_mut l : Result ((List T) × (List T → List T)))))
-      (.var .zero)) (.pair .var .var)
+    (.call (.crate FunName.id_mut) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.tuple [(.adt (.crate TypeName.List) [(.var 0)] []), (.arrow (.adt (.crate TypeName.List) [(.var 0)] []) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) .nil)) (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.fn "loops::list_nth_mut_with_id^loop0")
-                  (fun (i1 : Std.U32) (l : List T) =>
-                  (list_nth_mut_with_id_loop i1 l : Result (T × (T → List
-                    T))))) (.var (.succ (.succ (.succ .zero))))) (.var .zero))
-    (.pair .var .var)
+    (.call (.crate FunName.list_nth_mut_with_id_loop) [(.var 0)] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.tuple [(.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var .zero) .nil)))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.let_
-    (.lam .var
+    (.lam (.var 0) .var
       (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
       (.app (.var (.succ (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))))
     .var
-  (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+  (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
 
 theorem list_nth_mut_with_id.deep_eq {T : Type _} (ls : List T) (i : Std.U32) :
   list_nth_mut_with_id ls i =
     Aeneas.Deep.Expr.denote (list_nth_mut_with_id.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared_with_id]: loop 0:
     Source: 'tests/src/loops.rs', lines 180:4-189:1
     Visibility: public -/
 def list_nth_shared_with_id_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.U32, List T] (Result T) :=
-  (.match_ (.var (.succ .zero)) List.deepElim
-  (.cons (.ite (.eq (.var (.succ (.succ .zero))) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])]
+    (.result (.var 0)) :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
+  (.cons (.ite
+           (.eq (.var (.succ (.succ .zero))) (.uscalarLit .U32 0 (by decide)))
          (.ok (.var .zero))
          (.bind
-           (.app (.app (.leaf (.binop "panic.-::<u32>")
-                         (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                         (i1 - i2 : Result Std.U32)))
-             (.var (.succ (.succ .zero)))) (.lit 1#u32)) .var
-         (.app (.app (.leaf (.fn "loops::list_nth_shared_with_id^loop0")
-                       (fun (i2 : Std.U32) (l : List T) =>
-                       (list_nth_shared_with_id_loop i2 l : Result T)))
-           (.var .zero)) (.var (.succ (.succ .zero))))))
-  (.cons (.fail panic)
+           (.scalarBinop .sub (.u .U32) (.var (.succ (.succ .zero)))
+             (.uscalarLit .U32 1 (by decide))) .var
+         (.call (.crate FunName.list_nth_shared_with_id_loop) [(.var 0)] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.var 0)) rfl rfl
+           (.cons (.var .zero) (.cons (.var (.succ (.succ .zero))) .nil)))))
+  (.cons (.fail (.var 0) panic)
   .nil)))
 
 theorem list_nth_shared_with_id_loop.deep_eq {T : Type _} (i : Std.U32)
   (ls : List T) :
   list_nth_shared_with_id_loop i ls =
     Aeneas.Deep.Expr.denote (list_nth_shared_with_id_loop.deep)
-      (i ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_with_id_loop; deep_rfl
 
 /-- [loops::list_nth_shared_with_id]:
     Source: 'tests/src/loops.rs', lines 178:0-189:1
     Visibility: public -/
 def list_nth_shared_with_id.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, Std.U32] (Result T) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.var 0)) :=
   (.bind
-    (.app (.leaf (.fn "loops::id_shared") (fun (l : List T) =>
-            (id_shared l : Result (List T)))) (.var .zero)) .var
-  (.app (.app (.leaf (.fn "loops::list_nth_shared_with_id^loop0")
-                (fun (i1 : Std.U32) (l : List T) =>
-                (list_nth_shared_with_id_loop i1 l : Result T)))
-    (.var (.succ (.succ .zero)))) (.var .zero)))
+    (.call (.crate FunName.id_shared) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.adt (.crate TypeName.List) [(.var 0)] [])) rfl rfl
+      (.cons (.var .zero) .nil)) .var
+  (.call (.crate FunName.list_nth_shared_with_id_loop) [(.var 0)] [] [(.scalar (.u .U32)), (.adt (.crate TypeName.List) [(.var 0)] [])] (.result (.var 0)) rfl rfl
+    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil))))
 
 theorem list_nth_shared_with_id.deep_eq {T : Type _} (ls : List T)
   (i : Std.U32) :
   list_nth_shared_with_id ls i =
     Aeneas.Deep.Expr.denote (list_nth_shared_with_id.deep)
-      (ls ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut_pair]: loop 0:
     Source: 'tests/src/loops.rs', lines 199:4-215:1
     Visibility: public -/
 def list_nth_mut_pair_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List T)
-    × (T → List T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.pair
-                        (.lam .var
-                          (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                        (fun (t1 : T) (l : List T) =>
-                                        (List.Cons t1 l : List T)))
-                            (.var .zero))
-                            (.var (.succ (.succ (.succ (.succ .zero)))))))
-                        (.lam .var
-                          (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                        (fun (t1 : T) (l : List T) =>
-                                        (List.Cons t1 l : List T)))
-                            (.var .zero)) (.var (.succ (.succ .zero)))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                                   .nil))))
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ .zero))) .nil))))
+                      .nil))))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_pair^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_mut_pair_loop l l1 i2 : Result
-                                        (T × T × (T → List T) × (T →
-                                        List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var (.pair .var .var)))
+                  (.call (.crate FunName.list_nth_mut_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  (.cons .var .nil)))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
                         (.var .zero)) .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var (.succ (.succ (.succ .zero))))
-                      (.pair (.var (.succ .zero)) (.var .zero))))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero)))
+                      (.cons (.var (.succ (.succ (.succ .zero))))
+                      (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_pair_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_pair_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_pair_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_pair_loop; deep_rfl
 
 /-- [loops::list_nth_mut_pair]:
     Source: 'tests/src/loops.rs', lines 194:0-215:1
     Visibility: public -/
 def list_nth_mut_pair.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × (T → List
-    T) × (T → List T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_pair^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_mut_pair_loop l l1 i1 : Result (T × T × (T
-                          → List T) × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var (.pair .var .var)))
+    (.call (.crate FunName.list_nth_mut_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var (.cons .var .nil)))))
   (.ok
-    (.pair (.pair (.var .zero) (.var (.succ .zero)))
-      (.pair (.var (.succ (.succ .zero))) (.var (.succ (.succ (.succ .zero))))))))
+    (.tuple
+      (.cons (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+        (.cons (.var (.succ (.succ .zero)))
+        (.cons (.var (.succ (.succ (.succ .zero)))) .nil))))))
 
 theorem list_nth_mut_pair.deep_eq {T : Type _} (ls0 : List T) (ls1 : List T)
   (i : Std.U32) :
   list_nth_mut_pair ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_pair.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared_pair]: loop 0:
     Source: 'tests/src/loops.rs', lines 223:4-239:1
     Visibility: public -/
 def list_nth_shared_pair_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T)) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0)])) :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
-                (.ok (.pair (.var (.succ (.succ .zero))) (.var .zero)))
+                    (.uscalarLit .U32 0 (by decide)))
+                (.ok
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
-                (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_pair^loop0")
-                                    (fun (l : List T) (l1 : List T)
-                                      (i2 : Std.U32) =>
-                                    (list_nth_shared_pair_loop l l1 i2 : Result
-                                      (T × T))))
-                  (.var (.succ (.succ (.succ (.succ .zero))))))
-                  (.var (.succ (.succ .zero)))) (.var .zero))))
-         (.cons (.fail panic)
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
+                (.call (.crate FunName.list_nth_shared_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0)])) rfl rfl
+                  (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                    .nil))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0)]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0)]) panic)
   .nil)))
 
 theorem list_nth_shared_pair_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_pair_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_pair_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_pair_loop; deep_rfl
 
 /-- [loops::list_nth_shared_pair]:
     Source: 'tests/src/loops.rs', lines 218:0-239:1
     Visibility: public -/
 def list_nth_shared_pair.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T)) :=
-  (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_pair^loop0")
-                      (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                      (list_nth_shared_pair_loop l l1 i1 : Result (T × T))))
-    (.var .zero)) (.var (.succ .zero))) (.var (.succ (.succ .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0)])) :=
+  (.call (.crate FunName.list_nth_shared_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0)])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero))
+      (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem list_nth_shared_pair.deep_eq {T : Type _} (ls0 : List T) (ls1 : List T)
   (i : Std.U32) :
   list_nth_shared_pair ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_pair.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut_pair_merge]: loop 0:
     Source: 'tests/src/loops.rs', lines 248:4-258:1
     Visibility: public -/
 def list_nth_mut_pair_merge_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List T)
-    × (T → List T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.pair
-                        (.lam .var
-                          (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                        (fun (t1 : T) (l : List T) =>
-                                        (List.Cons t1 l : List T)))
-                            (.var .zero))
-                            (.var (.succ (.succ (.succ (.succ .zero)))))))
-                        (.lam .var
-                          (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                        (fun (t1 : T) (l : List T) =>
-                                        (List.Cons t1 l : List T)))
-                            (.var .zero)) (.var (.succ (.succ .zero)))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                                   .nil))))
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ .zero))) .nil))))
+                      .nil))))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_pair_merge^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_mut_pair_merge_loop l l1 i2 :
-                                        Result (T × T × (T → List T) × (T
-                                        → List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var (.pair .var .var)))
+                  (.call (.crate FunName.list_nth_mut_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  (.cons .var .nil)))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
                         (.var .zero)) .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var (.succ (.succ (.succ .zero))))
-                      (.pair (.var (.succ .zero)) (.var .zero))))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero)))
+                      (.cons (.var (.succ (.succ (.succ .zero))))
+                      (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_pair_merge_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_pair_merge_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_pair_merge_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_pair_merge_loop; deep_rfl
 
 /-- [loops::list_nth_mut_pair_merge]:
     Source: 'tests/src/loops.rs', lines 243:0-258:1
     Visibility: public -/
 def list_nth_mut_pair_merge.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × ((T × T) →
-    ((List T) × (List T))))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.tuple [(.var 0), (.var 0)]) (.tuple [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] [])]))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_pair_merge^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_mut_pair_merge_loop l l1 i1 : Result (T × T
-                          × (T → List T) × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var (.pair .var .var)))
+    (.call (.crate FunName.list_nth_mut_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] [])), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var (.cons .var .nil)))))
   (.let_
-    (.lam .var
-      (.let_ (.var .zero) (.pair .var .var)
+    (.lam (.tuple [(.var 0), (.var 0)]) .var
+      (.let_ (.var .zero) (.tuple (.cons .var (.cons .var .nil)))
       (.let_
         (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
           (.var .zero)) .var
       (.let_
         (.app (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
           (.var (.succ (.succ .zero)))) .var
-      (.pair (.var (.succ .zero)) (.var .zero)))))) .var
+      (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))) .var
   (.ok
-    (.pair (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero))))
-      (.var .zero)))))
+    (.tuple
+      (.cons (.tuple
+               (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero)))
+                 .nil))) (.cons (.var .zero) .nil))))))
 
 theorem list_nth_mut_pair_merge.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_pair_merge ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_pair_merge.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared_pair_merge]: loop 0:
     Source: 'tests/src/loops.rs', lines 266:4-276:1
     Visibility: public -/
 def list_nth_shared_pair_merge_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T)) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0)])) :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
-                (.ok (.pair (.var (.succ (.succ .zero))) (.var .zero)))
+                    (.uscalarLit .U32 0 (by decide)))
+                (.ok
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
-                (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_pair_merge^loop0")
-                                    (fun (l : List T) (l1 : List T)
-                                      (i2 : Std.U32) =>
-                                    (list_nth_shared_pair_merge_loop l l1 i2 :
-                                      Result (T × T))))
-                  (.var (.succ (.succ (.succ (.succ .zero))))))
-                  (.var (.succ (.succ .zero)))) (.var .zero))))
-         (.cons (.fail panic)
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
+                (.call (.crate FunName.list_nth_shared_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0)])) rfl rfl
+                  (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                    .nil))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0)]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0)]) panic)
   .nil)))
 
 theorem list_nth_shared_pair_merge_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_pair_merge_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_pair_merge_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_pair_merge_loop; deep_rfl
 
 /-- [loops::list_nth_shared_pair_merge]:
     Source: 'tests/src/loops.rs', lines 261:0-276:1
     Visibility: public -/
 def list_nth_shared_pair_merge.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T)) :=
-  (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_pair_merge^loop0")
-                      (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                      (list_nth_shared_pair_merge_loop l l1 i1 : Result (T ×
-                        T)))) (.var .zero)) (.var (.succ .zero)))
-    (.var (.succ (.succ .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0)])) :=
+  (.call (.crate FunName.list_nth_shared_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0)])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero))
+      (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem list_nth_shared_pair_merge.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_pair_merge ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_pair_merge.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut_shared_pair]: loop 0:
     Source: 'tests/src/loops.rs', lines 284:4-294:1
     Visibility: public -/
 def list_nth_mut_shared_pair_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List
-    T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.lam .var
-                        (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                      (fun (t1 : T) (l : List T) =>
-                                      (List.Cons t1 l : List T))) (.var .zero))
-                          (.var (.succ (.succ (.succ (.succ .zero))))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                                   .nil)))) .nil)))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_shared_pair^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_mut_shared_pair_loop l l1 i2 :
-                                        Result (T × T × (T → List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var .var))
+                  (.call (.crate FunName.list_nth_mut_shared_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  .nil))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ .zero))
-                    (.pair (.var (.succ (.succ .zero))) (.var .zero))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ .zero))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_shared_pair_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_shared_pair_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_shared_pair_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_shared_pair_loop; deep_rfl
 
 /-- [loops::list_nth_mut_shared_pair]:
     Source: 'tests/src/loops.rs', lines 279:0-294:1
     Visibility: public -/
 def list_nth_mut_shared_pair.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × (T → List
-    T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_shared_pair^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_mut_shared_pair_loop l l1 i1 : Result (T × T
-                          × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var .var))
+    (.call (.crate FunName.list_nth_mut_shared_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var .nil))))
   (.ok
-    (.pair (.pair (.var .zero) (.var (.succ .zero)))
-      (.var (.succ (.succ .zero))))))
+    (.tuple
+      (.cons (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+        (.cons (.var (.succ (.succ .zero))) .nil)))))
 
 theorem list_nth_mut_shared_pair.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_shared_pair ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_shared_pair.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_mut_shared_pair_merge]: loop 0:
     Source: 'tests/src/loops.rs', lines 303:4-313:1
     Visibility: public -/
 def list_nth_mut_shared_pair_merge_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List
-    T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.lam .var
-                        (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                      (fun (t1 : T) (l : List T) =>
-                                      (List.Cons t1 l : List T))) (.var .zero))
-                          (.var (.succ (.succ (.succ (.succ .zero))))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                                   .nil)))) .nil)))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_shared_pair_merge^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_mut_shared_pair_merge_loop l l1
-                                        i2 : Result (T × T × (T → List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var .var))
+                  (.call (.crate FunName.list_nth_mut_shared_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  .nil))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ .zero))
-                    (.pair (.var (.succ (.succ .zero))) (.var .zero))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ .zero))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_mut_shared_pair_merge_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_shared_pair_merge_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_shared_pair_merge_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_mut_shared_pair_merge_loop; deep_rfl
 
 /-- [loops::list_nth_mut_shared_pair_merge]:
     Source: 'tests/src/loops.rs', lines 298:0-313:1
     Visibility: public -/
 def list_nth_mut_shared_pair_merge.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × (T → List
-    T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_mut_shared_pair_merge^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_mut_shared_pair_merge_loop l l1 i1 : Result
-                          (T × T × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var .var))
+    (.call (.crate FunName.list_nth_mut_shared_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var .nil))))
   (.ok
-    (.pair (.pair (.var .zero) (.var (.succ .zero)))
-      (.var (.succ (.succ .zero))))))
+    (.tuple
+      (.cons (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+        (.cons (.var (.succ (.succ .zero))) .nil)))))
 
 theorem list_nth_mut_shared_pair_merge.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_mut_shared_pair_merge ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_mut_shared_pair_merge.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared_mut_pair]: loop 0:
     Source: 'tests/src/loops.rs', lines 322:4-332:1
     Visibility: public -/
 def list_nth_shared_mut_pair_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List
-    T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.lam .var
-                        (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                      (fun (t1 : T) (l : List T) =>
-                                      (List.Cons t1 l : List T))) (.var .zero))
-                          (.var (.succ (.succ .zero))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ .zero))) .nil))))
+                      .nil)))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_mut_pair^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_shared_mut_pair_loop l l1 i2 :
-                                        Result (T × T × (T → List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var .var))
+                  (.call (.crate FunName.list_nth_shared_mut_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  .nil))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ .zero))
-                    (.pair (.var (.succ (.succ .zero))) (.var .zero))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ .zero))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_shared_mut_pair_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_mut_pair_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_mut_pair_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_mut_pair_loop; deep_rfl
 
 /-- [loops::list_nth_shared_mut_pair]:
     Source: 'tests/src/loops.rs', lines 317:0-332:1
     Visibility: public -/
 def list_nth_shared_mut_pair.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × (T → List
-    T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_mut_pair^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_shared_mut_pair_loop l l1 i1 : Result (T × T
-                          × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var .var))
+    (.call (.crate FunName.list_nth_shared_mut_pair_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var .nil))))
   (.ok
-    (.pair (.pair (.var .zero) (.var (.succ .zero)))
-      (.var (.succ (.succ .zero))))))
+    (.tuple
+      (.cons (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+        (.cons (.var (.succ (.succ .zero))) .nil)))))
 
 theorem list_nth_shared_mut_pair.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_mut_pair ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_mut_pair.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::list_nth_shared_mut_pair_merge]: loop 0:
     Source: 'tests/src/loops.rs', lines 341:4-351:1
     Visibility: public -/
 def list_nth_shared_mut_pair_merge_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result (T × T × (T → List
-    T))) :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.match_ (.var (.succ (.succ (.succ .zero)))) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+    (.var .zero)
+  (.cons (.match_ (.crate TypeName.List) [(.var 0)] [] [[(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])], []] rfl
+           (.var (.succ (.succ (.succ .zero))))
          (.cons (.ite
                   (.eq
                     (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
-                    (.lit 0#u32))
+                    (.uscalarLit .U32 0 (by decide)))
                 (.ok
-                  (.pair (.var (.succ (.succ .zero)))
-                    (.pair (.var .zero)
-                      (.lam .var
-                        (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                      (fun (t1 : T) (l : List T) =>
-                                      (List.Cons t1 l : List T))) (.var .zero))
-                          (.var (.succ (.succ .zero))))))))
+                  (.tuple
+                    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      (.cons (.lam (.var 0) .var
+                               (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                                 (.cons (.var .zero)
+                                   (.cons (.var (.succ (.succ .zero))) .nil))))
+                      .nil)))))
                 (.bind
-                  (.app (.app (.leaf (.binop "panic.-::<u32>")
-                                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                                (i1 - i2 : Result Std.U32)))
-                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                    (.lit 1#u32)) .var
+                  (.scalarBinop .sub (.u .U32)
+                    (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                    (.uscalarLit .U32 1 (by decide))) .var
                 (.bind
-                  (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_mut_pair_merge^loop0")
-                                      (fun (l : List T) (l1 : List T)
-                                        (i2 : Std.U32) =>
-                                      (list_nth_shared_mut_pair_merge_loop l l1
-                                        i2 : Result (T × T × (T → List T)))))
-                    (.var (.succ (.succ (.succ (.succ .zero))))))
-                    (.var (.succ (.succ .zero)))) (.var .zero)) (.pair .var
-                  (.pair .var .var))
+                  (.call (.crate FunName.list_nth_shared_mut_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+                    (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))) (.tuple (.cons .var (.cons .var (.cons .var
+                  .nil))))
                 (.let_
-                  (.lam .var
+                  (.lam (.var 0) .var
                     (.let_
                       (.app (.var (.succ (.succ (.succ .zero)))) (.var .zero))
                       .var
-                    (.app (.app (.leaf (.ctor "loops::List::Cons")
-                                  (fun (t3 : T) (l1 : List T) =>
-                                  (List.Cons t3 l1 : List T)))
-                      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-                      (.var .zero)))) .var
+                    (.ctor (.crate TypeName.List) 0 [(.var 0)] [] [(.var 0), (.adt (.crate TypeName.List) [(.var 0)] [])] rfl
+                      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+                        (.cons (.var .zero) .nil))))) .var
                 (.ok
-                  (.pair (.var (.succ .zero))
-                    (.pair (.var (.succ (.succ .zero))) (.var .zero))))))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.var (.succ .zero))
+                      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+                      .nil)))))))))
+         (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
          .nil)))
-  (.cons (.fail panic)
+  (.cons (.fail (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]) panic)
   .nil)))
 
 theorem list_nth_shared_mut_pair_merge_loop.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_mut_pair_merge_loop ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_mut_pair_merge_loop.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold list_nth_shared_mut_pair_merge_loop; deep_rfl
 
 /-- [loops::list_nth_shared_mut_pair_merge]:
     Source: 'tests/src/loops.rs', lines 336:0-351:1
     Visibility: public -/
 def list_nth_shared_mut_pair_merge.deep {T : Type _} :
-  Aeneas.Deep.Expr [List T, List T, Std.U32] (Result ((T × T) × (T → List
-    T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))]
+    (.result (.tuple [(.tuple [(.var 0), (.var 0)]), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "loops::list_nth_shared_mut_pair_merge^loop0")
-                        (fun (l : List T) (l1 : List T) (i1 : Std.U32) =>
-                        (list_nth_shared_mut_pair_merge_loop l l1 i1 : Result
-                          (T × T × (T → List T))))) (.var .zero))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero)))) (.pair .var
-    (.pair .var .var))
+    (.call (.crate FunName.list_nth_shared_mut_pair_merge_loop) [(.var 0)] [] [(.adt (.crate TypeName.List) [(.var 0)] []), (.adt (.crate TypeName.List) [(.var 0)] []), (.scalar (.u .U32))] (.result (.tuple [(.var 0), (.var 0), (.arrow (.var 0) (.adt (.crate TypeName.List) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+    (.cons .var (.cons .var .nil))))
   (.ok
-    (.pair (.pair (.var .zero) (.var (.succ .zero)))
-      (.var (.succ (.succ .zero))))))
+    (.tuple
+      (.cons (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+        (.cons (.var (.succ (.succ .zero))) .nil)))))
 
 theorem list_nth_shared_mut_pair_merge.deep_eq {T : Type _} (ls0 : List T)
   (ls1 : List T) (i : Std.U32) :
   list_nth_shared_mut_pair_merge ls0 ls1 i =
     Aeneas.Deep.Expr.denote (list_nth_shared_mut_pair_merge.deep)
-      (ls0 ::ₕ ls1 ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ls0 ::ₑ ls1 ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_mut_borrow]: loop body 0:
     Source: 'tests/src/loops.rs', lines 356:4-358:5
     Visibility: public -/
 def ignore_input_mut_borrow_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result (ControlFlow Std.U32 Unit)) :=
-  (.ite (.gt (.var .zero) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) :=
+  (.ite (.gt (.var .zero) (.uscalarLit .U32 0 (by decide)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.-::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 - i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i2 : Std.U32) =>
-            (cont i2 : ControlFlow Std.U32 Unit))) (.var .zero))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Std.U32 Unit))) (.lit ()))))
+    (.scalarBinop .sub (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
+    .var
+  (.ok (.continue_ (.scalar (.u .U32)) .unit (.var .zero))))
+  (.ok (.break_ (.scalar (.u .U32)) .unit .unitLit)))
 
 theorem ignore_input_mut_borrow_loop.body.deep_eq (i : Std.U32) :
   ignore_input_mut_borrow_loop.body i =
     Aeneas.Deep.Expr.denote (ignore_input_mut_borrow_loop.body.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_mut_borrow]: loop 0:
     Source: 'tests/src/loops.rs', lines 356:4-358:5
     Visibility: public -/
 def ignore_input_mut_borrow_loop.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result Unit) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result .unit) :=
   (.loop
-    (.lam .var
-      (.app (.leaf (.fn "loops::ignore_input_mut_borrow^loop0^body")
-              (fun (i2 : Std.U32) =>
-              (ignore_input_mut_borrow_loop.body i2 : Result (ControlFlow
-                Std.U32 Unit)))) (.var .zero))) (.var .zero))
+    (.lam (.scalar (.u .U32)) .var
+      (.call (.crate FunName.ignore_input_mut_borrow_loop_body) [] [] [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) (.var .zero))
 
 theorem ignore_input_mut_borrow_loop.deep_eq (i : Std.U32) :
   ignore_input_mut_borrow_loop i =
     Aeneas.Deep.Expr.denote (ignore_input_mut_borrow_loop.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_mut_borrow]:
     Source: 'tests/src/loops.rs', lines 355:0-359:1
     Visibility: public -/
 def ignore_input_mut_borrow.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.leaf (.fn "loops::ignore_input_mut_borrow^loop0")
-            (fun (i1 : Std.U32) =>
-            (ignore_input_mut_borrow_loop i1 : Result Unit)))
-      (.var (.succ .zero))) .ignore
+    (.call (.crate FunName.ignore_input_mut_borrow_loop) [] [] [(.scalar (.u .U32))] (.result .unit) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .ignore
   (.ok (.var .zero)))
 
 theorem ignore_input_mut_borrow.deep_eq (_a : Std.U32) (i : Std.U32) :
   ignore_input_mut_borrow _a i =
     Aeneas.Deep.Expr.denote (ignore_input_mut_borrow.deep)
-      (_a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (_a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::incr_ignore_input_mut_borrow]: loop body 0:
     Source: 'tests/src/loops.rs', lines 365:4-367:5
     Visibility: public -/
 def incr_ignore_input_mut_borrow_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result (ControlFlow Std.U32 Unit)) :=
-  (.ite (.gt (.var .zero) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) :=
+  (.ite (.gt (.var .zero) (.uscalarLit .U32 0 (by decide)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.-::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 - i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i2 : Std.U32) =>
-            (cont i2 : ControlFlow Std.U32 Unit))) (.var .zero))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Std.U32 Unit))) (.lit ()))))
+    (.scalarBinop .sub (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
+    .var
+  (.ok (.continue_ (.scalar (.u .U32)) .unit (.var .zero))))
+  (.ok (.break_ (.scalar (.u .U32)) .unit .unitLit)))
 
 theorem incr_ignore_input_mut_borrow_loop.body.deep_eq (i : Std.U32) :
   incr_ignore_input_mut_borrow_loop.body i =
     Aeneas.Deep.Expr.denote (incr_ignore_input_mut_borrow_loop.body.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::incr_ignore_input_mut_borrow]: loop 0:
     Source: 'tests/src/loops.rs', lines 365:4-367:5
     Visibility: public -/
 def incr_ignore_input_mut_borrow_loop.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result Unit) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result .unit) :=
   (.loop
-    (.lam .var
-      (.app (.leaf (.fn "loops::incr_ignore_input_mut_borrow^loop0^body")
-              (fun (i2 : Std.U32) =>
-              (incr_ignore_input_mut_borrow_loop.body i2 : Result (ControlFlow
-                Std.U32 Unit)))) (.var .zero))) (.var .zero))
+    (.lam (.scalar (.u .U32)) .var
+      (.call (.crate FunName.incr_ignore_input_mut_borrow_loop_body) [] [] [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) (.var .zero))
 
 theorem incr_ignore_input_mut_borrow_loop.deep_eq (i : Std.U32) :
   incr_ignore_input_mut_borrow_loop i =
     Aeneas.Deep.Expr.denote (incr_ignore_input_mut_borrow_loop.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::incr_ignore_input_mut_borrow]:
     Source: 'tests/src/loops.rs', lines 363:0-368:1
     Visibility: public -/
 def incr_ignore_input_mut_borrow.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 + i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)) .var
+    (.scalarBinop .add (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
+    .var
   (.bind
-    (.app (.leaf (.fn "loops::incr_ignore_input_mut_borrow^loop0")
-            (fun (i1 : Std.U32) =>
-            (incr_ignore_input_mut_borrow_loop i1 : Result Unit)))
-      (.var (.succ (.succ .zero)))) .ignore
+    (.call (.crate FunName.incr_ignore_input_mut_borrow_loop) [] [] [(.scalar (.u .U32))] (.result .unit) rfl rfl
+      (.cons (.var (.succ (.succ .zero))) .nil)) .ignore
   (.ok (.var .zero))))
 
 theorem incr_ignore_input_mut_borrow.deep_eq (a : Std.U32) (i : Std.U32) :
   incr_ignore_input_mut_borrow a i =
     Aeneas.Deep.Expr.denote (incr_ignore_input_mut_borrow.deep)
-      (a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_shared_borrow]: loop body 0:
     Source: 'tests/src/loops.rs', lines 373:4-375:5
     Visibility: public -/
 def ignore_input_shared_borrow_loop.body.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result (ControlFlow Std.U32 Unit)) :=
-  (.ite (.gt (.var .zero) (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) :=
+  (.ite (.gt (.var .zero) (.uscalarLit .U32 0 (by decide)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.-::<u32>")
-                  (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                  (i1 - i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i2 : Std.U32) =>
-            (cont i2 : ControlFlow Std.U32 Unit))) (.var .zero))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Std.U32 Unit))) (.lit ()))))
+    (.scalarBinop .sub (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide)))
+    .var
+  (.ok (.continue_ (.scalar (.u .U32)) .unit (.var .zero))))
+  (.ok (.break_ (.scalar (.u .U32)) .unit .unitLit)))
 
 theorem ignore_input_shared_borrow_loop.body.deep_eq (i : Std.U32) :
   ignore_input_shared_borrow_loop.body i =
     Aeneas.Deep.Expr.denote (ignore_input_shared_borrow_loop.body.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_shared_borrow]: loop 0:
     Source: 'tests/src/loops.rs', lines 373:4-375:5
     Visibility: public -/
 def ignore_input_shared_borrow_loop.deep :
-  Aeneas.Deep.Expr [Std.U32] (Result Unit) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result .unit) :=
   (.loop
-    (.lam .var
-      (.app (.leaf (.fn "loops::ignore_input_shared_borrow^loop0^body")
-              (fun (i2 : Std.U32) =>
-              (ignore_input_shared_borrow_loop.body i2 : Result (ControlFlow
-                Std.U32 Unit)))) (.var .zero))) (.var .zero))
+    (.lam (.scalar (.u .U32)) .var
+      (.call (.crate FunName.ignore_input_shared_borrow_loop_body) [] [] [(.scalar (.u .U32))] (.result (.controlFlow (.scalar (.u .U32)) .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) (.var .zero))
 
 theorem ignore_input_shared_borrow_loop.deep_eq (i : Std.U32) :
   ignore_input_shared_borrow_loop i =
     Aeneas.Deep.Expr.denote (ignore_input_shared_borrow_loop.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::ignore_input_shared_borrow]:
     Source: 'tests/src/loops.rs', lines 372:0-376:1
     Visibility: public -/
 def ignore_input_shared_borrow.deep :
-  Aeneas.Deep.Expr [Std.U32, Std.U32] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.leaf (.fn "loops::ignore_input_shared_borrow^loop0")
-            (fun (i1 : Std.U32) =>
-            (ignore_input_shared_borrow_loop i1 : Result Unit)))
-      (.var (.succ .zero))) .ignore
+    (.call (.crate FunName.ignore_input_shared_borrow_loop) [] [] [(.scalar (.u .U32))] (.result .unit) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .ignore
   (.ok (.var .zero)))
 
 theorem ignore_input_shared_borrow.deep_eq (_a : Std.U32) (i : Std.U32) :
   ignore_input_shared_borrow _a i =
     Aeneas.Deep.Expr.denote (ignore_input_shared_borrow.deep)
-      (_a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (_a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_1::bar]:
     Source: 'tests/src/loops.rs', lines 380:4-380:28 -/
-def issue500_1.bar.deep : Aeneas.Deep.Expr [Bool] (Result Bool) :=
+def issue500_1.bar.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result .bool) :=
   (.ok (.var .zero))
 
 theorem issue500_1.bar.deep_eq (_a : Bool) :
   issue500_1.bar _a =
     Aeneas.Deep.Expr.denote (issue500_1.bar.deep)
-      (_a ::ₕ Aeneas.Deep.HList.nil)
+      (_a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_1]: loop body 0:
     Source: 'tests/src/loops.rs', lines 383:4-385:5 -/
 def issue500_1_loop.body.deep :
-  Aeneas.Deep.Expr [Bool] (Result (ControlFlow Bool Bool)) :=
-  (.ite (.lt (.lit 0#i32) (.lit 0#i32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result (.controlFlow .bool .bool)) :=
+  (.ite (.lt (.iscalarLit .I32 0 (by decide)) (.iscalarLit .I32 0 (by decide)))
   (.bind
-    (.app (.leaf (.fn "loops::issue500_1::bar") (fun (b : Bool) =>
-            (issue500_1.bar b : Result Bool))) (.var .zero)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (b : Bool) =>
-            (cont b : ControlFlow Bool Bool))) (.var .zero))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (b : Bool) =>
-            (done b : ControlFlow Bool Bool))) (.var .zero))))
+    (.call (.crate FunName.issue500_1_bar) [] [] [.bool] (.result .bool) rfl rfl
+      (.cons (.var .zero) .nil)) .var
+  (.ok (.continue_ .bool .bool (.var .zero))))
+  (.ok (.break_ .bool .bool (.var .zero))))
 
 theorem issue500_1_loop.body.deep_eq (a : Bool) :
   issue500_1_loop.body a =
     Aeneas.Deep.Expr.denote (issue500_1_loop.body.deep)
-      (a ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_1]: loop 0:
     Source: 'tests/src/loops.rs', lines 383:4-385:5 -/
-def issue500_1_loop.deep : Aeneas.Deep.Expr [Bool] (Result Bool) :=
+def issue500_1_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result .bool) :=
   (.loop
-    (.lam .var
-      (.app (.leaf (.fn "loops::issue500_1^loop0^body") (fun (b : Bool) =>
-              (issue500_1_loop.body b : Result (ControlFlow Bool Bool))))
-        (.var .zero))) (.var .zero))
+    (.lam .bool .var
+      (.call (.crate FunName.issue500_1_loop_body) [] [] [.bool] (.result (.controlFlow .bool .bool)) rfl rfl
+        (.cons (.var .zero) .nil))) (.var .zero))
 
 theorem issue500_1_loop.deep_eq (a : Bool) :
   issue500_1_loop a =
     Aeneas.Deep.Expr.denote (issue500_1_loop.deep)
-      (a ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_1]:
     Source: 'tests/src/loops.rs', lines 379:0-387:1 -/
-def issue500_1.deep : Aeneas.Deep.Expr [Bool] (Result Bool) :=
-  (.app (.leaf (.fn "loops::issue500_1^loop0") (fun (b : Bool) =>
-          (issue500_1_loop b : Result Bool))) (.var .zero))
+def issue500_1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool]
+    (.result .bool) :=
+  (.call (.crate FunName.issue500_1_loop) [] [] [.bool] (.result .bool) rfl rfl
+    (.cons (.var .zero) .nil))
 
 theorem issue500_1.deep_eq (s : Bool) :
   issue500_1 s =
-    Aeneas.Deep.Expr.denote (issue500_1.deep) (s ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_1.deep) (s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_2::bar]:
     Source: 'tests/src/loops.rs', lines 392:4-392:33 -/
 def issue500_2.bar.deep :
-  Aeneas.Deep.Expr [Array Bool 1#usize] (Result (Array Bool 1#usize)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array .bool (.lit 1 (by decide)))]
+    (.result (.array .bool (.lit 1 (by decide)))) :=
   (.ok (.var .zero))
 
 theorem issue500_2.bar.deep_eq (_a : Array Bool 1#usize) :
   issue500_2.bar _a =
     Aeneas.Deep.Expr.denote (issue500_2.bar.deep)
-      (_a ::ₕ Aeneas.Deep.HList.nil)
+      (_a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_2]: loop body 0:
     Source: 'tests/src/loops.rs', lines 395:4-397:5 -/
 def issue500_2_loop.body.deep :
-  Aeneas.Deep.Expr [] (Result (ControlFlow Unit Unit)) :=
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ())))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.controlFlow .unit .unit)) :=
+  (.ok (.break_ .unit .unit .unitLit))
 
 theorem issue500_2_loop.body.deep_eq :
   issue500_2_loop.body =
-    Aeneas.Deep.Expr.denote (issue500_2_loop.body.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_2_loop.body.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_2]: loop 0:
     Source: 'tests/src/loops.rs', lines 395:4-397:5 -/
-def issue500_2_loop.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+def issue500_2_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
   (.loop
-    (.lam .ignore
-      (.leaf (.fn "loops::issue500_2^loop0^body")
-        (issue500_2_loop.body : Result (ControlFlow Unit Unit)))) (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.issue500_2_loop_body) [] [] [] (.result (.controlFlow .unit .unit)) rfl rfl
+        .nil)) .unitLit)
 
 theorem issue500_2_loop.deep_eq :
   issue500_2_loop =
-    Aeneas.Deep.Expr.denote (issue500_2_loop.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_2_loop.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_2]:
     Source: 'tests/src/loops.rs', lines 390:0-399:1 -/
 def issue500_2.deep :
-  Aeneas.Deep.Expr [Array Bool 1#usize] (Result (Array Bool 1#usize)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array .bool (.lit 1 (by decide)))]
+    (.result (.array .bool (.lit 1 (by decide)))) :=
   (.bind
-    (.leaf (.fn "loops::issue500_2^loop0") (issue500_2_loop : Result Unit))
-    .ignore
+    (.call (.crate FunName.issue500_2_loop) [] [] [] (.result .unit) rfl rfl
+      .nil) .ignore
   (.ok (.var .zero)))
 
 theorem issue500_2.deep_eq (s : Array Bool 1#usize) :
   issue500_2 s =
-    Aeneas.Deep.Expr.denote (issue500_2.deep) (s ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_2.deep) (s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_3]: loop body 0:
     Source: 'tests/src/loops.rs', lines 405:4-405:18 -/
 def issue500_3_loop.body.deep :
-  Aeneas.Deep.Expr [] (Result (ControlFlow Unit Unit)) :=
-  (.ite (.lt (.lit 0#i32) (.lit 0#i32))
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (t : Unit) =>
-            (cont t : ControlFlow Unit Unit))) (.lit ())))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ()))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.controlFlow .unit .unit)) :=
+  (.ite (.lt (.iscalarLit .I32 0 (by decide)) (.iscalarLit .I32 0 (by decide)))
+  (.ok (.continue_ .unit .unit .unitLit))
+  (.ok (.break_ .unit .unit .unitLit)))
 
 theorem issue500_3_loop.body.deep_eq :
   issue500_3_loop.body =
-    Aeneas.Deep.Expr.denote (issue500_3_loop.body.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_3_loop.body.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_3]: loop 0:
     Source: 'tests/src/loops.rs', lines 405:4-405:18 -/
-def issue500_3_loop.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+def issue500_3_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
   (.loop
-    (.lam .ignore
-      (.leaf (.fn "loops::issue500_3^loop0^body")
-        (issue500_3_loop.body : Result (ControlFlow Unit Unit)))) (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.issue500_3_loop_body) [] [] [] (.result (.controlFlow .unit .unit)) rfl rfl
+        .nil)) .unitLit)
 
 theorem issue500_3_loop.deep_eq :
   issue500_3_loop =
-    Aeneas.Deep.Expr.denote (issue500_3_loop.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_3_loop.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue500_3]:
     Source: 'tests/src/loops.rs', lines 402:0-407:1 -/
 def issue500_3.deep :
-  Aeneas.Deep.Expr [Array Bool 1#usize] (Result (Array Bool 1#usize)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array .bool (.lit 1 (by decide)))]
+    (.result (.array .bool (.lit 1 (by decide)))) :=
   (.bind
-    (.leaf (.fn "loops::issue500_3^loop0") (issue500_3_loop : Result Unit))
-    .ignore
+    (.call (.crate FunName.issue500_3_loop) [] [] [] (.result .unit) rfl rfl
+      .nil) .ignore
   (.ok (.var .zero)))
 
 theorem issue500_3.deep_eq (s : Array Bool 1#usize) :
   issue500_3 s =
-    Aeneas.Deep.Expr.denote (issue500_3.deep) (s ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue500_3.deep) (s ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue351]: loop 0:
     Source: 'tests/src/loops.rs', lines 412:4-415:5 -/
-def issue351_loop.deep : Aeneas.Deep.Expr [List Std.U8, Std.U8] (Result Std.U8)
-  :=
-  (.match_ (.var .zero) List.deepElim
-  (.cons (.app (.app (.leaf (.fn "loops::issue351^loop0")
-                       (fun (l : List Std.U8) (i : Std.U8) =>
-                       (issue351_loop l i : Result Std.U8)))
-           (.var (.succ .zero))) (.var .zero))
+def issue351_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.scalar (.u .U8))]
+    (.result (.scalar (.u .U8))) :=
+  (.match_ (.crate TypeName.List) [(.scalar (.u .U8))] [] [[(.scalar (.u .U8)), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])], []] rfl
+    (.var .zero)
+  (.cons (.call (.crate FunName.issue351_loop) [] [] [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.scalar (.u .U8))] (.result (.scalar (.u .U8))) rfl rfl
+           (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))
   (.cons (.ok (.var (.succ .zero)))
   .nil)))
 
 theorem issue351_loop.deep_eq (t : List Std.U8) (last : Std.U8) :
   issue351_loop t last =
     Aeneas.Deep.Expr.denote (issue351_loop.deep)
-      (t ::ₕ last ::ₕ Aeneas.Deep.HList.nil)
+      (t ::ₑ last ::ₑ Aeneas.Deep.Env.nil)
   := by unfold issue351_loop; deep_rfl
 
 /-- [loops::issue351]:
     Source: 'tests/src/loops.rs', lines 410:0-417:1 -/
-def issue351.deep : Aeneas.Deep.Expr [Std.U8, List Std.U8] (Result Std.U8) :=
-  (.app (.app (.leaf (.fn "loops::issue351^loop0")
-                (fun (l : List Std.U8) (i : Std.U8) =>
-                (issue351_loop l i : Result Std.U8))) (.var (.succ .zero)))
-    (.var .zero))
+def issue351.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]
+    (.result (.scalar (.u .U8))) :=
+  (.call (.crate FunName.issue351_loop) [] [] [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.scalar (.u .U8))] (.result (.scalar (.u .U8))) rfl rfl
+    (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))
 
 theorem issue351.deep_eq (h : Std.U8) (t : List Std.U8) :
   issue351 h t =
     Aeneas.Deep.Expr.denote (issue351.deep)
-      (h ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (h ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue270::box_get_borrow]:
     Source: 'tests/src/loops.rs', lines 421:4-423:5 -/
-def issue270.box_get_borrow.deep {T : Type _} : Aeneas.Deep.Expr [T] (Result T)
-  :=
+def issue270.box_get_borrow.deep {T : Type _} :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ [(.var 0)]
+    (.result (.var 0)) :=
   (.ok (.var .zero))
 
 theorem issue270.box_get_borrow.deep_eq {T : Type _} (x : T) :
   issue270.box_get_borrow x =
     Aeneas.Deep.Expr.denote (issue270.box_get_borrow.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue270]: loop body 0:
     Source: 'tests/src/loops.rs', lines 427:8-430:9 -/
 def issue270_loop.body.deep :
-  Aeneas.Deep.Expr [List (List Std.U8), List Std.U8] (Result (ControlFlow
-    ((List (List Std.U8)) × (List Std.U8)) (List Std.U8))) :=
-  (.match_ (.var .zero) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]
+    (.result (.controlFlow (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])))
+  :=
+  (.match_ (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [] [[(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])], []] rfl
+    (.var .zero)
   (.cons (.bind
-           (.app (.leaf (.fn "loops::issue270::box_get_borrow")
-                   (fun (l : List (List Std.U8)) =>
-                   (issue270.box_get_borrow l : Result (List (List Std.U8)))))
-             (.var (.succ .zero))) .var
+           (.call (.crate FunName.issue270_box_get_borrow) [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])] [] [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])] (.result (.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])) rfl rfl
+             (.cons (.var (.succ .zero)) .nil)) .var
          (.ok
-           (.app (.leaf (.ctor "@Continue")
-                   (fun (p : ((List (List Std.U8)) × (List Std.U8))) =>
-                   (cont p : ControlFlow ((List (List Std.U8)) × (List
-                     Std.U8)) (List Std.U8))))
-             (.pair (.var .zero) (.var (.succ .zero))))))
+           (.continue_ (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])
+             (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))))
   (.cons (.ok
-           (.app (.leaf (.ctor "@Break") (fun (l : List Std.U8) =>
-                   (done l : ControlFlow ((List (List Std.U8)) × (List
-                     Std.U8)) (List Std.U8)))) (.var (.succ .zero))))
+           (.break_ (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])
+             (.var (.succ .zero))))
   .nil)))
 
 theorem issue270_loop.body.deep_eq (t : List (List Std.U8))
   (last : List Std.U8) :
   issue270_loop.body t last =
     Aeneas.Deep.Expr.denote (issue270_loop.body.deep)
-      (t ::ₕ last ::ₕ Aeneas.Deep.HList.nil)
+      (t ::ₑ last ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue270]: loop 0:
     Source: 'tests/src/loops.rs', lines 427:8-430:9 -/
 def issue270_loop.deep :
-  Aeneas.Deep.Expr [List (List Std.U8), List Std.U8] (Result (List Std.U8)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]
+    (.result (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.leaf (.fn "loops::issue270^loop0^body")
-                    (fun (l : List (List Std.U8)) (l1 : List Std.U8) =>
-                    (issue270_loop.body l l1 : Result (ControlFlow ((List (List
-                      Std.U8)) × (List Std.U8)) (List Std.U8)))))
-        (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var .zero) (.var (.succ .zero))))
+    (.lam (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.issue270_loop_body) [] [] [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] (.result (.controlFlow (.tuple [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])]) (.adt (.crate TypeName.List) [(.scalar (.u .U8))] []))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
+    (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem issue270_loop.deep_eq (t : List (List Std.U8)) (last : List Std.U8) :
   issue270_loop t last =
     Aeneas.Deep.Expr.denote (issue270_loop.deep)
-      (t ::ₕ last ::ₕ Aeneas.Deep.HList.nil)
+      (t ::ₑ last ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue270]:
     Source: 'tests/src/loops.rs', lines 420:0-435:1 -/
 def issue270.deep :
-  Aeneas.Deep.Expr [List (List Std.U8)] (Result (Option (List Std.U8))) :=
-  (.match_ (.var .zero) List.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])]
+    (.result (.adt (.builtin .option) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []))
+  :=
+  (.match_ (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [] [[(.adt (.crate TypeName.List) [(.scalar (.u .U8))] []), (.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])], []] rfl
+    (.var .zero)
   (.cons (.bind
-           (.app (.leaf (.fn "loops::issue270::box_get_borrow")
-                   (fun (l : List (List Std.U8)) =>
-                   (issue270.box_get_borrow l : Result (List (List Std.U8)))))
-             (.var (.succ .zero))) .var
+           (.call (.crate FunName.issue270_box_get_borrow) [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])] [] [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])] (.result (.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [])) rfl rfl
+             (.cons (.var (.succ .zero)) .nil)) .var
          (.bind
-           (.app (.app (.leaf (.fn "loops::issue270^loop0")
-                         (fun (l : List (List Std.U8)) (l1 : List Std.U8) =>
-                         (issue270_loop l l1 : Result (List Std.U8))))
-             (.var .zero)) (.var (.succ .zero))) .var
+           (.call (.crate FunName.issue270_loop) [] [] [(.adt (.crate TypeName.List) [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] []), (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] (.result (.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])) rfl rfl
+             (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))) .var
          (.ok
-           (.app (.leaf (.ctor "core::option::Option::Some")
-                   (fun (l : List Std.U8) => (some l : Option (List Std.U8))))
-             (.var .zero)))))
+           (.ctor (.builtin .option) 1 [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [] [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] rfl
+             (.cons (.var .zero) .nil)))))
   (.cons (.ok
-           (.leaf (.ctor "core::option::Option::None")
-             (none : Option (List Std.U8))))
+           (.ctor (.builtin .option) 0 [(.adt (.crate TypeName.List) [(.scalar (.u .U8))] [])] [] [] rfl
+             .nil))
   .nil)))
 
 theorem issue270.deep_eq (v : List (List Std.U8)) :
   issue270 v =
-    Aeneas.Deep.Expr.denote (issue270.deep) (v ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (issue270.deep) (v ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_1]: loop body 0:
     Source: 'tests/src/loops.rs', lines 441:4-448:5 -/
 def issue400_1_loop.body.deep :
-  Aeneas.Deep.Expr [Bool, Std.I32 → (Std.I32 × Std.I32), Std.I32, Std.I32]
-    (Result (ControlFlow ((Std.I32 → (Std.I32 × Std.I32)) × Std.I32 ×
-    Std.I32) (Std.I32 × Std.I32))) :=
-  (.ite (.lt (.var (.succ (.succ (.succ .zero)))) (.lit 32#i32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [.bool, (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])))
+  :=
+  (.ite
+    (.lt (.var (.succ (.succ (.succ .zero))))
+      (.iscalarLit .I32 32 (by decide)))
   (.bind
     (.ite (.bool (.var .zero))
-    (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero)))) (.pair .var
-      .var)
+    (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero))))
+      (.tuple (.cons .var (.cons .var .nil)))
     (.ok
-      (.pair (.var .zero)
-        (.lam .var (.pair (.var .zero) (.var (.succ (.succ .zero))))))))
-    (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero)))) (.pair .var
-      .var)
+      (.tuple
+        (.cons (.var .zero)
+          (.cons (.lam (.scalar (.i .I32)) .var
+                   (.tuple
+                     (.cons (.var .zero) (.cons (.var (.succ (.succ .zero)))
+                       .nil)))) .nil)))))
+    (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero))))
+      (.tuple (.cons .var (.cons .var .nil)))
     (.ok
-      (.pair (.var (.succ .zero))
-        (.lam .var (.pair (.var (.succ .zero)) (.var .zero))))))) (.pair .var
-    .var)
+      (.tuple
+        (.cons (.var (.succ .zero))
+          (.cons (.lam (.scalar (.i .I32)) .var
+                   (.tuple
+                     (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))
+          .nil)))))) (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<i32>")
-                  (fun (i1 : Std.I32) (i2 : Std.I32) =>
-                  (i1 + i2 : Result Std.I32)))
-      (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.lit 1#i32)) .var
+    (.scalarBinop .add (.i .I32)
+      (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+      (.iscalarLit .I32 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue")
-            (fun (t : ((Std.I32 → (Std.I32 × Std.I32)) × Std.I32 ×
-              Std.I32)) =>
-            (cont t : ControlFlow ((Std.I32 → (Std.I32 × Std.I32)) ×
-              Std.I32 × Std.I32) (Std.I32 × Std.I32))))
-      (.pair (.var (.succ (.succ .zero)))
-        (.pair (.var (.succ .zero)) (.var .zero)))))))
-  (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero)))) (.pair .var
-    .var)
+    (.continue_ (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])
+      (.tuple
+        (.cons (.var (.succ (.succ .zero))) (.cons (.var (.succ .zero))
+          (.cons (.var .zero) .nil))))))))
+  (.let_ (.app (.var (.succ .zero)) (.var (.succ (.succ .zero))))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (p : (Std.I32 × Std.I32)) =>
-            (done p : ControlFlow ((Std.I32 → (Std.I32 × Std.I32)) ×
-              Std.I32 × Std.I32) (Std.I32 × Std.I32))))
-      (.pair (.var .zero) (.var (.succ .zero)))))))
+    (.break_ (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))))
 
 theorem issue400_1_loop.body.deep_eq (cond : Bool)
   (back : Std.I32 → (Std.I32 × Std.I32)) (y : Std.I32) (i : Std.I32) :
   issue400_1_loop.body cond back y i =
     Aeneas.Deep.Expr.denote (issue400_1_loop.body.deep)
-      (cond ::ₕ back ::ₕ y ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (cond ::ₑ back ::ₑ y ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_1]: loop 0:
     Source: 'tests/src/loops.rs', lines 441:4-448:5 -/
 def issue400_1_loop.deep :
-  Aeneas.Deep.Expr [Std.I32 → (Std.I32 × Std.I32), Bool, Std.I32, Std.I32]
-    (Result (Std.I32 × Std.I32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), .bool, (.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])) :=
   (.loop
-    (.lam (.pair .var (.pair .var .var))
-      (.app (.app (.app (.app (.leaf (.fn "loops::issue400_1^loop0^body")
-                                (fun (b : Bool) (f : Std.I32 → (Std.I32 ×
-                                  Std.I32)) (i2 : Std.I32) (i3 : Std.I32) =>
-                                (issue400_1_loop.body b f i2 i3 : Result
-                                  (ControlFlow ((Std.I32 → (Std.I32 ×
-                                  Std.I32)) × Std.I32 × Std.I32) (Std.I32 ×
-                                  Std.I32)))))
-        (.var (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))
-        (.var (.succ .zero))) (.var (.succ (.succ .zero)))))
-    (.pair (.var .zero)
-      (.pair (.var (.succ (.succ .zero))) (.var (.succ (.succ (.succ .zero)))))))
+    (.lam (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple (.cons .var
+      (.cons .var (.cons .var .nil))))
+      (.call (.crate FunName.issue400_1_loop_body) [] [] [.bool, (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), (.scalar (.i .I32)), (.scalar (.i .I32))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))]))) rfl rfl
+        (.cons (.var (.succ (.succ (.succ (.succ .zero))))) (.cons (.var .zero)
+          (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero)))
+          .nil))))))
+    (.tuple
+      (.cons (.var .zero) (.cons (.var (.succ (.succ .zero)))
+        (.cons (.var (.succ (.succ (.succ .zero)))) .nil)))))
 
 theorem issue400_1_loop.deep_eq (back : Std.I32 → (Std.I32 × Std.I32))
   (cond : Bool) (y : Std.I32) (i : Std.I32) :
   issue400_1_loop back cond y i =
     Aeneas.Deep.Expr.denote (issue400_1_loop.deep)
-      (back ::ₕ cond ::ₕ y ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (back ::ₑ cond ::ₑ y ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_1]:
     Source: 'tests/src/loops.rs', lines 438:0-449:1 -/
 def issue400_1.deep :
-  Aeneas.Deep.Expr [Std.I32, Std.I32, Bool] (Result (Std.I32 × Std.I32)) :=
-  (.app (.app (.app (.app (.leaf (.fn "loops::issue400_1^loop0")
-                            (fun (f : Std.I32 → (Std.I32 × Std.I32))
-                              (b1 : Bool) (i : Std.I32) (i1 : Std.I32) =>
-                            (issue400_1_loop f b1 i i1 : Result (Std.I32 ×
-                              Std.I32))))
-    (.lam .var (.pair (.var .zero) (.var (.succ (.succ .zero))))))
-    (.var (.succ (.succ .zero)))) (.var .zero)) (.lit 0#i32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32)), .bool]
+    (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])) :=
+  (.call (.crate FunName.issue400_1_loop) [] [] [(.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])), .bool, (.scalar (.i .I32)), (.scalar (.i .I32))] (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32))])) rfl rfl
+    (.cons (.lam (.scalar (.i .I32)) .var
+             (.tuple
+               (.cons (.var .zero) (.cons (.var (.succ (.succ .zero))) .nil))))
+      (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+      (.cons (.iscalarLit .I32 0 (by decide)) .nil)))))
 
 theorem issue400_1.deep_eq (a : Std.I32) (b : Std.I32) (cond : Bool) :
   issue400_1 a b cond =
     Aeneas.Deep.Expr.denote (issue400_1.deep)
-      (a ::ₕ b ::ₕ cond ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ b ::ₑ cond ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_2]: loop body 0:
     Source: 'tests/src/loops.rs', lines 456:4-465:5 -/
 def issue400_2_loop.body.deep :
-  Aeneas.Deep.Expr [Slice Bool, Std.I32 → Std.I32 → (Std.I32 × Std.I32 ×
-    Std.I32), Std.I32, Std.I32, Std.Usize] (Result (ControlFlow ((Std.I32 →
-    Std.I32 → (Std.I32 × Std.I32 × Std.I32)) × Std.I32 × Std.I32 ×
-    Std.Usize) (Std.I32 × Std.I32 × (Std.I32 → Std.I32 → (Std.I32 ×
-    Std.I32 × Std.I32))))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice .bool), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]
+    (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))])))
+  :=
   (.let_
-    (.app (.leaf (.fn "core::slice::{[T]}::len") (fun (s : Slice Bool) =>
-            (Slice.len s : Std.Usize))) (.var .zero)) .var
+    (.call (.prim .sliceLen) [.bool] [] [(.slice .bool)] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite (.lt (.var (.succ (.succ (.succ (.succ (.succ .zero)))))) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.fn "@sliceIndex")
-                  (fun (s : Slice Bool) (i2 : Std.Usize) =>
-                  (Slice.index_usize s i2 : Result Bool)))
-      (.var (.succ .zero)))
-      (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) .var
+    (.call (.prim .sliceIndex) [.bool] [] [(.slice .bool), (.scalar (.u .Usize))] (.result .bool) rfl rfl
+      (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero)))))) .nil)))
+    .var
   (.bind
     (.ite (.bool (.var .zero))
     (.let_
       (.app (.app (.var (.succ (.succ (.succ .zero))))
         (.var (.succ (.succ (.succ (.succ .zero))))))
-        (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.pair .var
-      (.pair .var .var))
+        (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
+      (.tuple (.cons .var (.cons .var (.cons .var .nil))))
     (.ok
-      (.pair (.var .zero)
-        (.pair (.var (.succ .zero))
-          (.lam .var (.lam .var
-            (.pair (.var (.succ .zero))
-              (.pair (.var .zero) (.var (.succ (.succ (.succ (.succ .zero)))))))))))))
+      (.tuple
+        (.cons (.var .zero) (.cons (.var (.succ .zero))
+          (.cons (.lam (.scalar (.i .I32)) .var (.lam (.scalar (.i .I32)) .var
+                   (.tuple
+                     (.cons (.var (.succ .zero)) (.cons (.var .zero)
+                       (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                       .nil)))))) .nil))))))
     (.let_
       (.app (.app (.var (.succ (.succ (.succ .zero))))
         (.var (.succ (.succ (.succ (.succ .zero))))))
-        (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.pair .var
-      (.pair .var .var))
+        (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
+      (.tuple (.cons .var (.cons .var (.cons .var .nil))))
     (.ok
-      (.pair (.var (.succ .zero))
-        (.pair (.var (.succ (.succ .zero)))
-          (.lam .var (.lam .var
-            (.pair (.var (.succ (.succ .zero)))
-              (.pair (.var (.succ .zero)) (.var .zero)))))))))) (.pair .var
-    (.pair .var .var))
+      (.tuple
+        (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero)))
+          (.cons (.lam (.scalar (.i .I32)) .var (.lam (.scalar (.i .I32)) .var
+                   (.tuple
+                     (.cons (.var (.succ (.succ .zero)))
+                       (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))
+          .nil))))))) (.tuple (.cons .var (.cons .var (.cons .var .nil))))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
-      (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize)
+      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue")
-            (fun (t : ((Std.I32 → Std.I32 → (Std.I32 × Std.I32 ×
-              Std.I32)) × Std.I32 × Std.I32 × Std.Usize)) =>
-            (cont t : ControlFlow ((Std.I32 → Std.I32 → (Std.I32 × Std.I32
-              × Std.I32)) × Std.I32 × Std.I32 × Std.Usize) (Std.I32 ×
-              Std.I32 × (Std.I32 → Std.I32 → (Std.I32 × Std.I32 ×
-              Std.I32))))))
-      (.pair (.var (.succ (.succ (.succ .zero))))
-        (.pair (.var (.succ .zero))
-          (.pair (.var (.succ (.succ .zero))) (.var .zero)))))))))
+    (.continue_ (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))])
+      (.tuple
+        (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var (.succ .zero))
+          (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil))))))))))
   (.ok
-    (.app (.leaf (.ctor "@Break")
-            (fun (t : (Std.I32 × Std.I32 × (Std.I32 → Std.I32 → (Std.I32
-              × Std.I32 × Std.I32)))) =>
-            (done t : ControlFlow ((Std.I32 → Std.I32 → (Std.I32 × Std.I32
-              × Std.I32)) × Std.I32 × Std.I32 × Std.Usize) (Std.I32 ×
-              Std.I32 × (Std.I32 → Std.I32 → (Std.I32 × Std.I32 ×
-              Std.I32))))))
-      (.pair (.var (.succ (.succ (.succ .zero))))
-        (.pair (.var (.succ (.succ (.succ (.succ .zero)))))
-          (.var (.succ (.succ .zero)))))))))
+    (.break_ (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))])
+      (.tuple
+        (.cons (.var (.succ (.succ (.succ .zero))))
+          (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+          (.cons (.var (.succ (.succ .zero))) .nil))))))))
 
 theorem issue400_2_loop.body.deep_eq (conds : Slice Bool)
   (back : Std.I32 → Std.I32 → (Std.I32 × Std.I32 × Std.I32))
   (y : Std.I32) (z : Std.I32) (i : Std.Usize) :
   issue400_2_loop.body conds back y z i =
     Aeneas.Deep.Expr.denote (issue400_2_loop.body.deep)
-      (conds ::ₕ back ::ₕ y ::ₕ z ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (conds ::ₑ back ::ₑ y ::ₑ z ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_2]: loop 0:
     Source: 'tests/src/loops.rs', lines 456:4-465:5 -/
 def issue400_2_loop.deep :
-  Aeneas.Deep.Expr [Std.I32 → Std.I32 → (Std.I32 × Std.I32 × Std.I32),
-    Slice Bool, Std.I32, Std.I32, Std.Usize] (Result (Std.I32 × Std.I32 ×
-    (Std.I32 → Std.I32 → (Std.I32 × Std.I32 × Std.I32)))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.slice .bool), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))]))
+  :=
   (.loop
-    (.lam (.pair .var (.pair .var (.pair .var .var)))
-      (.app (.app (.app (.app (.app (.leaf (.fn "loops::issue400_2^loop0^body")
-                                      (fun (s : Slice Bool) (f : Std.I32 →
-                                        Std.I32 → (Std.I32 × Std.I32 ×
-                                        Std.I32)) (i2 : Std.I32) (i3 : Std.I32)
-                                        (i4 : Std.Usize) =>
-                                      (issue400_2_loop.body s f i2 i3 i4 :
-                                        Result (ControlFlow ((Std.I32 →
-                                        Std.I32 → (Std.I32 × Std.I32 ×
-                                        Std.I32)) × Std.I32 × Std.I32 ×
-                                        Std.Usize) (Std.I32 × Std.I32 ×
-                                        (Std.I32 → Std.I32 → (Std.I32 ×
-                                        Std.I32 × Std.I32)))))))
-        (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.var .zero))
-        (.var (.succ .zero))) (.var (.succ (.succ .zero))))
-        (.var (.succ (.succ (.succ .zero))))))
-    (.pair (.var .zero)
-      (.pair (.var (.succ (.succ .zero)))
-        (.pair (.var (.succ (.succ (.succ .zero))))
-          (.var (.succ (.succ (.succ (.succ .zero)))))))))
+    (.lam (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple (.cons .var
+      (.cons .var (.cons .var (.cons .var .nil)))))
+      (.call (.crate FunName.issue400_2_loop_body) [] [] [(.slice .bool), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))] (.result (.controlFlow (.tuple [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))]) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))]))) rfl rfl
+        (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+          (.cons (.var .zero) (.cons (.var (.succ .zero))
+          (.cons (.var (.succ (.succ .zero)))
+          (.cons (.var (.succ (.succ (.succ .zero)))) .nil)))))))
+    (.tuple
+      (.cons (.var .zero) (.cons (.var (.succ (.succ .zero)))
+        (.cons (.var (.succ (.succ (.succ .zero))))
+        (.cons (.var (.succ (.succ (.succ (.succ .zero))))) .nil))))))
 
 theorem issue400_2_loop.deep_eq
   (back : Std.I32 → Std.I32 → (Std.I32 × Std.I32 × Std.I32))
   (conds : Slice Bool) (y : Std.I32) (z : Std.I32) (i : Std.Usize) :
   issue400_2_loop back conds y z i =
     Aeneas.Deep.Expr.denote (issue400_2_loop.deep)
-      (back ::ₕ conds ::ₕ y ::ₕ z ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (back ::ₑ conds ::ₑ y ::ₑ z ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::issue400_2]:
     Source: 'tests/src/loops.rs', lines 452:0-468:1 -/
 def issue400_2.deep :
-  Aeneas.Deep.Expr [Std.I32, Std.I32, Std.I32, Slice Bool] (Result (Std.I32 ×
-    Std.I32 × Std.I32)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32)), (.slice .bool)]
+    (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))
+  :=
   (.bind
-    (.app (.app (.app (.app (.app (.leaf (.fn "loops::issue400_2^loop0")
-                                    (fun (f : Std.I32 → Std.I32 → (Std.I32
-                                      × Std.I32 × Std.I32)) (s : Slice Bool)
-                                      (i : Std.I32) (i1 : Std.I32)
-                                      (i2 : Std.Usize) =>
-                                    (issue400_2_loop f s i i1 i2 : Result
-                                      (Std.I32 × Std.I32 × (Std.I32 →
-                                      Std.I32 → (Std.I32 × Std.I32 ×
-                                      Std.I32))))))
-      (.lam .var (.lam .var
-        (.pair (.var (.succ .zero))
-          (.pair (.var .zero) (.var (.succ (.succ (.succ (.succ .zero))))))))))
-      (.var (.succ (.succ (.succ .zero))))) (.var .zero)) (.var (.succ .zero)))
-      (.lit 0#usize)) (.pair .var (.pair .var .var))
+    (.call (.crate FunName.issue400_2_loop) [] [] [(.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))]))), (.slice .bool), (.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.u .Usize))] (.result (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), (.scalar (.i .I32)), (.scalar (.i .I32))])))])) rfl rfl
+      (.cons (.lam (.scalar (.i .I32)) .var (.lam (.scalar (.i .I32)) .var
+               (.tuple
+                 (.cons (.var (.succ .zero)) (.cons (.var .zero)
+                   (.cons (.var (.succ (.succ (.succ (.succ .zero))))) .nil))))))
+        (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var .zero)
+        (.cons (.var (.succ .zero)) (.cons (.uscalarLit .Usize 0 (by decide))
+        .nil)))))) (.tuple (.cons .var (.cons .var (.cons .var .nil))))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<i32>")
-                  (fun (i : Std.I32) (i1 : Std.I32) =>
-                  (i + i1 : Result Std.I32))) (.var .zero)) (.lit 3#i32)) .var
+    (.scalarBinop .add (.i .I32) (.var .zero) (.iscalarLit .I32 3 (by decide)))
+    .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<i32>")
-                  (fun (i : Std.I32) (i1 : Std.I32) =>
-                  (i + i1 : Result Std.I32))) (.var (.succ (.succ .zero))))
-      (.lit 5#i32)) .var
+    (.scalarBinop .add (.i .I32) (.var (.succ (.succ .zero)))
+      (.iscalarLit .I32 5 (by decide))) .var
   (.ok
     (.app (.app (.var (.succ (.succ (.succ (.succ .zero)))))
       (.var (.succ .zero))) (.var .zero))))))
@@ -3460,567 +3910,524 @@ theorem issue400_2.deep_eq (a : Std.I32) (b : Std.I32) (c : Std.I32)
   (conds : Slice Bool) :
   issue400_2 a b c conds =
     Aeneas.Deep.Expr.denote (issue400_2.deep)
-      (a ::ₕ b ::ₕ c ::ₕ conds ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ b ::ₑ c ::ₑ conds ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::copy_carray::CARRAY]
     Source: 'tests/src/loops.rs', lines 472:4-472:36 -/
-def copy_carray.CARRAY.deep : Aeneas.Deep.Expr [] (Array Std.U32 2#usize) :=
-  (.app (.app (.leaf (.ctor "Array") (fun (i : Std.U32) (i1 : Std.U32) =>
+def copy_carray.CARRAY.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.array (.scalar (.u .U32)) (.lit 2 (by decide))) :=
+  (.app (.app (.leaf (.ctor "Array")
+                (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))))
+                (fun (i : Std.U32) (i1 : Std.U32) =>
                 (Array.make 2#usize [ i, i1 ] : Array Std.U32 2#usize)))
-    (.lit 0#u32)) (.lit 1#u32))
+    (.uscalarLit .U32 0 (by decide))) (.uscalarLit .U32 1 (by decide)))
 
 theorem copy_carray.CARRAY.deep_eq :
   copy_carray.CARRAY =
-    Aeneas.Deep.Expr.denote (copy_carray.CARRAY.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (copy_carray.CARRAY.deep) (Aeneas.Deep.Env.nil)
   := by unfold copy_carray.CARRAY; deep_rfl
 
 /-- [loops::copy_carray]: loop body 0:
     Source: 'tests/src/loops.rs', lines 474:4-477:5 -/
 def copy_carray_loop.body.deep :
-  Aeneas.Deep.Expr [Array Std.U32 2#usize, Std.Usize] (Result (ControlFlow
-    ((Array Std.U32 2#usize) × Std.Usize) (Array Std.U32 2#usize))) :=
-  (.ite (.lt (.var (.succ .zero)) (.lit 2#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]
+    (.result (.controlFlow (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))))
+  :=
+  (.ite (.lt (.var (.succ .zero)) (.uscalarLit .Usize 2 (by decide)))
   (.bind
-    (.app (.app (.leaf (.fn "@arrayIndex")
-                  (fun (a1 : Array Std.U32 2#usize) (i1 : Std.Usize) =>
-                  (Array.index_usize a1 i1 : Result Std.U32)))
-      (.leaf (.global "loops::copy_carray::CARRAY")
-        (copy_carray.CARRAY : Array Std.U32 2#usize))) (.var (.succ .zero)))
-    .var
+    (.call (.prim .arrayIndex) [(.scalar (.u .U32))] [(.lit 2 (by decide))] [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.global GlobalName.copy_carray_CARRAY [] [] (.array (.scalar (.u .U32)) (.lit 2 (by decide))) rfl)
+        (.cons (.var (.succ .zero)) .nil))) .var
   (.bind
-    (.app (.app (.app (.leaf (.fn "@arrayUpdate")
-                        (fun (a1 : Array Std.U32 2#usize) (i2 : Std.Usize)
-                          (i3 : Std.U32) =>
-                        (Array.update a1 i2 i3 : Result (Array Std.U32
-                          2#usize)))) (.var (.succ .zero)))
-      (.var (.succ (.succ .zero)))) (.var .zero)) .var
+    (.call (.prim .arrayUpdate) [(.scalar (.u .U32))] [(.lit 2 (by decide))] [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize)), (.scalar (.u .U32))] (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide)))) rfl rfl
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero)))
+        (.cons (.var .zero) .nil)))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.ok
-    (.app (.leaf (.ctor "@Continue")
-            (fun (p : ((Array Std.U32 2#usize) × Std.Usize)) =>
-            (cont p : ControlFlow ((Array Std.U32 2#usize) × Std.Usize) (Array
-              Std.U32 2#usize)))) (.pair (.var (.succ .zero)) (.var .zero)))))))
+    (.continue_ (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))
+      (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (a1 : Array Std.U32 2#usize) =>
-            (done a1 : ControlFlow ((Array Std.U32 2#usize) × Std.Usize)
-              (Array Std.U32 2#usize)))) (.var .zero))))
+    (.break_ (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))
+      (.var .zero))))
 
 theorem copy_carray_loop.body.deep_eq (a : Array Std.U32 2#usize)
   (i : Std.Usize) :
   copy_carray_loop.body a i =
     Aeneas.Deep.Expr.denote (copy_carray_loop.body.deep)
-      (a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::copy_carray]: loop 0:
     Source: 'tests/src/loops.rs', lines 474:4-477:5 -/
 def copy_carray_loop.deep :
-  Aeneas.Deep.Expr [Array Std.U32 2#usize, Std.Usize] (Result (Array Std.U32
-    2#usize)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]
+    (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide)))) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.leaf (.fn "loops::copy_carray^loop0^body")
-                    (fun (a2 : Array Std.U32 2#usize) (i2 : Std.Usize) =>
-                    (copy_carray_loop.body a2 i2 : Result (ControlFlow ((Array
-                      Std.U32 2#usize) × Std.Usize) (Array Std.U32 2#usize)))))
-        (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var .zero) (.var (.succ .zero))))
+    (.lam (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.copy_carray_loop_body) [] [] [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))] (.result (.controlFlow (.tuple [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))]) (.array (.scalar (.u .U32)) (.lit 2 (by decide))))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
+    (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem copy_carray_loop.deep_eq (a : Array Std.U32 2#usize) (i : Std.Usize) :
   copy_carray_loop a i =
     Aeneas.Deep.Expr.denote (copy_carray_loop.deep)
-      (a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::copy_carray]:
     Source: 'tests/src/loops.rs', lines 471:0-478:1 -/
 def copy_carray.deep :
-  Aeneas.Deep.Expr [Array Std.U32 2#usize] (Result (Array Std.U32 2#usize)) :=
-  (.app (.app (.leaf (.fn "loops::copy_carray^loop0")
-                (fun (a1 : Array Std.U32 2#usize) (i : Std.Usize) =>
-                (copy_carray_loop a1 i : Result (Array Std.U32 2#usize))))
-    (.var .zero)) (.lit 0#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array (.scalar (.u .U32)) (.lit 2 (by decide)))]
+    (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide)))) :=
+  (.call (.crate FunName.copy_carray_loop) [] [] [(.array (.scalar (.u .U32)) (.lit 2 (by decide))), (.scalar (.u .Usize))] (.result (.array (.scalar (.u .U32)) (.lit 2 (by decide)))) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
 
 theorem copy_carray.deep_eq (a : Array Std.U32 2#usize) :
   copy_carray a =
-    Aeneas.Deep.Expr.denote (copy_carray.deep) (a ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (copy_carray.deep) (a ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_mut_borrow]: loop body 0:
     Source: 'tests/src/loops.rs', lines 484:4-491:5 -/
 def iter_local_mut_borrow_loop.body.deep :
-  Aeneas.Deep.Expr [Std.I32] (Result (ControlFlow Std.I32 Unit)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result (.controlFlow (.scalar (.i .I32)) .unit)) :=
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<i32>")
-                  (fun (i : Std.I32) (i1 : Std.I32) =>
-                  (i + i1 : Result Std.I32))) (.var .zero)) (.lit 1#i32)) .var
-  (.ite (.eq (.var .zero) (.lit 10#i32))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Std.I32 Unit))) (.lit ())))
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i : Std.I32) =>
-            (cont i : ControlFlow Std.I32 Unit))) (.var .zero)))))
+    (.scalarBinop .add (.i .I32) (.var .zero) (.iscalarLit .I32 1 (by decide)))
+    .var
+  (.ite (.eq (.var .zero) (.iscalarLit .I32 10 (by decide)))
+  (.ok (.break_ (.scalar (.i .I32)) .unit .unitLit))
+  (.ok (.continue_ (.scalar (.i .I32)) .unit (.var .zero)))))
 
 theorem iter_local_mut_borrow_loop.body.deep_eq (p : Std.I32) :
   iter_local_mut_borrow_loop.body p =
     Aeneas.Deep.Expr.denote (iter_local_mut_borrow_loop.body.deep)
-      (p ::ₕ Aeneas.Deep.HList.nil)
+      (p ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_mut_borrow]: loop 0:
     Source: 'tests/src/loops.rs', lines 484:4-491:5 -/
-def iter_local_mut_borrow_loop.deep : Aeneas.Deep.Expr [Std.I32] (Result Unit)
-  :=
+def iter_local_mut_borrow_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32))] (.result .unit) :=
   (.loop
-    (.lam .var
-      (.app (.leaf (.fn "loops::iter_local_mut_borrow^loop0^body")
-              (fun (i : Std.I32) =>
-              (iter_local_mut_borrow_loop.body i : Result (ControlFlow Std.I32
-                Unit)))) (.var .zero))) (.var .zero))
+    (.lam (.scalar (.i .I32)) .var
+      (.call (.crate FunName.iter_local_mut_borrow_loop_body) [] [] [(.scalar (.i .I32))] (.result (.controlFlow (.scalar (.i .I32)) .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) (.var .zero))
 
 theorem iter_local_mut_borrow_loop.deep_eq (p : Std.I32) :
   iter_local_mut_borrow_loop p =
     Aeneas.Deep.Expr.denote (iter_local_mut_borrow_loop.deep)
-      (p ::ₕ Aeneas.Deep.HList.nil)
+      (p ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_mut_borrow]:
     Source: 'tests/src/loops.rs', lines 481:0-492:1 -/
-def iter_local_mut_borrow.deep : Aeneas.Deep.Expr [] (Result Unit) :=
-  (.app (.leaf (.fn "loops::iter_local_mut_borrow^loop0") (fun (i : Std.I32) =>
-          (iter_local_mut_borrow_loop i : Result Unit))) (.lit 0#i32))
+def iter_local_mut_borrow.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.call (.crate FunName.iter_local_mut_borrow_loop) [] [] [(.scalar (.i .I32))] (.result .unit) rfl rfl
+    (.cons (.iscalarLit .I32 0 (by decide)) .nil))
 
 theorem iter_local_mut_borrow.deep_eq :
   iter_local_mut_borrow =
-    Aeneas.Deep.Expr.denote (iter_local_mut_borrow.deep)
-      (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (iter_local_mut_borrow.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_shared_borrow]: loop body 0:
     Source: 'tests/src/loops.rs', lines 498:4-504:5 -/
 def iter_local_shared_borrow_loop.body.deep :
-  Aeneas.Deep.Expr [] (Result (ControlFlow Unit Unit)) :=
-  (.ite (.eq (.lit 0#i32) (.lit 0#i32))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ())))
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (t : Unit) =>
-            (cont t : ControlFlow Unit Unit))) (.lit ()))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.controlFlow .unit .unit)) :=
+  (.ite (.eq (.iscalarLit .I32 0 (by decide)) (.iscalarLit .I32 0 (by decide)))
+  (.ok (.break_ .unit .unit .unitLit))
+  (.ok (.continue_ .unit .unit .unitLit)))
 
 theorem iter_local_shared_borrow_loop.body.deep_eq :
   iter_local_shared_borrow_loop.body =
     Aeneas.Deep.Expr.denote (iter_local_shared_borrow_loop.body.deep)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_shared_borrow]: loop 0:
     Source: 'tests/src/loops.rs', lines 498:4-504:5 -/
-def iter_local_shared_borrow_loop.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+def iter_local_shared_borrow_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
   (.loop
-    (.lam .ignore
-      (.leaf (.fn "loops::iter_local_shared_borrow^loop0^body")
-        (iter_local_shared_borrow_loop.body : Result (ControlFlow Unit Unit))))
-    (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.iter_local_shared_borrow_loop_body) [] [] [] (.result (.controlFlow .unit .unit)) rfl rfl
+        .nil)) .unitLit)
 
 theorem iter_local_shared_borrow_loop.deep_eq :
   iter_local_shared_borrow_loop =
     Aeneas.Deep.Expr.denote (iter_local_shared_borrow_loop.deep)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::iter_local_shared_borrow]:
     Source: 'tests/src/loops.rs', lines 495:0-505:1 -/
-def iter_local_shared_borrow.deep : Aeneas.Deep.Expr [] (Result Unit) :=
-  (.leaf (.fn "loops::iter_local_shared_borrow^loop0")
-    (iter_local_shared_borrow_loop : Result Unit))
+def iter_local_shared_borrow.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.call (.crate FunName.iter_local_shared_borrow_loop) [] [] [] (.result .unit) rfl rfl
+    .nil)
 
 theorem iter_local_shared_borrow.deep_eq :
   iter_local_shared_borrow =
     Aeneas.Deep.Expr.denote (iter_local_shared_borrow.deep)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [loops::AList]
-    Source: 'tests/src/loops.rs', lines 507:0-510:1 -/
-@[reducible] def AList.deepElim {T : Type _} :
-  Aeneas.Deep.Elim (AList T) [[Std.Usize, T, AList T], []] :=
-  fun x alts => AList.casesOn x alts.1 alts.2.1
 
 /-- [loops::insert_in_list]: loop 0:
     Source: 'tests/src/loops.rs', lines 1:0-529:5 -/
 def insert_in_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, T, AList T] (Result (Bool × (AList T))) :=
-  (.match_ (.var (.succ (.succ .zero))) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ (.succ .zero)))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ .zero)))))
          (.ok
-           (.pair (.lit false)
-             (.app (.app (.app (.leaf (.ctor "loops::AList::Cons")
-                                 (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                                 (AList.Cons i t a : AList T))) (.var .zero))
-               (.var (.succ (.succ (.succ (.succ .zero))))))
-               (.var (.succ (.succ .zero))))))
+           (.tuple
+             (.cons (.boolLit false)
+               (.cons (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+                        (.cons (.var .zero)
+                          (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                          (.cons (.var (.succ (.succ .zero))) .nil)))) .nil))))
          (.bind
-           (.app (.app (.app (.leaf (.fn "loops::insert_in_list^loop0")
-                               (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                               (insert_in_list_loop i t a : Result (Bool ×
-                                 (AList T)))))
-             (.var (.succ (.succ (.succ .zero)))))
-             (.var (.succ (.succ (.succ (.succ .zero))))))
-             (.var (.succ (.succ .zero)))) (.pair .var .var)
+           (.call (.crate FunName.insert_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+             (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+               (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+           (.cons .var .nil)))
          (.let_
-           (.app (.app (.app (.leaf (.ctor "loops::AList::Cons")
-                               (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                               (AList.Cons i t a : AList T)))
-             (.var (.succ (.succ .zero))))
-             (.var (.succ (.succ (.succ .zero))))) (.var (.succ .zero))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+           (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+             (.cons (.var (.succ (.succ .zero)))
+               (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ .zero)) .nil)))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
   (.cons (.ok
-           (.pair (.lit true)
-             (.app (.app (.app (.leaf (.ctor "loops::AList::Cons")
-                                 (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                                 (AList.Cons i t a : AList T))) (.var .zero))
-               (.var (.succ .zero)))
-               (.leaf (.ctor "loops::AList::Nil") (AList.Nil : AList T)))))
+           (.tuple
+             (.cons (.boolLit true)
+               (.cons (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+                        (.cons (.var .zero) (.cons (.var (.succ .zero))
+                          (.cons (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl
+                                   .nil) .nil)))) .nil))))
   .nil)))
 
 theorem insert_in_list_loop.deep_eq {T : Type _} (key : Std.Usize) (value : T)
   (ls : AList T) :
   insert_in_list_loop key value ls =
     Aeneas.Deep.Expr.denote (insert_in_list_loop.deep)
-      (key ::ₕ value ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ value ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold insert_in_list_loop; deep_rfl
 
 /-- [loops::insert_in_list]:
     Source: 'tests/src/loops.rs', lines 513:0-530:1 -/
 def insert_in_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, T, AList T] (Result (Bool × (AList T))) :=
-  (.app (.app (.app (.leaf (.fn "loops::insert_in_list^loop0")
-                      (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                      (insert_in_list_loop i t a : Result (Bool × (AList T)))))
-    (.var .zero)) (.var (.succ .zero))) (.var (.succ (.succ .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) :=
+  (.call (.crate FunName.insert_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero))
+      (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem insert_in_list.deep_eq {T : Type _} (key : Std.Usize) (value : T)
   (ls : AList T) :
   insert_in_list key value ls =
     Aeneas.Deep.Expr.denote (insert_in_list.deep)
-      (key ::ₕ value ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ value ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::reborrow_const::reborrow]:
     Source: 'tests/src/loops.rs', lines 535:4-539:5 -/
-def reborrow_const.reborrow.deep : Aeneas.Deep.Expr [Std.U64] (Result Std.U64)
-  :=
+def reborrow_const.reborrow.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64))] (.result (.scalar (.u .U64))) :=
   (.ok (.var .zero))
 
 theorem reborrow_const.reborrow.deep_eq (x : Std.U64) :
   reborrow_const.reborrow x =
     Aeneas.Deep.Expr.denote (reborrow_const.reborrow.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+      (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::reborrow_const]: loop body 0:
     Source: 'tests/src/loops.rs', lines 541:4-543:5 -/
 def reborrow_const_loop.body.deep :
-  Aeneas.Deep.Expr [] (Result (ControlFlow Unit Unit)) :=
-  (.ite (.lt (.lit 0#i32) (.lit 5#i32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.controlFlow .unit .unit)) :=
+  (.ite (.lt (.iscalarLit .I32 0 (by decide)) (.iscalarLit .I32 5 (by decide)))
   (.bind
-    (.app (.leaf (.fn "loops::reborrow_const::reborrow") (fun (i : Std.U64) =>
-            (reborrow_const.reborrow i : Result Std.U64))) (.lit 0#u64))
-    .ignore
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (t : Unit) =>
-            (cont t : ControlFlow Unit Unit))) (.lit ()))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ()))))
+    (.call (.crate FunName.reborrow_const_reborrow) [] [] [(.scalar (.u .U64))] (.result (.scalar (.u .U64))) rfl rfl
+      (.cons (.uscalarLit .U64 0 (by decide)) .nil)) .ignore
+  (.ok (.continue_ .unit .unit .unitLit)))
+  (.ok (.break_ .unit .unit .unitLit)))
 
 theorem reborrow_const_loop.body.deep_eq :
   reborrow_const_loop.body =
     Aeneas.Deep.Expr.denote (reborrow_const_loop.body.deep)
-      (Aeneas.Deep.HList.nil)
+      (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::reborrow_const]: loop 0:
     Source: 'tests/src/loops.rs', lines 541:4-543:5 -/
-def reborrow_const_loop.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+def reborrow_const_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
   (.loop
-    (.lam .ignore
-      (.leaf (.fn "loops::reborrow_const^loop0^body")
-        (reborrow_const_loop.body : Result (ControlFlow Unit Unit))))
-    (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.reborrow_const_loop_body) [] [] [] (.result (.controlFlow .unit .unit)) rfl rfl
+        .nil)) .unitLit)
 
 theorem reborrow_const_loop.deep_eq :
   reborrow_const_loop =
-    Aeneas.Deep.Expr.denote (reborrow_const_loop.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (reborrow_const_loop.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::reborrow_const]:
     Source: 'tests/src/loops.rs', lines 534:0-544:1 -/
-def reborrow_const.deep : Aeneas.Deep.Expr [] (Result Unit) :=
-  (.leaf (.fn "loops::reborrow_const^loop0")
-    (reborrow_const_loop : Result Unit))
+def reborrow_const.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.call (.crate FunName.reborrow_const_loop) [] [] [] (.result .unit) rfl rfl
+    .nil)
 
 theorem reborrow_const.deep_eq :
   reborrow_const =
-    Aeneas.Deep.Expr.denote (reborrow_const.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (reborrow_const.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::decode]: loop body 1:
     Source: 'tests/src/loops.rs', lines 553:8-553:32 -/
 def decode_loop0_loop0.body.deep :
-  Aeneas.Deep.Expr [Std.U8] (Result (ControlFlow Unit Unit)) :=
-  (.ite (.gt (.var .zero) (.lit 32#u8))
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (t : Unit) =>
-            (cont t : ControlFlow Unit Unit))) (.lit ())))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ()))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8))] (.result (.controlFlow .unit .unit)) :=
+  (.ite (.gt (.var .zero) (.uscalarLit .U8 32 (by decide)))
+  (.ok (.continue_ .unit .unit .unitLit))
+  (.ok (.break_ .unit .unit .unitLit)))
 
 theorem decode_loop0_loop0.body.deep_eq (dst_coeff : Std.U8) :
   decode_loop0_loop0.body dst_coeff =
     Aeneas.Deep.Expr.denote (decode_loop0_loop0.body.deep)
-      (dst_coeff ::ₕ Aeneas.Deep.HList.nil)
+      (dst_coeff ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::decode]: loop 1:
     Source: 'tests/src/loops.rs', lines 553:8-553:32 -/
-def decode_loop0_loop0.deep : Aeneas.Deep.Expr [Std.U8] (Result Unit) :=
+def decode_loop0_loop0.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8))] (.result .unit) :=
   (.loop
-    (.lam .ignore
-      (.app (.leaf (.fn "loops::decode^loop1^body") (fun (i : Std.U8) =>
-              (decode_loop0_loop0.body i : Result (ControlFlow Unit Unit))))
-        (.var .zero))) (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.decode_loop0_loop0_body) [] [] [(.scalar (.u .U8))] (.result (.controlFlow .unit .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) .unitLit)
 
 theorem decode_loop0_loop0.deep_eq (dst_coeff : Std.U8) :
   decode_loop0_loop0 dst_coeff =
     Aeneas.Deep.Expr.denote (decode_loop0_loop0.deep)
-      (dst_coeff ::ₕ Aeneas.Deep.HList.nil)
+      (dst_coeff ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::decode]: loop body 0:
     Source: 'tests/src/loops.rs', lines 551:4-564:1 -/
 def decode_loop0.body.deep :
-  Aeneas.Deep.Expr [Slice Std.U8, Std.Usize] (Result (ControlFlow ((Slice
-    Std.U8) × Std.Usize) (Bool × (Slice Std.U8)))) :=
-  (.ite (.lt (.var (.succ .zero)) (.lit 128#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]
+    (.result (.controlFlow (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))])))
+  :=
+  (.ite (.lt (.var (.succ .zero)) (.uscalarLit .Usize 128 (by decide)))
   (.bind
-    (.app (.app (.leaf (.fn "@sliceIndexMut")
-                  (fun (s : Slice Std.U8) (i1 : Std.Usize) =>
-                  (Slice.index_mut_usize s i1 : Result (Std.U8 × (Std.U8 →
-                    Slice Std.U8))))) (.var .zero)) (.var (.succ .zero)))
-    (.pair .var .var)
+    (.call (.prim .sliceIndexMut) [(.scalar (.u .U8))] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.tuple [(.scalar (.u .U8)), (.arrow (.scalar (.u .U8)) (.slice (.scalar (.u .U8))))])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.leaf (.fn "loops::decode^loop1") (fun (i1 : Std.U8) =>
-            (decode_loop0_loop0 i1 : Result Unit))) (.var .zero)) .ignore
-  (.ite (.gt (.var .zero) (.lit 32#u8))
+    (.call (.crate FunName.decode_loop0_loop0) [] [] [(.scalar (.u .U8))] (.result .unit) rfl rfl
+      (.cons (.var .zero) .nil)) .ignore
+  (.ite (.gt (.var .zero) (.uscalarLit .U8 32 (by decide)))
   (.let_ (.app (.var (.succ .zero)) (.var .zero)) .var
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (p : (Bool × (Slice Std.U8))) =>
-            (done p : ControlFlow ((Slice Std.U8) × Std.Usize) (Bool × (Slice
-              Std.U8))))) (.pair (.lit true) (.var .zero)))))
+    (.break_ (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))])
+      (.tuple (.cons (.boolLit true) (.cons (.var .zero) .nil))))))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 + i2 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit 1#usize)) .var
-  (.let_ (.app (.var (.succ (.succ .zero))) (.lit 0#u8)) .var
+    (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
+      (.uscalarLit .Usize 1 (by decide))) .var
+  (.let_ (.app (.var (.succ (.succ .zero))) (.uscalarLit .U8 0 (by decide)))
+    .var
   (.ok
-    (.app (.leaf (.ctor "@Continue")
-            (fun (p : ((Slice Std.U8) × Std.Usize)) =>
-            (cont p : ControlFlow ((Slice Std.U8) × Std.Usize) (Bool × (Slice
-              Std.U8))))) (.pair (.var .zero) (.var (.succ .zero))))))))))
+    (.continue_ (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))])
+      (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))))))))
   (.ok
-    (.app (.leaf (.ctor "@Break") (fun (p : (Bool × (Slice Std.U8))) =>
-            (done p : ControlFlow ((Slice Std.U8) × Std.Usize) (Bool × (Slice
-              Std.U8))))) (.pair (.lit false) (.var .zero)))))
+    (.break_ (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))])
+      (.tuple (.cons (.boolLit false) (.cons (.var .zero) .nil))))))
 
 theorem decode_loop0.body.deep_eq (pe_dst : Slice Std.U8) (i : Std.Usize) :
   decode_loop0.body pe_dst i =
     Aeneas.Deep.Expr.denote (decode_loop0.body.deep)
-      (pe_dst ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (pe_dst ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::decode]: loop 0:
     Source: 'tests/src/loops.rs', lines 551:4-564:1 -/
 def decode_loop0.deep :
-  Aeneas.Deep.Expr [Slice Std.U8, Std.Usize] (Result (Bool × (Slice Std.U8)))
-  :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]
+    (.result (.tuple [.bool, (.slice (.scalar (.u .U8)))])) :=
   (.loop
-    (.lam (.pair .var .var)
-      (.app (.app (.leaf (.fn "loops::decode^loop0^body")
-                    (fun (s : Slice Std.U8) (i2 : Std.Usize) =>
-                    (decode_loop0.body s i2 : Result (ControlFlow ((Slice
-                      Std.U8) × Std.Usize) (Bool × (Slice Std.U8))))))
-        (.var .zero)) (.var (.succ .zero))))
-    (.pair (.var .zero) (.var (.succ .zero))))
+    (.lam (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple (.cons .var
+      (.cons .var .nil)))
+      (.call (.crate FunName.decode_loop0_body) [] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.controlFlow (.tuple [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]) (.tuple [.bool, (.slice (.scalar (.u .U8)))]))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
+    (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))
 
 theorem decode_loop0.deep_eq (pe_dst : Slice Std.U8) (i : Std.Usize) :
   decode_loop0 pe_dst i =
     Aeneas.Deep.Expr.denote (decode_loop0.deep)
-      (pe_dst ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (pe_dst ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::decode]:
     Source: 'tests/src/loops.rs', lines 547:0-564:1 -/
 def decode.deep :
-  Aeneas.Deep.Expr [Slice Std.U8] (Result (Bool × (Slice Std.U8))) :=
-  (.app (.app (.leaf (.fn "loops::decode^loop0")
-                (fun (s : Slice Std.U8) (i : Std.Usize) =>
-                (decode_loop0 s i : Result (Bool × (Slice Std.U8)))))
-    (.var .zero)) (.lit 0#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8)))]
+    (.result (.tuple [.bool, (.slice (.scalar (.u .U8)))])) :=
+  (.call (.crate FunName.decode_loop0) [] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.tuple [.bool, (.slice (.scalar (.u .U8)))])) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
 
 theorem decode.deep_eq (pe_dst : Slice Std.U8) :
   decode pe_dst =
-    Aeneas.Deep.Expr.denote (decode.deep) (pe_dst ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (decode.deep) (pe_dst ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::as_radix_minimized]: loop body 0:
     Source: 'tests/src/loops.rs', lines 570:4-577:5 -/
 def as_radix_minimized_loop.body.deep :
-  Aeneas.Deep.Expr [Array Std.U64 4#usize, Std.Usize] (Result (ControlFlow
-    Std.Usize Unit)) :=
-  (.ite (.lt (.var (.succ .zero)) (.lit 4#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))]
+    (.result (.controlFlow (.scalar (.u .Usize)) .unit)) :=
+  (.ite (.lt (.var (.succ .zero)) (.uscalarLit .Usize 4 (by decide)))
   (.bind
-    (.ite (.eq (.var (.succ .zero)) (.lit 0#usize))
+    (.ite (.eq (.var (.succ .zero)) (.uscalarLit .Usize 0 (by decide)))
     (.bind
-      (.app (.app (.leaf (.fn "@arrayIndex")
-                    (fun (a : Array Std.U64 4#usize) (i1 : Std.Usize) =>
-                    (Array.index_usize a i1 : Result Std.U64))) (.var .zero))
-        (.var (.succ .zero))) .var
-    (.app (.app (.leaf (.binop "panic.>>::<u64,  i32>")
-                  (fun (i2 : Std.U64) (i3 : Std.I32) =>
-                  (i2 >>> i3 : Result Std.U64))) (.var .zero)) (.lit 1#i32)))
+      (.call (.prim .arrayIndex) [(.scalar (.u .U64))] [(.lit 4 (by decide))] [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))] (.result (.scalar (.u .U64))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))) .var
+    (.scalarBinop (.shr (.i .I32)) (.u .U64) (.var .zero)
+      (.iscalarLit .I32 1 (by decide))))
     (.bind
-      (.app (.app (.leaf (.fn "@arrayIndex")
-                    (fun (a : Array Std.U64 4#usize) (i1 : Std.Usize) =>
-                    (Array.index_usize a i1 : Result Std.U64))) (.var .zero))
-        (.var (.succ .zero))) .var
+      (.call (.prim .arrayIndex) [(.scalar (.u .U64))] [(.lit 4 (by decide))] [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))] (.result (.scalar (.u .U64))) rfl rfl
+        (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))) .var
     (.bind
-      (.app (.app (.leaf (.binop "panic.>>::<u64,  i32>")
-                    (fun (i2 : Std.U64) (i3 : Std.I32) =>
-                    (i2 >>> i3 : Result Std.U64))) (.var .zero)) (.lit 1#i32))
-      .var
+      (.scalarBinop (.shr (.i .I32)) (.u .U64) (.var .zero)
+        (.iscalarLit .I32 1 (by decide))) .var
     (.bind
-      (.app (.app (.leaf (.binop "panic.<<::<u64,  i32>")
-                    (fun (i3 : Std.U64) (i4 : Std.I32) =>
-                    (i3 <<< i4 : Result Std.U64))) (.var (.succ .zero)))
-        (.lit 63#i32)) .var
-    (.ok
-      (.app (.app (.leaf (.binop "|::<u64>")
-                    (fun (i4 : Std.U64) (i5 : Std.U64) =>
-                    (i4 ||| i5 : Std.U64))) (.var (.succ .zero))) (.var .zero)))))))
+      (.scalarBinop (.shl (.i .I32)) (.u .U64) (.var (.succ .zero))
+        (.iscalarLit .I32 63 (by decide))) .var
+    (.ok (.scalarBitop .or (.u .U64) (.var (.succ .zero)) (.var .zero)))))))
     .ignore
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 + i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.lit 1#usize)) .var
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (i2 : Std.Usize) =>
-            (cont i2 : ControlFlow Std.Usize Unit))) (.var .zero)))))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Std.Usize Unit))) (.lit ()))))
+    (.scalarBinop .add (.u .Usize) (.var (.succ .zero))
+      (.uscalarLit .Usize 1 (by decide))) .var
+  (.ok (.continue_ (.scalar (.u .Usize)) .unit (.var .zero)))))
+  (.ok (.break_ (.scalar (.u .Usize)) .unit .unitLit)))
 
 theorem as_radix_minimized_loop.body.deep_eq (scalar : Array Std.U64 4#usize)
   (i : Std.Usize) :
   as_radix_minimized_loop.body scalar i =
     Aeneas.Deep.Expr.denote (as_radix_minimized_loop.body.deep)
-      (scalar ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (scalar ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::as_radix_minimized]: loop 0:
     Source: 'tests/src/loops.rs', lines 570:4-577:5 -/
 def as_radix_minimized_loop.deep :
-  Aeneas.Deep.Expr [Array Std.U64 4#usize, Std.Usize] (Result Unit) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))]
+    (.result .unit) :=
   (.loop
-    (.lam .var
-      (.app (.app (.leaf (.fn "loops::as_radix_minimized^loop0^body")
-                    (fun (a : Array Std.U64 4#usize) (i2 : Std.Usize) =>
-                    (as_radix_minimized_loop.body a i2 : Result (ControlFlow
-                      Std.Usize Unit)))) (.var (.succ .zero))) (.var .zero)))
+    (.lam (.scalar (.u .Usize)) .var
+      (.call (.crate FunName.as_radix_minimized_loop_body) [] [] [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))] (.result (.controlFlow (.scalar (.u .Usize)) .unit)) rfl rfl
+        (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))
     (.var (.succ .zero)))
 
 theorem as_radix_minimized_loop.deep_eq (scalar : Array Std.U64 4#usize)
   (i : Std.Usize) :
   as_radix_minimized_loop scalar i =
     Aeneas.Deep.Expr.denote (as_radix_minimized_loop.deep)
-      (scalar ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (scalar ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::as_radix_minimized]:
     Source: 'tests/src/loops.rs', lines 567:0-578:1 -/
-def as_radix_minimized.deep : Aeneas.Deep.Expr [] (Result Unit) :=
+def as_radix_minimized.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
   (.let_
-    (.app (.leaf (.fn "core::array::repeat") (fun (i : Std.U64) =>
-            (Array.repeat 4#usize i : Array Std.U64 4#usize))) (.lit 0#u64))
-    .var
-  (.app (.app (.leaf (.fn "loops::as_radix_minimized^loop0")
-                (fun (a : Array Std.U64 4#usize) (i : Std.Usize) =>
-                (as_radix_minimized_loop a i : Result Unit))) (.var .zero))
-    (.lit 0#usize)))
+    (.call (.prim .arrayRepeat) [(.scalar (.u .U64))] [(.lit 4 (by decide))] [(.scalar (.u .U64))] (.array (.scalar (.u .U64)) (.lit 4 (by decide))) rfl rfl
+      (.cons (.uscalarLit .U64 0 (by decide)) .nil)) .var
+  (.call (.crate FunName.as_radix_minimized_loop) [] [] [(.array (.scalar (.u .U64)) (.lit 4 (by decide))), (.scalar (.u .Usize))] (.result .unit) rfl rfl
+    (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil))))
 
 theorem as_radix_minimized.deep_eq :
   as_radix_minimized =
-    Aeneas.Deep.Expr.denote (as_radix_minimized.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (as_radix_minimized.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::single_break]: loop body 0:
     Source: 'tests/src/loops.rs', lines 584:4-588:5 -/
 def single_break_loop.body.deep :
-  Aeneas.Deep.Expr [Slice Std.U8] (Result (ControlFlow Unit Unit)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8)))] (.result (.controlFlow .unit .unit)) :=
   (.bind
-    (.app (.app (.leaf (.fn "@sliceIndex")
-                  (fun (s : Slice Std.U8) (i : Std.Usize) =>
-                  (Slice.index_usize s i : Result Std.U8))) (.var .zero))
-      (.lit 0#usize)) .var
-  (.ite (.eq (.var .zero) (.lit 0#u8))
-  (.ok
-    (.app (.leaf (.ctor "@Break") (fun (t : Unit) =>
-            (done t : ControlFlow Unit Unit))) (.lit ())))
-  (.ok
-    (.app (.leaf (.ctor "@Continue") (fun (t : Unit) =>
-            (cont t : ControlFlow Unit Unit))) (.lit ())))))
+    (.call (.prim .sliceIndex) [(.scalar (.u .U8))] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.scalar (.u .U8))) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
+    .var
+  (.ite (.eq (.var .zero) (.uscalarLit .U8 0 (by decide)))
+  (.ok (.break_ .unit .unit .unitLit))
+  (.ok (.continue_ .unit .unit .unitLit))))
 
 theorem single_break_loop.body.deep_eq (d : Slice Std.U8) :
   single_break_loop.body d =
     Aeneas.Deep.Expr.denote (single_break_loop.body.deep)
-      (d ::ₕ Aeneas.Deep.HList.nil)
+      (d ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::single_break]: loop 0:
     Source: 'tests/src/loops.rs', lines 584:4-588:5 -/
-def single_break_loop.deep : Aeneas.Deep.Expr [Slice Std.U8] (Result Unit) :=
+def single_break_loop.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8)))] (.result .unit) :=
   (.loop
-    (.lam .ignore
-      (.app (.leaf (.fn "loops::single_break^loop0^body")
-              (fun (s : Slice Std.U8) =>
-              (single_break_loop.body s : Result (ControlFlow Unit Unit))))
-        (.var .zero))) (.lit ()))
+    (.lam .unit .ignore
+      (.call (.crate FunName.single_break_loop_body) [] [] [(.slice (.scalar (.u .U8)))] (.result (.controlFlow .unit .unit)) rfl rfl
+        (.cons (.var .zero) .nil))) .unitLit)
 
 theorem single_break_loop.deep_eq (d : Slice Std.U8) :
   single_break_loop d =
     Aeneas.Deep.Expr.denote (single_break_loop.deep)
-      (d ::ₕ Aeneas.Deep.HList.nil)
+      (d ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [loops::single_break]:
     Source: 'tests/src/loops.rs', lines 583:0-589:1 -/
-def single_break.deep : Aeneas.Deep.Expr [Slice Std.U8] (Result Unit) :=
-  (.app (.leaf (.fn "loops::single_break^loop0") (fun (s : Slice Std.U8) =>
-          (single_break_loop s : Result Unit))) (.var .zero))
+def single_break.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8)))] (.result .unit) :=
+  (.call (.crate FunName.single_break_loop) [] [] [(.slice (.scalar (.u .U8)))] (.result .unit) rfl rfl
+    (.cons (.var .zero) .nil))
 
 theorem single_break.deep_eq (d : Slice Std.U8) :
   single_break d =
-    Aeneas.Deep.Expr.denote (single_break.deep) (d ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (single_break.deep) (d ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end loops

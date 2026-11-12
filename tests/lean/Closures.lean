@@ -305,13 +305,119 @@ def map_fn_pointer (x : alloc.vec.Vec Std.U8) : Result Unit := do
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | alloc_alloc_Global
+  | core_iter_adapters_map_Map
+  | alloc_vec_into_iter_IntoIter
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.alloc_alloc_Global, _ => alloc.alloc.Global
+    | TypeName.core_iter_adapters_map_Map, ρ => core.iter.adapters.map.Map
+      (Aeneas.Deep.tyAt ρ.types 0) (Aeneas.Deep.tyAt ρ.types 1)
+    | TypeName.alloc_vec_into_iter_IntoIter, ρ => alloc.vec.into_iter.IntoIter
+      (Aeneas.Deep.tyAt ρ.types 0)
+  variants
+    | TypeName.alloc_alloc_Global => []
+    | TypeName.core_iter_adapters_map_Map => []
+    | TypeName.alloc_vec_into_iter_IntoIter => []
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | call_fn_no_state
+  | call_fn_shared
+  | call_closure1
+  | call_closure2
+  | u8_id
+  | map_fn_pointer
+  | call_fn_no_state_closure_Insts_CoreOpsFunctionFnTupleU32U32_call
+  | call_fn_shared_closure_Insts_CoreOpsFunctionFnTupleUsizeU8_call
+  | call_closure1_closure_Insts_CoreOpsFunctionFnTupleU32_call
+  | call_closure2_closure_Insts_CoreOpsFunctionFnTupleU32_call
+  | call_closure2_closure_1_Insts_CoreOpsFunctionFnTupleU32_call
+  | P_Insts_CoreOpsFunctionFnMutTupleU8U8_call_mut
+  | call_closure1_closure_Insts_CoreOpsFunctionFnOnceTupleU32_call_once
+  | call_closure1_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut
+  | call_closure2_closure_Insts_CoreOpsFunctionFnOnceTupleU32_call_once
+  | call_closure2_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut
+  | call_closure2_closure_1_Insts_CoreOpsFunctionFnOnceTupleU32_call_once
+  | call_closure2_closure_1_Insts_CoreOpsFunctionFnMutTupleU32_call_mut
+  | P_Insts_CoreOpsFunctionFnOnceTupleU8U8_call_once
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.call_fn_no_state => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => call_fn_no_state⟩
+    | FunName.call_fn_shared =>
+      ⟨⟨[(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))],
+      (.result (.scalar (.u .U8)))⟩, fun _ => call_fn_shared⟩
+    | FunName.call_closure1 => ⟨⟨[], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure1⟩
+    | FunName.call_closure2 => ⟨⟨[], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure2⟩
+    | FunName.u8_id => ⟨⟨[(.scalar (.u .U8))],
+      (.result (.scalar (.u .U8)))⟩, fun _ => u8_id⟩
+    | FunName.map_fn_pointer =>
+      ⟨⟨[(.adt (.builtin .vec) [(.scalar (.u .U8))] [])],
+      (.result .unit)⟩, fun _ => map_fn_pointer⟩
+    | FunName.call_fn_no_state_closure_Insts_CoreOpsFunctionFnTupleU32U32_call =>
+      ⟨⟨[.unit, (.scalar (.u .U32))], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call⟩
+    | FunName.call_fn_shared_closure_Insts_CoreOpsFunctionFnTupleUsizeU8_call =>
+      ⟨⟨[(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))],
+      (.result (.scalar (.u .U8)))⟩,
+      fun _ => call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call⟩
+    | FunName.call_closure1_closure_Insts_CoreOpsFunctionFnTupleU32_call =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call⟩
+    | FunName.call_closure2_closure_Insts_CoreOpsFunctionFnTupleU32_call =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call⟩
+    | FunName.call_closure2_closure_1_Insts_CoreOpsFunctionFnTupleU32_call =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call⟩
+    | FunName.P_Insts_CoreOpsFunctionFnMutTupleU8U8_call_mut =>
+      ⟨⟨[(.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))), (.scalar (.u .U8))],
+      (.result (.tuple [(.scalar (.u .U8)), (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8))))]))⟩,
+      fun _ => P.Insts.CoreOpsFunctionFnMutTupleU8U8.call_mut⟩
+    | FunName.call_closure1_closure_Insts_CoreOpsFunctionFnOnceTupleU32_call_once =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once⟩
+    | FunName.call_closure1_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut =>
+      ⟨⟨[.unit, .unit], (.result (.tuple [(.scalar (.u .U32)), .unit]))⟩,
+      fun _ => call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut⟩
+    | FunName.call_closure2_closure_Insts_CoreOpsFunctionFnOnceTupleU32_call_once =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once⟩
+    | FunName.call_closure2_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut =>
+      ⟨⟨[.unit, .unit], (.result (.tuple [(.scalar (.u .U32)), .unit]))⟩,
+      fun _ => call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut⟩
+    | FunName.call_closure2_closure_1_Insts_CoreOpsFunctionFnOnceTupleU32_call_once =>
+      ⟨⟨[.unit, .unit], (.result (.scalar (.u .U32)))⟩,
+      fun _ => call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once⟩
+    | FunName.call_closure2_closure_1_Insts_CoreOpsFunctionFnMutTupleU32_call_mut =>
+      ⟨⟨[.unit, .unit], (.result (.tuple [(.scalar (.u .U32)), .unit]))⟩,
+      fun _ => call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut⟩
+    | FunName.P_Insts_CoreOpsFunctionFnOnceTupleU8U8_call_once =>
+      ⟨⟨[(.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))), (.scalar (.u .U8))],
+      (.result (.scalar (.u .U8)))⟩,
+      fun _ => P.Insts.CoreOpsFunctionFnOnceTupleU8U8.call_once⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
 /-- [closures::call_fn_no_state::{impl core::ops::function::Fn<(u32,), u32> for closures::call_fn_no_state::{closure}}::call]:
     Source: 'tests/src/closures.rs', lines 5:15-5:40 -/
 def call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call.deep :
-  Aeneas.Deep.Expr [call_fn_no_state.closure, Std.U32] (Result Std.U32) :=
-  (.app (.app (.leaf (.binop "panic.+::<u32>")
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (i + i1 : Result Std.U32))) (.var (.succ .zero))) (.lit 1#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [.unit, (.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.scalarBinop .add (.u .U32) (.var (.succ .zero))
+    (.uscalarLit .U32 1 (by decide)))
 
 theorem call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call.deep_eq
   (c : call_fn_no_state.closure) (tupled_args : Std.U32) :
@@ -319,33 +425,32 @@ theorem call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call.deep_eq
     tupled_args =
     Aeneas.Deep.Expr.denote
       (call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call.deep)
-      (c ::ₕ tupled_args ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ tupled_args ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_fn_no_state]:
     Source: 'tests/src/closures.rs', lines 4:0-7:1 -/
-def call_fn_no_state.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.app (.app (.leaf (.fn "closures::call_fn_no_state::{impl core::ops::function::Fn<(u32,), u32> for closures::call_fn_no_state::{closure}}::call")
-                (fun (c : call_fn_no_state.closure) (i1 : Std.U32) =>
-                (call_fn_no_state.closure.Insts.CoreOpsFunctionFnTupleU32U32.call
-                  c i1 : Result Std.U32)))
-    (.leaf (.ctor "closures::call_fn_no_state::{closure}")
-      (() : call_fn_no_state.closure))) (.var .zero))
+def call_fn_no_state.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.call (.crate FunName.call_fn_no_state_closure_Insts_CoreOpsFunctionFnTupleU32U32_call) [] [] [.unit, (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
+    (.cons (.leaf (.ctor "closures::call_fn_no_state::{closure}") .unit
+             (() : call_fn_no_state.closure)) (.cons (.var .zero) .nil)))
 
 theorem call_fn_no_state.deep_eq (i : Std.U32) :
   call_fn_no_state i =
     Aeneas.Deep.Expr.denote (call_fn_no_state.deep)
-      (i ::ₕ Aeneas.Deep.HList.nil)
+      (i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_fn_shared::{impl core::ops::function::Fn<(usize,), u8> for closures::call_fn_shared::{closure}<'_0>}::call]:
     Source: 'tests/src/closures.rs', lines 10:15-10:40 -/
 def call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call.deep :
-  Aeneas.Deep.Expr [call_fn_shared.closure, Std.Usize] (Result Std.U8) :=
-  (.app (.app (.leaf (.fn "@sliceIndex")
-                (fun (s : Slice Std.U8) (i : Std.Usize) =>
-                (Slice.index_usize s i : Result Std.U8))) (.var .zero))
-    (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]
+    (.result (.scalar (.u .U8))) :=
+  (.call (.prim .sliceIndex) [(.scalar (.u .U8))] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.scalar (.u .U8))) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call.deep_eq
   (c : call_fn_shared.closure) (tupled_args : Std.Usize) :
@@ -353,89 +458,89 @@ theorem call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call.deep_eq
     =
     Aeneas.Deep.Expr.denote
       (call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call.deep)
-      (c ::ₕ tupled_args ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ tupled_args ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_fn_shared]:
     Source: 'tests/src/closures.rs', lines 9:0-12:1 -/
 def call_fn_shared.deep :
-  Aeneas.Deep.Expr [Slice Std.U8, Std.Usize] (Result Std.U8) :=
-  (.app (.app (.leaf (.fn "closures::call_fn_shared::{impl core::ops::function::Fn<(usize,), u8> for closures::call_fn_shared::{closure}<'_0>}::call")
-                (fun (c : call_fn_shared.closure) (i1 : Std.Usize) =>
-                (call_fn_shared.closure.Insts.CoreOpsFunctionFnTupleUsizeU8.call
-                  c i1 : Result Std.U8)))
-    (.app (.leaf (.ctor "closures::call_fn_shared::{closure}")
-            (fun (s : Slice Std.U8) => (s : call_fn_shared.closure)))
-      (.var .zero))) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]
+    (.result (.scalar (.u .U8))) :=
+  (.call (.crate FunName.call_fn_shared_closure_Insts_CoreOpsFunctionFnTupleUsizeU8_call) [] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.scalar (.u .U8))) rfl rfl
+    (.cons (.app (.leaf (.ctor "closures::call_fn_shared::{closure}")
+                   (.arrow (.slice (.scalar (.u .U8))) (.slice (.scalar (.u .U8))))
+                   (fun (s : Slice Std.U8) => (s : call_fn_shared.closure)))
+             (.var .zero)) (.cons (.var (.succ .zero)) .nil)))
 
 theorem call_fn_shared.deep_eq (a : Slice Std.U8) (i : Std.Usize) :
   call_fn_shared a i =
     Aeneas.Deep.Expr.denote (call_fn_shared.deep)
-      (a ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (a ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure]:
     Source: 'tests/src/closures.rs', lines 31:0-33:1 -/
 def call_closure.deep {F : Type _} (coreopsfunctionFnFTupleU32Inst :
-  core.ops.function.Fn F Unit Std.U32) : Aeneas.Deep.Expr [F] (Result Std.U32)
-  :=
+  core.ops.function.Fn F Unit Std.U32) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[F], []⟩ [(.var 0)]
+    (.result (.scalar (.u .U32))) :=
   (.app (.app (.leaf (.fn "TraitClauseFree(0).call")
+                (.arrow (.var 0) (.arrow .unit (.result (.scalar (.u .U32)))))
                 (fun (t : F) (t1 : Unit) =>
                 (coreopsfunctionFnFTupleU32Inst.call t t1 : Result Std.U32)))
-    (.var .zero)) (.lit ()))
+    (.var .zero)) .unitLit)
 
 theorem call_closure.deep_eq
   {F : Type _} (coreopsfunctionFnFTupleU32Inst : core.ops.function.Fn F Unit
   Std.U32) (f : F) :
   call_closure coreopsfunctionFnFTupleU32Inst f =
     Aeneas.Deep.Expr.denote (call_closure.deep coreopsfunctionFnFTupleU32Inst)
-      (f ::ₕ Aeneas.Deep.HList.nil)
+      (f ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure1::{impl core::ops::function::Fn<(), u32> for closures::call_closure1::{closure}}::call]:
     Source: 'tests/src/closures.rs', lines 36:17-36:21 -/
 def call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep :
-  Aeneas.Deep.Expr [call_closure1.closure, Unit] (Result Std.U32) :=
-  (.ok (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
+  (.ok (.uscalarLit .U32 0 (by decide)))
 
 theorem call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep_eq
   (c : call_closure1.closure) (t : Unit) :
   call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call c t =
     Aeneas.Deep.Expr.denote
       (call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure1::{impl core::ops::function::FnMut<(), u32> for closures::call_closure1::{closure}}::call_mut]:
     Source: 'tests/src/closures.rs', lines 36:17-36:21 -/
 def call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep :
-  Aeneas.Deep.Expr [call_closure1.closure, Unit] (Result (Std.U32 ×
-    call_closure1.closure)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.tuple [(.scalar (.u .U32)), .unit])) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure1::{impl core::ops::function::Fn<(), u32> for closures::call_closure1::{closure}}::call")
-                  (fun (c : call_closure1.closure) (t1 : Unit) =>
-                  (call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32.call c
-                    t1 : Result Std.U32))) (.var .zero)) (.lit ())) .var
-  (.ok (.pair (.var .zero) (.var (.succ .zero)))))
+    (.call (.crate FunName.call_closure1_closure_Insts_CoreOpsFunctionFnTupleU32_call) [] [] [.unit, .unit] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) .var
+  (.ok (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))
 
 theorem call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep_eq
   (state : call_closure1.closure) (t : Unit) :
   call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut state t =
     Aeneas.Deep.Expr.denote
       (call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep)
-      (state ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (state ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure1::{impl core::ops::function::FnOnce<(), u32> for closures::call_closure1::{closure}}::call_once]:
     Source: 'tests/src/closures.rs', lines 36:17-36:21 -/
 def call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep :
-  Aeneas.Deep.Expr [call_closure1.closure, Unit] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure1::{impl core::ops::function::FnMut<(), u32> for closures::call_closure1::{closure}}::call_mut")
-                  (fun (c1 : call_closure1.closure) (t1 : Unit) =>
-                  (call_closure1.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut
-                    c1 t1 : Result (Std.U32 × call_closure1.closure))))
-      (.var .zero)) (.lit ())) (.pair .var .ignore)
+    (.call (.crate FunName.call_closure1_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut) [] [] [.unit, .unit] (.result (.tuple [(.scalar (.u .U32)), .unit])) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) (.tuple (.cons .var
+    (.cons .ignore .nil)))
   (.ok (.var .zero)))
 
 theorem call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep_eq
@@ -443,68 +548,70 @@ theorem call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep
   call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once c t =
     Aeneas.Deep.Expr.denote
       (call_closure1.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure1]:
     Source: 'tests/src/closures.rs', lines 35:0-37:1 -/
-def call_closure1.deep : Aeneas.Deep.Expr [] (Result Std.U32) :=
+def call_closure1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
   (.app (.leaf (.fn "closures::call_closure")
+          (.arrow .unit (.result (.scalar (.u .U32))))
           (fun (c : call_closure1.closure) =>
           (call_closure call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32 c
             : Result Std.U32)))
-    (.leaf (.ctor "closures::call_closure1::{closure}")
+    (.leaf (.ctor "closures::call_closure1::{closure}") .unit
       (() : call_closure1.closure)))
 
 theorem call_closure1.deep_eq :
   call_closure1 =
-    Aeneas.Deep.Expr.denote (call_closure1.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (call_closure1.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::Fn<(), u32> for closures::call_closure2::{closure#1}}::call]:
     Source: 'tests/src/closures.rs', lines 41:17-41:21 -/
 def call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call.deep :
-  Aeneas.Deep.Expr [call_closure2.closure_1, Unit] (Result Std.U32) :=
-  (.ok (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
+  (.ok (.uscalarLit .U32 0 (by decide)))
 
 theorem call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call.deep_eq
   (c : call_closure2.closure_1) (t : Unit) :
   call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call c t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::FnMut<(), u32> for closures::call_closure2::{closure#1}}::call_mut]:
     Source: 'tests/src/closures.rs', lines 41:17-41:21 -/
 def call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep :
-  Aeneas.Deep.Expr [call_closure2.closure_1, Unit] (Result (Std.U32 ×
-    call_closure2.closure_1)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.tuple [(.scalar (.u .U32)), .unit])) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure2::{impl core::ops::function::Fn<(), u32> for closures::call_closure2::{closure#1}}::call")
-                  (fun (c : call_closure2.closure_1) (t1 : Unit) =>
-                  (call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32.call
-                    c t1 : Result Std.U32))) (.var .zero)) (.lit ())) .var
-  (.ok (.pair (.var .zero) (.var (.succ .zero)))))
+    (.call (.crate FunName.call_closure2_closure_1_Insts_CoreOpsFunctionFnTupleU32_call) [] [] [.unit, .unit] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) .var
+  (.ok (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))
 
 theorem call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep_eq
   (state : call_closure2.closure_1) (t : Unit) :
   call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut state t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep)
-      (state ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (state ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::FnOnce<(), u32> for closures::call_closure2::{closure#1}}::call_once]:
     Source: 'tests/src/closures.rs', lines 41:17-41:21 -/
 def call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep
-  : Aeneas.Deep.Expr [call_closure2.closure_1, Unit] (Result Std.U32) :=
+  :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure2::{impl core::ops::function::FnMut<(), u32> for closures::call_closure2::{closure#1}}::call_mut")
-                  (fun (c1 : call_closure2.closure_1) (t1 : Unit) =>
-                  (call_closure2.closure_1.Insts.CoreOpsFunctionFnMutTupleU32.call_mut
-                    c1 t1 : Result (Std.U32 × call_closure2.closure_1))))
-      (.var .zero)) (.lit ())) (.pair .var .ignore)
+    (.call (.crate FunName.call_closure2_closure_1_Insts_CoreOpsFunctionFnMutTupleU32_call_mut) [] [] [.unit, .unit] (.result (.tuple [(.scalar (.u .U32)), .unit])) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) (.tuple (.cons .var
+    (.cons .ignore .nil)))
   (.ok (.var .zero)))
 
 theorem call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep_eq
@@ -512,53 +619,51 @@ theorem call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.de
   call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once c t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure_1.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::Fn<(), u32> for closures::call_closure2::{closure}}::call]:
     Source: 'tests/src/closures.rs', lines 40:17-40:21 -/
 def call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep :
-  Aeneas.Deep.Expr [call_closure2.closure, Unit] (Result Std.U32) :=
-  (.ok (.lit 0#u32))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
+  (.ok (.uscalarLit .U32 0 (by decide)))
 
 theorem call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep_eq
   (c : call_closure2.closure) (t : Unit) :
   call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call c t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::FnMut<(), u32> for closures::call_closure2::{closure}}::call_mut]:
     Source: 'tests/src/closures.rs', lines 40:17-40:21 -/
 def call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep :
-  Aeneas.Deep.Expr [call_closure2.closure, Unit] (Result (Std.U32 ×
-    call_closure2.closure)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.tuple [(.scalar (.u .U32)), .unit])) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure2::{impl core::ops::function::Fn<(), u32> for closures::call_closure2::{closure}}::call")
-                  (fun (c : call_closure2.closure) (t1 : Unit) =>
-                  (call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32.call c
-                    t1 : Result Std.U32))) (.var .zero)) (.lit ())) .var
-  (.ok (.pair (.var .zero) (.var (.succ .zero)))))
+    (.call (.crate FunName.call_closure2_closure_Insts_CoreOpsFunctionFnTupleU32_call) [] [] [.unit, .unit] (.result (.scalar (.u .U32))) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) .var
+  (.ok (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))
 
 theorem call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep_eq
   (state : call_closure2.closure) (t : Unit) :
   call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut state t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut.deep)
-      (state ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (state ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2::{impl core::ops::function::FnOnce<(), u32> for closures::call_closure2::{closure}}::call_once]:
     Source: 'tests/src/closures.rs', lines 40:17-40:21 -/
 def call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep :
-  Aeneas.Deep.Expr [call_closure2.closure, Unit] (Result Std.U32) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.unit, .unit]
+    (.result (.scalar (.u .U32))) :=
   (.bind
-    (.app (.app (.leaf (.fn "closures::call_closure2::{impl core::ops::function::FnMut<(), u32> for closures::call_closure2::{closure}}::call_mut")
-                  (fun (c1 : call_closure2.closure) (t1 : Unit) =>
-                  (call_closure2.closure.Insts.CoreOpsFunctionFnMutTupleU32.call_mut
-                    c1 t1 : Result (Std.U32 × call_closure2.closure))))
-      (.var .zero)) (.lit ())) (.pair .var .ignore)
+    (.call (.crate FunName.call_closure2_closure_Insts_CoreOpsFunctionFnMutTupleU32_call_mut) [] [] [.unit, .unit] (.result (.tuple [(.scalar (.u .U32)), .unit])) rfl rfl
+      (.cons (.var .zero) (.cons .unitLit .nil))) (.tuple (.cons .var
+    (.cons .ignore .nil)))
   (.ok (.var .zero)))
 
 theorem call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep_eq
@@ -566,85 +671,97 @@ theorem call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep
   call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once c t =
     Aeneas.Deep.Expr.denote
       (call_closure2.closure.Insts.CoreOpsFunctionFnOnceTupleU32.call_once.deep)
-      (c ::ₕ t ::ₕ Aeneas.Deep.HList.nil)
+      (c ::ₑ t ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::call_closure2]:
     Source: 'tests/src/closures.rs', lines 39:0-42:1 -/
-def call_closure2.deep : Aeneas.Deep.Expr [] (Result Std.U32) :=
+def call_closure2.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
+    (.result (.scalar (.u .U32))) :=
   (.bind
     (.app (.leaf (.fn "closures::call_closure")
+            (.arrow .unit (.result (.scalar (.u .U32))))
             (fun (c : call_closure2.closure) =>
             (call_closure call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32
               c : Result Std.U32)))
-      (.leaf (.ctor "closures::call_closure2::{closure}")
+      (.leaf (.ctor "closures::call_closure2::{closure}") .unit
         (() : call_closure2.closure))) .ignore
   (.app (.leaf (.fn "closures::call_closure")
+          (.arrow .unit (.result (.scalar (.u .U32))))
           (fun (c : call_closure2.closure_1) =>
           (call_closure call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32
             c : Result Std.U32)))
-    (.leaf (.ctor "closures::call_closure2::{closure#1}")
+    (.leaf (.ctor "closures::call_closure2::{closure#1}") .unit
       (() : call_closure2.closure_1))))
 
 theorem call_closure2.deep_eq :
   call_closure2 =
-    Aeneas.Deep.Expr.denote (call_closure2.deep) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (call_closure2.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::u8_id]:
     Source: 'tests/src/closures.rs', lines 44:0-46:1 -/
-def u8_id.deep : Aeneas.Deep.Expr [Std.U8] (Result Std.U8) :=
+def u8_id.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8))] (.result (.scalar (.u .U8))) :=
   (.ok (.var .zero))
 
 theorem u8_id.deep_eq (x : Std.U8) :
-  u8_id x =
-    Aeneas.Deep.Expr.denote (u8_id.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+  u8_id x = Aeneas.Deep.Expr.denote (u8_id.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::{impl core::ops::function::FnMut<(u8,), u8> for closures::u8_id}::call_mut]:
     Source: 'tests/src/closures.rs', lines 44:0-46:1 -/
 def P.Insts.CoreOpsFunctionFnMutTupleU8U8.call_mut.deep :
-  Aeneas.Deep.Expr [Std.U8 → Result Std.U8, Std.U8] (Result (Std.U8 ×
-    (Std.U8 → Result Std.U8))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))), (.scalar (.u .U8))]
+    (.result (.tuple [(.scalar (.u .U8)), (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8))))]))
+  :=
   (.bind
-    (.app (.leaf (.fn "closures::u8_id") (fun (i : Std.U8) =>
-            (u8_id i : Result Std.U8))) (.var (.succ .zero))) .var
-  (.ok (.pair (.var .zero) (.var (.succ .zero)))))
+    (.call (.crate FunName.u8_id) [] [] [(.scalar (.u .U8))] (.result (.scalar (.u .U8))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
+  (.ok (.tuple (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))))
 
 theorem P.Insts.CoreOpsFunctionFnMutTupleU8U8.call_mut.deep_eq
   (state : Std.U8 → Result Std.U8) (args : Std.U8) :
   P.Insts.CoreOpsFunctionFnMutTupleU8U8.call_mut state args =
     Aeneas.Deep.Expr.denote
       (P.Insts.CoreOpsFunctionFnMutTupleU8U8.call_mut.deep)
-      (state ::ₕ args ::ₕ Aeneas.Deep.HList.nil)
+      (state ::ₑ args ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::{impl core::ops::function::FnOnce<(u8,), u8> for closures::u8_id}::call_once]:
     Source: 'tests/src/closures.rs', lines 44:0-46:1 -/
 def P.Insts.CoreOpsFunctionFnOnceTupleU8U8.call_once.deep :
-  Aeneas.Deep.Expr [Std.U8 → Result Std.U8, Std.U8] (Result Std.U8) :=
-  (.app (.leaf (.fn "closures::u8_id") (fun (i : Std.U8) =>
-          (u8_id i : Result Std.U8))) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))), (.scalar (.u .U8))]
+    (.result (.scalar (.u .U8))) :=
+  (.call (.crate FunName.u8_id) [] [] [(.scalar (.u .U8))] (.result (.scalar (.u .U8))) rfl rfl
+    (.cons (.var (.succ .zero)) .nil))
 
 theorem P.Insts.CoreOpsFunctionFnOnceTupleU8U8.call_once.deep_eq
   (state : Std.U8 → Result Std.U8) (args : Std.U8) :
   P.Insts.CoreOpsFunctionFnOnceTupleU8U8.call_once state args =
     Aeneas.Deep.Expr.denote
       (P.Insts.CoreOpsFunctionFnOnceTupleU8U8.call_once.deep)
-      (state ::ₕ args ::ₕ Aeneas.Deep.HList.nil)
+      (state ::ₑ args ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [closures::map_fn_pointer]:
     Source: 'tests/src/closures.rs', lines 48:0-50:1 -/
-def map_fn_pointer.deep : Aeneas.Deep.Expr [alloc.vec.Vec Std.U8] (Result Unit)
-  :=
+def map_fn_pointer.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.builtin .vec) [(.scalar (.u .U8))] [])] (.result .unit) :=
   (.bind
     (.app (.leaf (.fn "alloc::vec::{impl core::iter::traits::collect::IntoIterator<T, alloc::vec::into_iter::IntoIter<T, A>> for alloc::vec::Vec<T>}::into_iter")
+            (.arrow (.adt (.builtin .vec) [(.scalar (.u .U8))] []) (.result (.adt (.crate TypeName.alloc_vec_into_iter_IntoIter) [(.scalar (.u .U8))] [])))
             (fun (v : alloc.vec.Vec Std.U8) =>
             (alloc.vec.IntoIteratorVec.into_iter v : Result
               (alloc.vec.into_iter.IntoIter Std.U8)))) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "core::iter::traits::iterator::Iterator::map")
+                  (.arrow (.adt (.crate TypeName.alloc_vec_into_iter_IntoIter) [(.scalar (.u .U8))] []) (.arrow (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8)))) (.result (.adt (.crate TypeName.core_iter_adapters_map_Map) [(.adt (.crate TypeName.alloc_vec_into_iter_IntoIter) [(.scalar (.u .U8))] []), (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8))))] []))))
                   (fun (ii1 : alloc.vec.into_iter.IntoIter Std.U8) (f : Std.U8
                     → Result Std.U8) =>
                   (core.iter.traits.iterator.Iterator.map.default
@@ -652,14 +769,14 @@ def map_fn_pointer.deep : Aeneas.Deep.Expr [alloc.vec.Vec Std.U8] (Result Unit)
                     P.Insts.CoreOpsFunctionFnMutTupleU8U8 ii1 f : Result
                     (core.iter.adapters.map.Map (alloc.vec.into_iter.IntoIter
                     Std.U8) (Std.U8 → Result Std.U8))))) (.var .zero))
-      (.leaf (.fn "closures::u8_id") (u8_id : Std.U8 → Result Std.U8)))
-    .ignore
-  (.ok (.lit ()))))
+      (.leaf (.fn "closures::u8_id")
+        (.arrow (.scalar (.u .U8)) (.result (.scalar (.u .U8))))
+        (u8_id : Std.U8 → Result Std.U8))) .ignore
+  (.ok .unitLit)))
 
 theorem map_fn_pointer.deep_eq (x : alloc.vec.Vec Std.U8) :
   map_fn_pointer x =
-    Aeneas.Deep.Expr.denote (map_fn_pointer.deep)
-      (x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (map_fn_pointer.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end closures

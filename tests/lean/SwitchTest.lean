@@ -31,19 +31,44 @@ def match_u32 (x : Std.U32) : Result Std.U32 := do
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
+/-- The type declarations of the crate -/
+inductive TypeName where
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote t _ := nomatch t
+  variants t := nomatch t
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | match_u32
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.match_u32 => ⟨⟨[(.scalar (.u .U32))],
+      (.result (.scalar (.u .U32)))⟩, fun _ => match_u32⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
 /-- [switch_test::match_u32]:
     Source: 'tests/src/switch_test.rs', lines 5:0-11:1 -/
-def match_u32.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.shallow (fun «deep env» =>
+def match_u32.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
+  (.shallow (.result (.scalar (.u .U32))) (fun «deep env» =>
     let x := Aeneas.Deep.Var.get .zero «deep env»
     (match x with
      | 0#uscalar => ok 0#u32
      | 1#uscalar => ok 1#u32
-     | _ => ok 2#u32)))
+     | _ => ok 2#u32 : Result Std.U32)))
 
 theorem match_u32.deep_eq (x : Std.U32) :
   match_u32 x =
-    Aeneas.Deep.Expr.denote (match_u32.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (match_u32.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end switch_test

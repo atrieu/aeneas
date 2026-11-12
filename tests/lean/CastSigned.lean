@@ -21,7 +21,7 @@ set_option maxRecDepth 2048
 namespace cast_signed
 
 /-- [cast_signed::test_u8_cast_signed_all_ones]:
-    Source: 'tests/src/cast_signed.rs', lines 9:0-13:1
+    Source: 'tests/src/cast_signed.rs', lines 10:0-14:1
     Visibility: public -/
 def test_u8_cast_signed_all_ones : Result Unit := do
   let y ← core.num.U8.cast_signed 255#u8
@@ -31,7 +31,7 @@ def test_u8_cast_signed_all_ones : Result Unit := do
 #guard (test_u8_cast_signed_all_ones).reducesTo ()
 
 /-- [cast_signed::test_i8_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 17:0-21:1
+    Source: 'tests/src/cast_signed.rs', lines 18:0-22:1
     Visibility: public -/
 def test_i8_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.I8.cast_unsigned (-1)#i8
@@ -41,7 +41,7 @@ def test_i8_cast_unsigned_neg_one : Result Unit := do
 #guard (test_i8_cast_unsigned_neg_one).reducesTo ()
 
 /-- [cast_signed::test_u16_cast_signed_high_bit]:
-    Source: 'tests/src/cast_signed.rs', lines 25:0-29:1
+    Source: 'tests/src/cast_signed.rs', lines 26:0-30:1
     Visibility: public -/
 def test_u16_cast_signed_high_bit : Result Unit := do
   let y ← core.num.U16.cast_signed 32768#u16
@@ -51,7 +51,7 @@ def test_u16_cast_signed_high_bit : Result Unit := do
 #guard (test_u16_cast_signed_high_bit).reducesTo ()
 
 /-- [cast_signed::test_i16_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 33:0-37:1
+    Source: 'tests/src/cast_signed.rs', lines 34:0-38:1
     Visibility: public -/
 def test_i16_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.I16.cast_unsigned (-1)#i16
@@ -61,7 +61,7 @@ def test_i16_cast_unsigned_neg_one : Result Unit := do
 #guard (test_i16_cast_unsigned_neg_one).reducesTo ()
 
 /-- [cast_signed::test_u32_cast_signed_small]:
-    Source: 'tests/src/cast_signed.rs', lines 41:0-45:1
+    Source: 'tests/src/cast_signed.rs', lines 42:0-46:1
     Visibility: public -/
 def test_u32_cast_signed_small : Result Unit := do
   let y ← core.num.U32.cast_signed 255#u32
@@ -71,7 +71,7 @@ def test_u32_cast_signed_small : Result Unit := do
 #guard (test_u32_cast_signed_small).reducesTo ()
 
 /-- [cast_signed::test_u32_cast_signed_all_ones]:
-    Source: 'tests/src/cast_signed.rs', lines 49:0-53:1
+    Source: 'tests/src/cast_signed.rs', lines 50:0-54:1
     Visibility: public -/
 def test_u32_cast_signed_all_ones : Result Unit := do
   let y ← core.num.U32.cast_signed 4294967295#u32
@@ -81,7 +81,7 @@ def test_u32_cast_signed_all_ones : Result Unit := do
 #guard (test_u32_cast_signed_all_ones).reducesTo ()
 
 /-- [cast_signed::test_u32_cast_signed_high_bit]:
-    Source: 'tests/src/cast_signed.rs', lines 57:0-61:1
+    Source: 'tests/src/cast_signed.rs', lines 58:0-62:1
     Visibility: public -/
 def test_u32_cast_signed_high_bit : Result Unit := do
   let y ← core.num.U32.cast_signed 2147483648#u32
@@ -91,7 +91,7 @@ def test_u32_cast_signed_high_bit : Result Unit := do
 #guard (test_u32_cast_signed_high_bit).reducesTo ()
 
 /-- [cast_signed::test_i32_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 65:0-69:1
+    Source: 'tests/src/cast_signed.rs', lines 66:0-70:1
     Visibility: public -/
 def test_i32_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.I32.cast_unsigned (-1)#i32
@@ -101,7 +101,7 @@ def test_i32_cast_unsigned_neg_one : Result Unit := do
 #guard (test_i32_cast_unsigned_neg_one).reducesTo ()
 
 /-- [cast_signed::test_i32_cast_roundtrip]:
-    Source: 'tests/src/cast_signed.rs', lines 73:0-77:1
+    Source: 'tests/src/cast_signed.rs', lines 74:0-78:1
     Visibility: public -/
 def test_i32_cast_roundtrip : Result Unit := do
   let i ← core.num.U32.cast_signed 3735928559#u32
@@ -112,7 +112,7 @@ def test_i32_cast_roundtrip : Result Unit := do
 #guard (test_i32_cast_roundtrip).reducesTo ()
 
 /-- [cast_signed::test_u64_cast_signed_all_ones]:
-    Source: 'tests/src/cast_signed.rs', lines 81:0-85:1
+    Source: 'tests/src/cast_signed.rs', lines 82:0-86:1
     Visibility: public -/
 def test_u64_cast_signed_all_ones : Result Unit := do
   let y ← core.num.U64.cast_signed core.num.U64.MAX
@@ -122,7 +122,7 @@ def test_u64_cast_signed_all_ones : Result Unit := do
 #guard (test_u64_cast_signed_all_ones).reducesTo ()
 
 /-- [cast_signed::test_i64_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 89:0-93:1
+    Source: 'tests/src/cast_signed.rs', lines 90:0-94:1
     Visibility: public -/
 def test_i64_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.I64.cast_unsigned (-1)#i64
@@ -132,7 +132,7 @@ def test_i64_cast_unsigned_neg_one : Result Unit := do
 #guard (test_i64_cast_unsigned_neg_one).reducesTo ()
 
 /-- [cast_signed::test_u128_cast_signed_all_ones]:
-    Source: 'tests/src/cast_signed.rs', lines 97:0-101:1
+    Source: 'tests/src/cast_signed.rs', lines 98:0-102:1
     Visibility: public -/
 def test_u128_cast_signed_all_ones : Result Unit := do
   let y ← core.num.U128.cast_signed core.num.U128.MAX
@@ -142,7 +142,7 @@ def test_u128_cast_signed_all_ones : Result Unit := do
 #guard (test_u128_cast_signed_all_ones).reducesTo ()
 
 /-- [cast_signed::test_i128_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 105:0-109:1
+    Source: 'tests/src/cast_signed.rs', lines 106:0-110:1
     Visibility: public -/
 def test_i128_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.I128.cast_unsigned (-1)#i128
@@ -152,7 +152,7 @@ def test_i128_cast_unsigned_neg_one : Result Unit := do
 #guard (test_i128_cast_unsigned_neg_one).reducesTo ()
 
 /-- [cast_signed::test_usize_cast_roundtrip]:
-    Source: 'tests/src/cast_signed.rs', lines 113:0-117:1
+    Source: 'tests/src/cast_signed.rs', lines 114:0-118:1
     Visibility: public -/
 def test_usize_cast_roundtrip : Result Unit := do
   let i ← core.num.Usize.cast_signed 12345#usize
@@ -163,7 +163,7 @@ def test_usize_cast_roundtrip : Result Unit := do
 #guard (test_usize_cast_roundtrip).reducesTo ()
 
 /-- [cast_signed::test_isize_cast_unsigned_neg_one]:
-    Source: 'tests/src/cast_signed.rs', lines 121:0-125:1
+    Source: 'tests/src/cast_signed.rs', lines 122:0-126:1
     Visibility: public -/
 def test_isize_cast_unsigned_neg_one : Result Unit := do
   let y ← core.num.Isize.cast_unsigned (-1)#isize
@@ -171,5 +171,404 @@ def test_isize_cast_unsigned_neg_one : Result Unit := do
 
 /- Unit test for [cast_signed::test_isize_cast_unsigned_neg_one] -/
 #guard (test_isize_cast_unsigned_neg_one).reducesTo ()
+
+/-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
+
+/-- The type declarations of the crate -/
+inductive TypeName where
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote t _ := nomatch t
+  variants t := nomatch t
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | test_u8_cast_signed_all_ones
+  | test_i8_cast_unsigned_neg_one
+  | test_u16_cast_signed_high_bit
+  | test_i16_cast_unsigned_neg_one
+  | test_u32_cast_signed_small
+  | test_u32_cast_signed_all_ones
+  | test_u32_cast_signed_high_bit
+  | test_i32_cast_unsigned_neg_one
+  | test_i32_cast_roundtrip
+  | test_u64_cast_signed_all_ones
+  | test_i64_cast_unsigned_neg_one
+  | test_u128_cast_signed_all_ones
+  | test_i128_cast_unsigned_neg_one
+  | test_usize_cast_roundtrip
+  | test_isize_cast_unsigned_neg_one
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.test_u8_cast_signed_all_ones => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u8_cast_signed_all_ones⟩
+    | FunName.test_i8_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i8_cast_unsigned_neg_one⟩
+    | FunName.test_u16_cast_signed_high_bit => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u16_cast_signed_high_bit⟩
+    | FunName.test_i16_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i16_cast_unsigned_neg_one⟩
+    | FunName.test_u32_cast_signed_small => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u32_cast_signed_small⟩
+    | FunName.test_u32_cast_signed_all_ones => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u32_cast_signed_all_ones⟩
+    | FunName.test_u32_cast_signed_high_bit => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u32_cast_signed_high_bit⟩
+    | FunName.test_i32_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i32_cast_unsigned_neg_one⟩
+    | FunName.test_i32_cast_roundtrip => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i32_cast_roundtrip⟩
+    | FunName.test_u64_cast_signed_all_ones => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u64_cast_signed_all_ones⟩
+    | FunName.test_i64_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i64_cast_unsigned_neg_one⟩
+    | FunName.test_u128_cast_signed_all_ones => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_u128_cast_signed_all_ones⟩
+    | FunName.test_i128_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_i128_cast_unsigned_neg_one⟩
+    | FunName.test_usize_cast_roundtrip => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_usize_cast_roundtrip⟩
+    | FunName.test_isize_cast_unsigned_neg_one => ⟨⟨[], (.result .unit)⟩,
+      fun _ => test_isize_cast_unsigned_neg_one⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+/-- [cast_signed::test_u8_cast_signed_all_ones]:
+    Source: 'tests/src/cast_signed.rs', lines 10:0-14:1
+    Visibility: public -/
+def test_u8_cast_signed_all_ones.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u8}::cast_signed")
+            (.arrow (.scalar (.u .U8)) (.result (.scalar (.i .I8))))
+            (fun (i : Std.U8) => (core.num.U8.cast_signed i : Result Std.I8)))
+      (.uscalarLit .U8 255 (by decide))) .var
+  (.assert (.eq (.var .zero) (.iscalarLit .I8 (-1) (by decide)))))
+
+theorem test_u8_cast_signed_all_ones.deep_eq :
+  test_u8_cast_signed_all_ones =
+    Aeneas.Deep.Expr.denote (test_u8_cast_signed_all_ones.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i8_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 18:0-22:1
+    Visibility: public -/
+def test_i8_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{i8}::cast_unsigned")
+            (.arrow (.scalar (.i .I8)) (.result (.scalar (.u .U8))))
+            (fun (i : Std.I8) =>
+            (core.num.I8.cast_unsigned i : Result Std.U8)))
+      (.iscalarLit .I8 (-1) (by decide))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U8 255 (by decide)))))
+
+theorem test_i8_cast_unsigned_neg_one.deep_eq :
+  test_i8_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_i8_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u16_cast_signed_high_bit]:
+    Source: 'tests/src/cast_signed.rs', lines 26:0-30:1
+    Visibility: public -/
+def test_u16_cast_signed_high_bit.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u16}::cast_signed")
+            (.arrow (.scalar (.u .U16)) (.result (.scalar (.i .I16))))
+            (fun (i : Std.U16) =>
+            (core.num.U16.cast_signed i : Result Std.I16)))
+      (.uscalarLit .U16 32768 (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{i16}::MIN") (.scalar (.i .I16))
+        (core.num.I16.MIN : Std.I16)))))
+
+theorem test_u16_cast_signed_high_bit.deep_eq :
+  test_u16_cast_signed_high_bit =
+    Aeneas.Deep.Expr.denote (test_u16_cast_signed_high_bit.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i16_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 34:0-38:1
+    Visibility: public -/
+def test_i16_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{i16}::cast_unsigned")
+            (.arrow (.scalar (.i .I16)) (.result (.scalar (.u .U16))))
+            (fun (i : Std.I16) =>
+            (core.num.I16.cast_unsigned i : Result Std.U16)))
+      (.iscalarLit .I16 (-1) (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{u16}::MAX") (.scalar (.u .U16))
+        (core.num.U16.MAX : Std.U16)))))
+
+theorem test_i16_cast_unsigned_neg_one.deep_eq :
+  test_i16_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_i16_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u32_cast_signed_small]:
+    Source: 'tests/src/cast_signed.rs', lines 42:0-46:1
+    Visibility: public -/
+def test_u32_cast_signed_small.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::cast_signed")
+            (.arrow (.scalar (.u .U32)) (.result (.scalar (.i .I32))))
+            (fun (i : Std.U32) =>
+            (core.num.U32.cast_signed i : Result Std.I32)))
+      (.uscalarLit .U32 255 (by decide))) .var
+  (.assert (.eq (.var .zero) (.iscalarLit .I32 255 (by decide)))))
+
+theorem test_u32_cast_signed_small.deep_eq :
+  test_u32_cast_signed_small =
+    Aeneas.Deep.Expr.denote (test_u32_cast_signed_small.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u32_cast_signed_all_ones]:
+    Source: 'tests/src/cast_signed.rs', lines 50:0-54:1
+    Visibility: public -/
+def test_u32_cast_signed_all_ones.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::cast_signed")
+            (.arrow (.scalar (.u .U32)) (.result (.scalar (.i .I32))))
+            (fun (i : Std.U32) =>
+            (core.num.U32.cast_signed i : Result Std.I32)))
+      (.uscalarLit .U32 4294967295 (by decide))) .var
+  (.assert (.eq (.var .zero) (.iscalarLit .I32 (-1) (by decide)))))
+
+theorem test_u32_cast_signed_all_ones.deep_eq :
+  test_u32_cast_signed_all_ones =
+    Aeneas.Deep.Expr.denote (test_u32_cast_signed_all_ones.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u32_cast_signed_high_bit]:
+    Source: 'tests/src/cast_signed.rs', lines 58:0-62:1
+    Visibility: public -/
+def test_u32_cast_signed_high_bit.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::cast_signed")
+            (.arrow (.scalar (.u .U32)) (.result (.scalar (.i .I32))))
+            (fun (i : Std.U32) =>
+            (core.num.U32.cast_signed i : Result Std.I32)))
+      (.uscalarLit .U32 2147483648 (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{i32}::MIN") (.scalar (.i .I32))
+        (core.num.I32.MIN : Std.I32)))))
+
+theorem test_u32_cast_signed_high_bit.deep_eq :
+  test_u32_cast_signed_high_bit =
+    Aeneas.Deep.Expr.denote (test_u32_cast_signed_high_bit.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i32_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 66:0-70:1
+    Visibility: public -/
+def test_i32_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{i32}::cast_unsigned")
+            (.arrow (.scalar (.i .I32)) (.result (.scalar (.u .U32))))
+            (fun (i : Std.I32) =>
+            (core.num.I32.cast_unsigned i : Result Std.U32)))
+      (.iscalarLit .I32 (-1) (by decide))) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U32 4294967295 (by decide)))))
+
+theorem test_i32_cast_unsigned_neg_one.deep_eq :
+  test_i32_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_i32_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i32_cast_roundtrip]:
+    Source: 'tests/src/cast_signed.rs', lines 74:0-78:1
+    Visibility: public -/
+def test_i32_cast_roundtrip.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u32}::cast_signed")
+            (.arrow (.scalar (.u .U32)) (.result (.scalar (.i .I32))))
+            (fun (i : Std.U32) =>
+            (core.num.U32.cast_signed i : Result Std.I32)))
+      (.uscalarLit .U32 3735928559 (by decide))) .var
+  (.bind
+    (.app (.leaf (.fn "core::num::{i32}::cast_unsigned")
+            (.arrow (.scalar (.i .I32)) (.result (.scalar (.u .U32))))
+            (fun (i1 : Std.I32) =>
+            (core.num.I32.cast_unsigned i1 : Result Std.U32))) (.var .zero))
+    .var
+  (.assert (.eq (.var .zero) (.uscalarLit .U32 3735928559 (by decide))))))
+
+theorem test_i32_cast_roundtrip.deep_eq :
+  test_i32_cast_roundtrip =
+    Aeneas.Deep.Expr.denote (test_i32_cast_roundtrip.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u64_cast_signed_all_ones]:
+    Source: 'tests/src/cast_signed.rs', lines 82:0-86:1
+    Visibility: public -/
+def test_u64_cast_signed_all_ones.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u64}::cast_signed")
+            (.arrow (.scalar (.u .U64)) (.result (.scalar (.i .I64))))
+            (fun (i : Std.U64) =>
+            (core.num.U64.cast_signed i : Result Std.I64)))
+      (.leaf (.global "core::num::{u64}::MAX") (.scalar (.u .U64))
+        (core.num.U64.MAX : Std.U64))) .var
+  (.assert (.eq (.var .zero) (.iscalarLit .I64 (-1) (by decide)))))
+
+theorem test_u64_cast_signed_all_ones.deep_eq :
+  test_u64_cast_signed_all_ones =
+    Aeneas.Deep.Expr.denote (test_u64_cast_signed_all_ones.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i64_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 90:0-94:1
+    Visibility: public -/
+def test_i64_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{i64}::cast_unsigned")
+            (.arrow (.scalar (.i .I64)) (.result (.scalar (.u .U64))))
+            (fun (i : Std.I64) =>
+            (core.num.I64.cast_unsigned i : Result Std.U64)))
+      (.iscalarLit .I64 (-1) (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{u64}::MAX") (.scalar (.u .U64))
+        (core.num.U64.MAX : Std.U64)))))
+
+theorem test_i64_cast_unsigned_neg_one.deep_eq :
+  test_i64_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_i64_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_u128_cast_signed_all_ones]:
+    Source: 'tests/src/cast_signed.rs', lines 98:0-102:1
+    Visibility: public -/
+def test_u128_cast_signed_all_ones.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{u128}::cast_signed")
+            (.arrow (.scalar (.u .U128)) (.result (.scalar (.i .I128))))
+            (fun (i : Std.U128) =>
+            (core.num.U128.cast_signed i : Result Std.I128)))
+      (.leaf (.global "core::num::{u128}::MAX") (.scalar (.u .U128))
+        (core.num.U128.MAX : Std.U128))) .var
+  (.assert (.eq (.var .zero) (.iscalarLit .I128 (-1) (by decide)))))
+
+theorem test_u128_cast_signed_all_ones.deep_eq :
+  test_u128_cast_signed_all_ones =
+    Aeneas.Deep.Expr.denote (test_u128_cast_signed_all_ones.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_i128_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 106:0-110:1
+    Visibility: public -/
+def test_i128_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{i128}::cast_unsigned")
+            (.arrow (.scalar (.i .I128)) (.result (.scalar (.u .U128))))
+            (fun (i : Std.I128) =>
+            (core.num.I128.cast_unsigned i : Result Std.U128)))
+      (.iscalarLit .I128 (-1) (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{u128}::MAX") (.scalar (.u .U128))
+        (core.num.U128.MAX : Std.U128)))))
+
+theorem test_i128_cast_unsigned_neg_one.deep_eq :
+  test_i128_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_i128_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_usize_cast_roundtrip]:
+    Source: 'tests/src/cast_signed.rs', lines 114:0-118:1
+    Visibility: public -/
+def test_usize_cast_roundtrip.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{usize}::cast_signed")
+            (.arrow (.scalar (.u .Usize)) (.result (.scalar (.i .Isize))))
+            (fun (i : Std.Usize) =>
+            (core.num.Usize.cast_signed i : Result Std.Isize)))
+      (.uscalarLit .Usize 12345 (by decide))) .var
+  (.bind
+    (.app (.leaf (.fn "core::num::{isize}::cast_unsigned")
+            (.arrow (.scalar (.i .Isize)) (.result (.scalar (.u .Usize))))
+            (fun (i1 : Std.Isize) =>
+            (core.num.Isize.cast_unsigned i1 : Result Std.Usize)))
+      (.var .zero)) .var
+  (.assert (.eq (.var .zero) (.uscalarLit .Usize 12345 (by decide))))))
+
+theorem test_usize_cast_roundtrip.deep_eq :
+  test_usize_cast_roundtrip =
+    Aeneas.Deep.Expr.denote (test_usize_cast_roundtrip.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [cast_signed::test_isize_cast_unsigned_neg_one]:
+    Source: 'tests/src/cast_signed.rs', lines 122:0-126:1
+    Visibility: public -/
+def test_isize_cast_unsigned_neg_one.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.bind
+    (.app (.leaf (.fn "core::num::{isize}::cast_unsigned")
+            (.arrow (.scalar (.i .Isize)) (.result (.scalar (.u .Usize))))
+            (fun (i : Std.Isize) =>
+            (core.num.Isize.cast_unsigned i : Result Std.Usize)))
+      (.iscalarLit .Isize (-1) (by decide))) .var
+  (.assert
+    (.eq (.var .zero)
+      (.leaf (.global "core::num::{usize}::MAX") (.scalar (.u .Usize))
+        (core.num.Usize.MAX : Std.Usize)))))
+
+theorem test_isize_cast_unsigned_neg_one.deep_eq :
+  test_isize_cast_unsigned_neg_one =
+    Aeneas.Deep.Expr.denote (test_isize_cast_unsigned_neg_one.deep)
+      (Aeneas.Deep.Env.nil)
+  := by deep_rfl
 
 end cast_signed

@@ -21,27 +21,110 @@ set_option maxRecDepth 2048
 namespace bool_cmp
 
 /-- [bool_cmp::le]:
-    Source: 'tests/src/bool-cmp.rs', lines 5:0-7:1
+    Source: 'tests/src/bool-cmp.rs', lines 6:0-8:1
     Visibility: public -/
 def le (a : Bool) (b : Bool) : Result Bool := do
   ok (a <= b)
 
 /-- [bool_cmp::lt]:
-    Source: 'tests/src/bool-cmp.rs', lines 9:0-11:1
+    Source: 'tests/src/bool-cmp.rs', lines 10:0-12:1
     Visibility: public -/
 def lt (a : Bool) (b : Bool) : Result Bool := do
   ok (a < b)
 
 /-- [bool_cmp::ge]:
-    Source: 'tests/src/bool-cmp.rs', lines 13:0-15:1
+    Source: 'tests/src/bool-cmp.rs', lines 14:0-16:1
     Visibility: public -/
 def ge (a : Bool) (b : Bool) : Result Bool := do
   ok (a >= b)
 
 /-- [bool_cmp::gt]:
-    Source: 'tests/src/bool-cmp.rs', lines 17:0-19:1
+    Source: 'tests/src/bool-cmp.rs', lines 18:0-20:1
     Visibility: public -/
 def gt (a : Bool) (b : Bool) : Result Bool := do
   ok (a > b)
+
+/-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
+
+/-- The type declarations of the crate -/
+inductive TypeName where
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote t _ := nomatch t
+  variants t := nomatch t
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | le
+  | lt
+  | ge
+  | gt
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.le => ⟨⟨[.bool, .bool], (.result .bool)⟩, fun _ => le⟩
+    | FunName.lt => ⟨⟨[.bool, .bool], (.result .bool)⟩, fun _ => lt⟩
+    | FunName.ge => ⟨⟨[.bool, .bool], (.result .bool)⟩, fun _ => ge⟩
+    | FunName.gt => ⟨⟨[.bool, .bool], (.result .bool)⟩, fun _ => gt⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+/-- [bool_cmp::le]:
+    Source: 'tests/src/bool-cmp.rs', lines 6:0-8:1
+    Visibility: public -/
+def le.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool, .bool]
+    (.result .bool) :=
+  (.ok (.decide (.le (.var .zero) (.var (.succ .zero)))))
+
+theorem le.deep_eq (a : Bool) (b : Bool) :
+  le a b =
+    Aeneas.Deep.Expr.denote (le.deep) (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [bool_cmp::lt]:
+    Source: 'tests/src/bool-cmp.rs', lines 10:0-12:1
+    Visibility: public -/
+def lt.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool, .bool]
+    (.result .bool) :=
+  (.ok (.decide (.lt (.var .zero) (.var (.succ .zero)))))
+
+theorem lt.deep_eq (a : Bool) (b : Bool) :
+  lt a b =
+    Aeneas.Deep.Expr.denote (lt.deep) (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [bool_cmp::ge]:
+    Source: 'tests/src/bool-cmp.rs', lines 14:0-16:1
+    Visibility: public -/
+def ge.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool, .bool]
+    (.result .bool) :=
+  (.ok (.decide (.ge (.var .zero) (.var (.succ .zero)))))
+
+theorem ge.deep_eq (a : Bool) (b : Bool) :
+  ge a b =
+    Aeneas.Deep.Expr.denote (ge.deep) (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [bool_cmp::gt]:
+    Source: 'tests/src/bool-cmp.rs', lines 18:0-20:1
+    Visibility: public -/
+def gt.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [.bool, .bool]
+    (.result .bool) :=
+  (.ok (.decide (.gt (.var .zero) (.var (.succ .zero)))))
+
+theorem gt.deep_eq (a : Bool) (b : Bool) :
+  gt a b =
+    Aeneas.Deep.Expr.denote (gt.deep) (a ::ₑ b ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
 
 end bool_cmp

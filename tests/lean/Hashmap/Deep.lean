@@ -21,353 +21,520 @@ set_option maxRecDepth 10000
 
 namespace hashmap
 
-/-- Deep eliminator for [hashmap::AList]
-    Source: 'tests/src/hashmap.rs', lines 25:0-28:1 -/
-@[reducible] def AList.deepElim {T : Type _} :
-  Aeneas.Deep.Elim (AList T) [[Std.Usize, T, AList T], []] :=
-  fun x alts => AList.casesOn x alts.1 alts.2.1
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | AList
+  | Fraction
+  | HashMap
+  | alloc_alloc_Global
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.AList, ρ => AList (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.Fraction, _ => Fraction
+    | TypeName.HashMap, ρ => HashMap (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.alloc_alloc_Global, _ => alloc.alloc.Global
+  variants
+    | TypeName.AList =>
+      [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []]
+    | TypeName.Fraction => [[(.scalar (.u .Usize)), (.scalar (.u .Usize))]]
+    | TypeName.HashMap =>
+      [[(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]]
+    | TypeName.alloc_alloc_Global => []
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.AList) 0 :=
+  ⟨fun _ => fun a0 a1 a2 => AList.Cons a0 a1 a2⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.AList) 1 :=
+  ⟨fun _ => AList.Nil⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.AList) :=
+  ⟨fun _ => fun x alts => AList.casesOn x alts.1 alts.2.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Fraction) 0 :=
+  ⟨fun _ => fun a0 a1 => Fraction.mk a0 a1⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Fraction) 0 :=
+  ⟨fun _ => fun x => x.dividend⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Fraction) 1 :=
+  ⟨fun _ => fun x => x.divisor⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Fraction) :=
+  ⟨fun _ => fun x alts => Fraction.casesOn x alts.1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.HashMap) 0 :=
+  ⟨fun _ => fun a0 a1 a2 a3 a4 => HashMap.mk a0 a1 a2 a3 a4⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.HashMap) 0 :=
+  ⟨fun _ => fun x => x.num_entries⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.HashMap) 1 :=
+  ⟨fun _ => fun x => x.max_load_factor⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.HashMap) 2 :=
+  ⟨fun _ => fun x => x.max_load⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.HashMap) 3 :=
+  ⟨fun _ => fun x => x.saturated⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.HashMap) 4 :=
+  ⟨fun _ => fun x => x.slots⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.HashMap) :=
+  ⟨fun _ => fun x alts => HashMap.casesOn x alts.1⟩
+
+/-- The functions of the crate -/
+inductive FunName where
+  | hash_key
+  | Fraction_Insts_CoreCloneClone_clone
+  | HashMap_allocate_slots
+  | HashMap_allocate_slots_loop
+  | HashMap_new_with_capacity
+  | HashMap_new
+  | HashMap_clear
+  | HashMap_clear_loop
+  | HashMap_len
+  | HashMap_insert_in_list
+  | HashMap_insert_in_list_loop
+  | HashMap_insert_no_resize
+  | HashMap_insert
+  | HashMap_try_resize
+  | HashMap_move_elements
+  | HashMap_move_elements_loop
+  | HashMap_move_elements_from_list
+  | HashMap_move_elements_from_list_loop
+  | HashMap_contains_key
+  | HashMap_contains_key_in_list
+  | HashMap_contains_key_in_list_loop
+  | HashMap_get_in_list
+  | HashMap_get_in_list_loop
+  | HashMap_get
+  | HashMap_get_mut_in_list
+  | HashMap_get_mut_in_list_loop
+  | HashMap_get_mut
+  | HashMap_remove_from_list
+  | HashMap_remove_from_list_loop
+  | HashMap_remove
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.hash_key => ⟨⟨[(.scalar (.u .Usize))],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => hash_key⟩
+    | FunName.Fraction_Insts_CoreCloneClone_clone =>
+      ⟨⟨[(.adt (.crate TypeName.Fraction) [] [])],
+      (.result (.adt (.crate TypeName.Fraction) [] []))⟩,
+      fun _ => Fraction.Insts.CoreCloneClone.clone⟩
+    | FunName.HashMap_allocate_slots =>
+      ⟨⟨[(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))],
+      (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))⟩,
+      fun ρ => @HashMap.allocate_slots (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_allocate_slots_loop =>
+      ⟨⟨[(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))],
+      (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))⟩,
+      fun ρ => @HashMap.allocate_slots_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_new_with_capacity =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] [])],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.new_with_capacity (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_new => ⟨⟨[],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.new (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_clear =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] [])],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.clear (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_clear_loop =>
+      ⟨⟨[(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))],
+      (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))⟩,
+      fun ρ => @HashMap.clear_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_len =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] [])],
+      (.result (.scalar (.u .Usize)))⟩,
+      fun ρ => @HashMap.len (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_insert_in_list =>
+      ⟨⟨[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @HashMap.insert_in_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_insert_in_list_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @HashMap.insert_in_list_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_insert_no_resize =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.insert_no_resize (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_insert =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.insert (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_try_resize =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] [])],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.try_resize (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_move_elements =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])],
+      (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]))⟩,
+      fun ρ => @HashMap.move_elements (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_move_elements_loop =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]))⟩,
+      fun ρ => @HashMap.move_elements_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_move_elements_from_list =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.move_elements_from_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_move_elements_from_list_loop =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.adt (.crate TypeName.HashMap) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.move_elements_from_list_loop
+        (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_contains_key =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result .bool)⟩,
+      fun ρ => @HashMap.contains_key (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_contains_key_in_list =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result .bool)⟩,
+      fun ρ => @HashMap.contains_key_in_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_contains_key_in_list_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result .bool)⟩,
+      fun ρ => @HashMap.contains_key_in_list_loop
+        (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get_in_list =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.adt (.builtin .option) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.get_in_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get_in_list_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.adt (.builtin .option) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.get_in_list_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result (.adt (.builtin .option) [(.var 0)] []))⟩,
+      fun ρ => @HashMap.get (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get_mut_in_list =>
+      ⟨⟨[(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))]))⟩,
+      fun ρ => @HashMap.get_mut_in_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get_mut_in_list_loop =>
+      ⟨⟨[(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))]))⟩,
+      fun ρ => @HashMap.get_mut_in_list_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_get_mut =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))]))⟩,
+      fun ρ => @HashMap.get_mut (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_remove_from_list =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @HashMap.remove_from_list (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_remove_from_list_loop =>
+      ⟨⟨[(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]))⟩,
+      fun ρ => @HashMap.remove_from_list_loop (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.HashMap_remove =>
+      ⟨⟨[(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))],
+      (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.HashMap) [(.var 0)] [])]))⟩,
+      fun ρ => @HashMap.remove (Aeneas.Deep.tyAt ρ.types 0)⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
 
 /-- [hashmap::hash_key]:
     Source: 'tests/src/hashmap.rs', lines 33:0-38:1
     Visibility: public -/
-def hash_key.deep : Aeneas.Deep.Expr [Std.Usize] (Result Std.Usize) :=
+def hash_key.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) :=
   (.ok (.var .zero))
 
 theorem hash_key.deep_eq (k : Std.Usize) :
   hash_key k =
-    Aeneas.Deep.Expr.denote (hash_key.deep) (k ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (hash_key.deep) (k ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [hashmap::Fraction]
-    Source: 'tests/src/hashmap.rs', lines 41:0-44:1 -/
-@[reducible] def Fraction.deepElim :
-  Aeneas.Deep.Elim Fraction [[Std.Usize, Std.Usize]] :=
-  fun x alts => Fraction.casesOn x alts.1
 
 /-- [hashmap::{impl core::clone::Clone for hashmap::Fraction}::clone]:
     Source: 'tests/src/hashmap.rs', lines 40:9-40:14
     Visibility: public -/
 def Fraction.Insts.CoreCloneClone.clone.deep :
-  Aeneas.Deep.Expr [Fraction] (Result Fraction) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.Fraction) [] [])]
+    (.result (.adt (.crate TypeName.Fraction) [] [])) :=
   (.ok (.var .zero))
 
 theorem Fraction.Insts.CoreCloneClone.clone.deep_eq (self : Fraction) :
   Fraction.Insts.CoreCloneClone.clone self =
     Aeneas.Deep.Expr.denote (Fraction.Insts.CoreCloneClone.clone.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
-
-/-- Deep eliminator for [hashmap::HashMap]
-    Source: 'tests/src/hashmap.rs', lines 47:0-59:1 -/
-@[reducible] def HashMap.deepElim {T : Type _} :
-  Aeneas.Deep.Elim (HashMap T) [[Std.Usize, Fraction, Std.Usize, Bool,
-    alloc.vec.Vec (AList T)]] :=
-  fun x alts => HashMap.casesOn x alts.1
 
 /-- [hashmap::{hashmap::HashMap<T>}::allocate_slots]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 65:8-68:9 -/
 def HashMap.allocate_slots_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [alloc.vec.Vec (AList T), Std.Usize] (Result (alloc.vec.Vec
-    (AList T))) :=
-  (.ite (.gt (.var (.succ .zero)) (.lit 0#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))]
+    (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))
+  :=
+  (.ite (.gt (.var (.succ .zero)) (.uscalarLit .Usize 0 (by decide)))
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::push")
-                  (fun (v : alloc.vec.Vec (AList T)) (a : AList T) =>
-                  (alloc.vec.Vec.push v a : Result (alloc.vec.Vec (AList T)))))
-      (.var .zero))
-      (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T))) .var
+    (.call (.prim .vecPush) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+      (.cons (.var .zero)
+        (.cons (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl .nil)
+        .nil))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.-::<usize>")
-                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
-                  (i - i1 : Result Std.Usize))) (.var (.succ (.succ .zero))))
-      (.lit 1#usize)) .var
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::allocate_slots^loop0")
-                (fun (v : alloc.vec.Vec (AList T)) (i : Std.Usize) =>
-                (HashMap.allocate_slots_loop v i : Result (alloc.vec.Vec (AList
-                  T))))) (.var (.succ .zero))) (.var .zero))))
+    (.scalarBinop .sub (.u .Usize) (.var (.succ (.succ .zero)))
+      (.uscalarLit .Usize 1 (by decide))) .var
+  (.call (.crate FunName.HashMap_allocate_slots_loop) [(.var 0)] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+    (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))
   (.ok (.var .zero)))
 
 theorem HashMap.allocate_slots_loop.deep_eq {T : Type _}
   (slots : alloc.vec.Vec (AList T)) (n : Std.Usize) :
   HashMap.allocate_slots_loop slots n =
     Aeneas.Deep.Expr.denote (HashMap.allocate_slots_loop.deep)
-      (slots ::ₕ n ::ₕ Aeneas.Deep.HList.nil)
+      (slots ::ₑ n ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.allocate_slots_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::allocate_slots]:
     Source: 'tests/src/hashmap.rs', lines 64:4-70:5 -/
 def HashMap.allocate_slots.deep {T : Type _} :
-  Aeneas.Deep.Expr [alloc.vec.Vec (AList T), Std.Usize] (Result (alloc.vec.Vec
-    (AList T))) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::allocate_slots^loop0")
-                (fun (v : alloc.vec.Vec (AList T)) (i : Std.Usize) =>
-                (HashMap.allocate_slots_loop v i : Result (alloc.vec.Vec (AList
-                  T))))) (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))]
+    (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))
+  :=
+  (.call (.crate FunName.HashMap_allocate_slots_loop) [(.var 0)] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.allocate_slots.deep_eq {T : Type _}
   (slots : alloc.vec.Vec (AList T)) (n : Std.Usize) :
   HashMap.allocate_slots slots n =
     Aeneas.Deep.Expr.denote (HashMap.allocate_slots.deep)
-      (slots ::ₕ n ::ₕ Aeneas.Deep.HList.nil)
+      (slots ::ₑ n ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::new_with_capacity]:
     Source: 'tests/src/hashmap.rs', lines 73:4-84:5 -/
 def HashMap.new_with_capacity.deep (T : Type _) :
-  Aeneas.Deep.Expr [Std.Usize, Fraction] (Result (HashMap T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] [])]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::allocate_slots")
-                  (fun (v : alloc.vec.Vec (AList T)) (i : Std.Usize) =>
-                  (HashMap.allocate_slots v i : Result (alloc.vec.Vec (AList
-                    T)))))
-      (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::new")
-        (alloc.vec.Vec.new (AList T) : alloc.vec.Vec (AList T)))) (.var .zero))
-    .var
+    (.call (.crate FunName.HashMap_allocate_slots) [(.var 0)] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+      (.cons (.call (.prim .vecNew) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl rfl
+               .nil) (.cons (.var .zero) .nil))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.*::<usize>")
-                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
-                  (i * i1 : Result Std.Usize))) (.var (.succ .zero)))
-      (.app (.leaf (.proj "dividend") (fun (f : Fraction) =>
-              (f.dividend : Std.Usize))) (.var (.succ (.succ .zero))))) .var
+    (.scalarBinop .mul (.u .Usize) (.var (.succ .zero))
+      (.proj (.crate TypeName.Fraction) 0 [] [] (.scalar (.u .Usize)) rfl
+        (.var (.succ (.succ .zero))))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic./::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 / i2 : Result Std.Usize))) (.var .zero))
-      (.app (.leaf (.proj "divisor") (fun (f : Fraction) =>
-              (f.divisor : Std.Usize))) (.var (.succ (.succ (.succ .zero))))))
-    .var
+    (.scalarBinop .div (.u .Usize) (.var .zero)
+      (.proj (.crate TypeName.Fraction) 1 [] [] (.scalar (.u .Usize)) rfl
+        (.var (.succ (.succ (.succ .zero)))))) .var
   (.ok
-    (.app (.app (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                                    (fun (i2 : Std.Usize) (f : Fraction)
-                                      (i3 : Std.Usize) (b : Bool)
-                                      (v : alloc.vec.Vec (AList T)) =>
-                                    ({
-                                       num_entries := i2,
-                                       max_load_factor := f,
-                                       max_load := i3,
-                                       saturated := b,
-                                       slots := v
-                                     } : HashMap T))) (.lit 0#usize))
-      (.var (.succ (.succ (.succ (.succ .zero)))))) (.var .zero)) (.lit false))
-      (.var (.succ (.succ .zero))))))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.uscalarLit .Usize 0 (by decide))
+        (.cons (.var (.succ (.succ (.succ (.succ .zero))))) (.cons (.var .zero)
+        (.cons (.boolLit false) (.cons (.var (.succ (.succ .zero))) .nil))))))))))
 
 theorem HashMap.new_with_capacity.deep_eq (T : Type _) (capacity : Std.Usize)
   (max_load_factor : Fraction) :
   HashMap.new_with_capacity T capacity max_load_factor =
     Aeneas.Deep.Expr.denote (HashMap.new_with_capacity.deep T)
-      (capacity ::ₕ max_load_factor ::ₕ Aeneas.Deep.HList.nil)
+      (capacity ::ₑ max_load_factor ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::new]:
     Source: 'tests/src/hashmap.rs', lines 86:4-95:5
     Visibility: public -/
-def HashMap.new.deep (T : Type _) : Aeneas.Deep.Expr [] (Result (HashMap T)) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::new_with_capacity")
-                (fun (i : Std.Usize) (f : Fraction) =>
-                (HashMap.new_with_capacity T i f : Result (HashMap T))))
-    (.lit 32#usize))
-    (.app (.app (.leaf (.ctor "hashmap::Fraction")
-                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
-                  ({ dividend := i, divisor := i1 } : Fraction)))
-      (.lit 4#usize)) (.lit 5#usize)))
+def HashMap.new.deep (T : Type _) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩ []
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
+  (.call (.crate FunName.HashMap_new_with_capacity) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+    (.cons (.uscalarLit .Usize 32 (by decide))
+      (.cons (.ctor (.crate TypeName.Fraction) 0 [] [] [(.scalar (.u .Usize)), (.scalar (.u .Usize))] rfl
+               (.cons (.uscalarLit .Usize 4 (by decide))
+                 (.cons (.uscalarLit .Usize 5 (by decide)) .nil))) .nil)))
 
 theorem HashMap.new.deep_eq (T : Type _) :
   HashMap.new T =
-    Aeneas.Deep.Expr.denote (HashMap.new.deep T) (Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (HashMap.new.deep T) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::clear]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 101:8-104:9
     Visibility: public -/
 def HashMap.clear_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [alloc.vec.Vec (AList T), Std.Usize] (Result (alloc.vec.Vec
-    (AList T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))]
+    (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))
+  :=
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize))) (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite (.lt (.var (.succ (.succ .zero))) (.var .zero))
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
                   (fun (v : alloc.vec.Vec (AList T)) (i2 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (AList T)) v i2 :
                     Result ((AList T) × (AList T → alloc.vec.Vec (AList
                     T)))))) (.var (.succ .zero))) (.var (.succ (.succ .zero))))
-    (.pair .ignore .var)
+    (.tuple (.cons .ignore (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.let_
     (.app (.var (.succ .zero))
-      (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T))) .var
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::clear^loop0")
-                (fun (v : alloc.vec.Vec (AList T)) (i3 : Std.Usize) =>
-                (HashMap.clear_loop v i3 : Result (alloc.vec.Vec (AList T)))))
-    (.var .zero)) (.var (.succ .zero))))))
+      (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl .nil)) .var
+  (.call (.crate FunName.HashMap_clear_loop) [(.var 0)] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))))))
   (.ok (.var (.succ .zero)))))
 
 theorem HashMap.clear_loop.deep_eq {T : Type _}
   (slots : alloc.vec.Vec (AList T)) (i : Std.Usize) :
   HashMap.clear_loop slots i =
     Aeneas.Deep.Expr.denote (HashMap.clear_loop.deep)
-      (slots ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (slots ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.clear_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::clear]:
     Source: 'tests/src/hashmap.rs', lines 97:4-105:5
     Visibility: public -/
 def HashMap.clear.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T] (Result (HashMap T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] [])]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::clear^loop0")
-                  (fun (v : alloc.vec.Vec (AList T)) (i : Std.Usize) =>
-                  (HashMap.clear_loop v i : Result (alloc.vec.Vec (AList T)))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var .zero)))
-      (.lit 0#usize)) .var
+    (.call (.crate FunName.HashMap_clear_loop) [(.var 0)] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var .zero)) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
+    .var
   (.ok
     (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
                         (fun (hm : HashMap T) (i : Std.Usize)
                           (v : alloc.vec.Vec (AList T)) =>
                         ({ hm with num_entries := i, slots := v } : HashMap T)))
-      (.var (.succ .zero))) (.lit 0#usize)) (.var .zero))))
+      (.var (.succ .zero))) (.uscalarLit .Usize 0 (by decide))) (.var .zero))))
 
 theorem HashMap.clear.deep_eq {T : Type _} (self : HashMap T) :
   HashMap.clear self =
     Aeneas.Deep.Expr.denote (HashMap.clear.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::len]:
     Source: 'tests/src/hashmap.rs', lines 107:4-109:5
     Visibility: public -/
 def HashMap.len.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T] (Result Std.Usize) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] [])]
+    (.result (.scalar (.u .Usize))) :=
   (.ok
-    (.app (.leaf (.proj "num_entries") (fun (hm : HashMap T) =>
-            (hm.num_entries : Std.Usize))) (.var .zero)))
+    (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+      (.var .zero)))
 
 theorem HashMap.len.deep_eq {T : Type _} (self : HashMap T) :
   HashMap.len self =
-    Aeneas.Deep.Expr.denote (HashMap.len.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (HashMap.len.deep) (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::insert_in_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 1:0-130:9 -/
 def HashMap.insert_in_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, T, AList T] (Result (Bool × (AList T))) :=
-  (.match_ (.var (.succ (.succ .zero))) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ (.succ .zero)))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ .zero)))))
          (.ok
-           (.pair (.lit false)
-             (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                                 (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                                 (AList.Cons i t a : AList T))) (.var .zero))
-               (.var (.succ (.succ (.succ (.succ .zero))))))
-               (.var (.succ (.succ .zero))))))
+           (.tuple
+             (.cons (.boolLit false)
+               (.cons (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+                        (.cons (.var .zero)
+                          (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                          (.cons (.var (.succ (.succ .zero))) .nil)))) .nil))))
          (.bind
-           (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::insert_in_list^loop0")
-                               (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                               (HashMap.insert_in_list_loop i t a : Result
-                                 (Bool × (AList T)))))
-             (.var (.succ (.succ (.succ .zero)))))
-             (.var (.succ (.succ (.succ (.succ .zero))))))
-             (.var (.succ (.succ .zero)))) (.pair .var .var)
+           (.call (.crate FunName.HashMap_insert_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+             (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+               (.cons (.var (.succ (.succ .zero))) .nil)))) (.tuple (.cons .var
+           (.cons .var .nil)))
          (.let_
-           (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                               (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                               (AList.Cons i t a : AList T)))
-             (.var (.succ (.succ .zero))))
-             (.var (.succ (.succ (.succ .zero))))) (.var (.succ .zero))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+           (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+             (.cons (.var (.succ (.succ .zero)))
+               (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ .zero)) .nil)))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
   (.cons (.ok
-           (.pair (.lit true)
-             (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                                 (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                                 (AList.Cons i t a : AList T))) (.var .zero))
-               (.var (.succ .zero)))
-               (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T)))))
+           (.tuple
+             (.cons (.boolLit true)
+               (.cons (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+                        (.cons (.var .zero) (.cons (.var (.succ .zero))
+                          (.cons (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl
+                                   .nil) .nil)))) .nil))))
   .nil)))
 
 theorem HashMap.insert_in_list_loop.deep_eq {T : Type _} (key : Std.Usize)
   (value : T) (ls : AList T) :
   HashMap.insert_in_list_loop key value ls =
     Aeneas.Deep.Expr.denote (HashMap.insert_in_list_loop.deep)
-      (key ::ₕ value ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ value ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.insert_in_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::insert_in_list]:
     Source: 'tests/src/hashmap.rs', lines 114:4-131:5 -/
 def HashMap.insert_in_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, T, AList T] (Result (Bool × (AList T))) :=
-  (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::insert_in_list^loop0")
-                      (fun (i : Std.Usize) (t : T) (a : AList T) =>
-                      (HashMap.insert_in_list_loop i t a : Result (Bool ×
-                        (AList T))))) (.var .zero)) (.var (.succ .zero)))
-    (.var (.succ (.succ .zero))))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) :=
+  (.call (.crate FunName.HashMap_insert_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero))
+      (.cons (.var (.succ (.succ .zero))) .nil))))
 
 theorem HashMap.insert_in_list.deep_eq {T : Type _} (key : Std.Usize)
   (value : T) (ls : AList T) :
   HashMap.insert_in_list key value ls =
     Aeneas.Deep.Expr.denote (HashMap.insert_in_list.deep)
-      (key ::ₕ value ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ value ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::insert_no_resize]:
     Source: 'tests/src/hashmap.rs', lines 134:4-142:5 -/
 def HashMap.insert_no_resize.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize, T] (Result (HashMap T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
   (.bind
-    (.app (.leaf (.fn "hashmap::hash_key") (fun (i : Std.Usize) =>
-            (hash_key i : Result Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.crate FunName.hash_key) [] [] [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var (.succ .zero))))
-    .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic.%::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 % i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ .zero))) .nil)) .var
+  (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
                   (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
                     Result ((AList T) × (AList T → alloc.vec.Vec (AList
                     T))))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) (.pair .var .var)
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::insert_in_list")
-                        (fun (i1 : Std.Usize) (t : T) (a1 : AList T) =>
-                        (HashMap.insert_in_list i1 t a1 : Result (Bool ×
-                          (AList T)))))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
-      (.var .zero)) (.pair .var .var)
+    (.call (.crate FunName.HashMap_insert_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+        (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
+        (.cons (.var .zero) .nil)))) (.tuple (.cons .var (.cons .var .nil)))
   (.ite (.bool (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 + i2 : Result Std.Usize)))
-      (.app (.leaf (.proj "num_entries") (fun (hm : HashMap T) =>
-              (hm.num_entries : Std.Usize)))
-        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-      (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize)
+      (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.let_
     (.app (.var (.succ (.succ (.succ (.succ .zero)))))
       (.var (.succ (.succ .zero)))) .var
   (.ok
     (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
                         (fun (hm : HashMap T) (i2 : Std.Usize)
                           (v1 : alloc.vec.Vec (AList T)) =>
                         ({ hm with num_entries := i2, slots := v1 } : HashMap
@@ -377,6 +544,7 @@ def HashMap.insert_no_resize.deep {T : Type _} :
   (.let_ (.app (.var (.succ (.succ (.succ .zero)))) (.var (.succ .zero))) .var
   (.ok
     (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                  (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
                   (fun (hm : HashMap T) (v1 : alloc.vec.Vec (AList T)) =>
                   ({ hm with slots := v1 } : HashMap T)))
       (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
@@ -386,26 +554,24 @@ theorem HashMap.insert_no_resize.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) (value : T) :
   HashMap.insert_no_resize self key value =
     Aeneas.Deep.Expr.denote (HashMap.insert_no_resize.deep)
-      (self ::ₕ key ::ₕ value ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ value ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::move_elements_from_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 196:12-203:17 -/
 def HashMap.move_elements_from_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, AList T] (Result (HashMap T)) :=
-  (.match_ (.var (.succ .zero)) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.bind
-           (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::insert_no_resize")
-                               (fun (hm : HashMap T) (i : Std.Usize) (t : T) =>
-                               (HashMap.insert_no_resize hm i t : Result
-                                 (HashMap T))))
-             (.var (.succ (.succ (.succ .zero))))) (.var .zero))
-             (.var (.succ .zero))) .var
-         (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements_from_list^loop0")
-                       (fun (hm : HashMap T) (a : AList T) =>
-                       (HashMap.move_elements_from_list_loop hm a : Result
-                         (HashMap T)))) (.var .zero))
-           (.var (.succ (.succ (.succ .zero))))))
+           (.call (.crate FunName.HashMap_insert_no_resize) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+             (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var .zero)
+               (.cons (.var (.succ .zero)) .nil)))) .var
+         (.call (.crate FunName.HashMap_move_elements_from_list_loop) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+           (.cons (.var .zero) (.cons (.var (.succ (.succ (.succ .zero))))
+             .nil))))
   (.cons (.ok (.var .zero))
   .nil)))
 
@@ -413,638 +579,614 @@ theorem HashMap.move_elements_from_list_loop.deep_eq {T : Type _}
   (ntable : HashMap T) (ls : AList T) :
   HashMap.move_elements_from_list_loop ntable ls =
     Aeneas.Deep.Expr.denote (HashMap.move_elements_from_list_loop.deep)
-      (ntable ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (ntable ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.move_elements_from_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::move_elements_from_list]:
     Source: 'tests/src/hashmap.rs', lines 193:4-206:5 -/
 def HashMap.move_elements_from_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, AList T] (Result (HashMap T)) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements_from_list^loop0")
-                (fun (hm : HashMap T) (a : AList T) =>
-                (HashMap.move_elements_from_list_loop hm a : Result (HashMap
-                  T)))) (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
+  (.call (.crate FunName.HashMap_move_elements_from_list_loop) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.move_elements_from_list.deep_eq {T : Type _}
   (ntable : HashMap T) (ls : AList T) :
   HashMap.move_elements_from_list ntable ls =
     Aeneas.Deep.Expr.denote (HashMap.move_elements_from_list.deep)
-      (ntable ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (ntable ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::move_elements]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 182:8-189:9 -/
 def HashMap.move_elements_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, alloc.vec.Vec (AList T), Std.Usize] (Result
-    ((HashMap T) × (alloc.vec.Vec (AList T)))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]))
+  :=
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.ite (.lt (.var (.succ (.succ (.succ .zero)))) (.var .zero))
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
                   (fun (v : alloc.vec.Vec (AList T)) (i2 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (AList T)) v i2 :
                     Result ((AList T) × (AList T → alloc.vec.Vec (AList
                     T)))))) (.var (.succ (.succ .zero))))
-      (.var (.succ (.succ (.succ .zero))))) (.pair .var .var)
+      (.var (.succ (.succ (.succ .zero))))) (.tuple (.cons .var (.cons .var
+    .nil)))
   (.let_
     (.app (.app (.leaf (.fn "core::mem::replace")
+                  (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])))
                   (fun (a1 : AList T) (a2 : AList T) =>
                   (core.mem.replace a1 a2 : ((AList T) × (AList T)))))
       (.var .zero))
-      (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T))) (.pair .var
-    .var)
+      (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl .nil))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements_from_list")
-                  (fun (hm : HashMap T) (a2 : AList T) =>
-                  (HashMap.move_elements_from_list hm a2 : Result (HashMap T))))
-      (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.var .zero)) .var
+    (.call (.crate FunName.HashMap_move_elements_from_list) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+      (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+        (.cons (.var .zero) .nil))) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic.+::<usize>")
-                  (fun (i2 : Std.Usize) (i3 : Std.Usize) =>
-                  (i2 + i3 : Result Std.Usize)))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-      (.lit 1#usize)) .var
+    (.scalarBinop .add (.u .Usize)
+      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))
+      (.uscalarLit .Usize 1 (by decide))) .var
   (.let_
     (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
       (.var (.succ (.succ (.succ .zero))))) .var
-  (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements^loop0")
-                      (fun (hm : HashMap T) (v : alloc.vec.Vec (AList T))
-                        (i3 : Std.Usize) =>
-                      (HashMap.move_elements_loop hm v i3 : Result ((HashMap T)
-                        × (alloc.vec.Vec (AList T))))))
-    (.var (.succ (.succ .zero)))) (.var .zero)) (.var (.succ .zero))))))))
-  (.ok (.pair (.var (.succ .zero)) (.var (.succ (.succ .zero)))))))
+  (.call (.crate FunName.HashMap_move_elements_loop) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])])) rfl rfl
+    (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero)
+      (.cons (.var (.succ .zero)) .nil)))))))))
+  (.ok
+    (.tuple
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil))))))
 
 theorem HashMap.move_elements_loop.deep_eq {T : Type _} (ntable : HashMap T)
   (slots : alloc.vec.Vec (AList T)) (i : Std.Usize) :
   HashMap.move_elements_loop ntable slots i =
     Aeneas.Deep.Expr.denote (HashMap.move_elements_loop.deep)
-      (ntable ::ₕ slots ::ₕ i ::ₕ Aeneas.Deep.HList.nil)
+      (ntable ::ₑ slots ::ₑ i ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.move_elements_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::move_elements]:
     Source: 'tests/src/hashmap.rs', lines 180:4-190:5 -/
 def HashMap.move_elements.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, alloc.vec.Vec (AList T)] (Result ((HashMap T) ×
-    (alloc.vec.Vec (AList T)))) :=
-  (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements^loop0")
-                      (fun (hm : HashMap T) (v : alloc.vec.Vec (AList T))
-                        (i : Std.Usize) =>
-                      (HashMap.move_elements_loop hm v i : Result ((HashMap T)
-                        × (alloc.vec.Vec (AList T)))))) (.var .zero))
-    (.var (.succ .zero))) (.lit 0#usize))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]
+    (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])]))
+  :=
+  (.call (.crate FunName.HashMap_move_elements_loop) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero))
+      (.cons (.uscalarLit .Usize 0 (by decide)) .nil))))
 
 theorem HashMap.move_elements.deep_eq {T : Type _} (ntable : HashMap T)
   (slots : alloc.vec.Vec (AList T)) :
   HashMap.move_elements ntable slots =
     Aeneas.Deep.Expr.denote (HashMap.move_elements.deep)
-      (ntable ::ₕ slots ::ₕ Aeneas.Deep.HList.nil)
+      (ntable ::ₑ slots ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::try_resize]:
     Source: 'tests/src/hashmap.rs', lines 157:4-176:5 -/
 def HashMap.try_resize.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T] (Result (HashMap T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] [])]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var .zero))) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var .zero)) .nil)) .var
   (.bind
-    (.app (.app (.leaf (.binop "panic./::<usize>")
-                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
-                  (i / i1 : Result Std.Usize)))
-      (.leaf (.global "core::num::{usize}::MAX")
-        (core.num.Usize.MAX : Std.Usize))) (.lit 2#usize)) .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic./::<usize>")
-                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
-                  (i / i1 : Result Std.Usize))) (.var .zero))
-      (.app (.leaf (.proj "dividend") (fun (f : Fraction) =>
-              (f.dividend : Std.Usize)))
-        (.app (.leaf (.proj "max_load_factor") (fun (hm : HashMap T) =>
-                (hm.max_load_factor : Fraction))) (.var (.succ (.succ .zero))))))
+    (.scalarBinop .div (.u .Usize)
+      (.leaf (.global "core::num::{usize}::MAX") (.scalar (.u .Usize))
+        (core.num.Usize.MAX : Std.Usize)) (.uscalarLit .Usize 2 (by decide)))
     .var
+  (.bind
+    (.scalarBinop .div (.u .Usize) (.var .zero)
+      (.proj (.crate TypeName.Fraction) 0 [] [] (.scalar (.u .Usize)) rfl
+        (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+          (.var (.succ (.succ .zero)))))) .var
   (.ite (.le (.var (.succ (.succ .zero))) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.binop "panic.*::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 * i2 : Result Std.Usize))) (.var (.succ (.succ .zero))))
-      (.lit 2#usize)) .var
+    (.scalarBinop .mul (.u .Usize) (.var (.succ (.succ .zero)))
+      (.uscalarLit .Usize 2 (by decide))) .var
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::new_with_capacity")
-                  (fun (i2 : Std.Usize) (f : Fraction) =>
-                  (HashMap.new_with_capacity T i2 f : Result (HashMap T))))
-      (.var .zero))
-      (.app (.leaf (.proj "max_load_factor") (fun (hm : HashMap T) =>
-              (hm.max_load_factor : Fraction)))
-        (.var (.succ (.succ (.succ (.succ .zero))))))) .var
+    (.call (.crate FunName.HashMap_new_with_capacity) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+      (.cons (.var .zero)
+        (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+                 (.var (.succ (.succ (.succ (.succ .zero)))))) .nil))) .var
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::move_elements")
-                  (fun (hm : HashMap T) (v : alloc.vec.Vec (AList T)) =>
-                  (HashMap.move_elements hm v : Result ((HashMap T) ×
-                    (alloc.vec.Vec (AList T)))))) (.var .zero))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
-        (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))) (.pair .var
-    .ignore)
+    (.call (.crate FunName.HashMap_move_elements) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.result (.tuple [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])])) rfl rfl
+      (.cons (.var .zero)
+        (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+                 (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) .nil)))
+    (.tuple (.cons .var (.cons .ignore .nil)))
   (.ok
     (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
                         (fun (hm : HashMap T) (i2 : Std.Usize)
                           (v : alloc.vec.Vec (AList T)) =>
                         ({ hm with max_load := i2, slots := v } : HashMap T)))
       (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-      (.app (.leaf (.proj "max_load") (fun (hm : HashMap T) =>
-              (hm.max_load : Std.Usize))) (.var .zero)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var .zero)))))))
+      (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+        (.var .zero)))
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+        (.var .zero)))))))
   (.ok
     (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                  (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow .bool (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
                   (fun (hm : HashMap T) (b : Bool) =>
                   ({ hm with saturated := b } : HashMap T)))
-      (.var (.succ (.succ (.succ .zero))))) (.lit true)))))))
+      (.var (.succ (.succ (.succ .zero))))) (.boolLit true)))))))
 
 theorem HashMap.try_resize.deep_eq {T : Type _} (self : HashMap T) :
   HashMap.try_resize self =
     Aeneas.Deep.Expr.denote (HashMap.try_resize.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::insert]:
     Source: 'tests/src/hashmap.rs', lines 146:4-153:5
     Visibility: public -/
 def HashMap.insert.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize, T] (Result (HashMap T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)]
+    (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) :=
   (.bind
-    (.app (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::insert_no_resize")
-                        (fun (hm : HashMap T) (i : Std.Usize) (t : T) =>
-                        (HashMap.insert_no_resize hm i t : Result (HashMap T))))
-      (.var .zero)) (.var (.succ .zero))) (.var (.succ (.succ .zero)))) .var
+    (.call (.crate FunName.HashMap_insert_no_resize) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize)), (.var 0)] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+      (.cons (.var .zero) (.cons (.var (.succ .zero))
+        (.cons (.var (.succ (.succ .zero))) .nil)))) .var
   (.bind
-    (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::len")
-            (fun (hm : HashMap T) => (HashMap.len hm : Result Std.Usize)))
-      (.var .zero)) .var
+    (.call (.crate FunName.HashMap_len) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] [])] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var .zero) .nil)) .var
   (.ite
     (.gt (.var .zero)
-      (.app (.leaf (.proj "max_load") (fun (hm : HashMap T) =>
-              (hm.max_load : Std.Usize))) (.var (.succ .zero))))
+      (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+        (.var (.succ .zero))))
   (.ite
     (.bool
-      (.app (.leaf (.proj "saturated") (fun (hm : HashMap T) =>
-              (hm.saturated : Bool))) (.var (.succ .zero))))
+      (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+        (.var (.succ .zero))))
   (.ok (.var (.succ .zero)))
-  (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::try_resize")
-          (fun (hm : HashMap T) =>
-          (HashMap.try_resize hm : Result (HashMap T)))) (.var (.succ .zero))))
+  (.call (.crate FunName.HashMap_try_resize) [(.var 0)] [] [(.adt (.crate TypeName.HashMap) [(.var 0)] [])] (.result (.adt (.crate TypeName.HashMap) [(.var 0)] [])) rfl rfl
+    (.cons (.var (.succ .zero)) .nil)))
   (.ok (.var (.succ .zero))))))
 
 theorem HashMap.insert.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) (value : T) :
   HashMap.insert self key value =
     Aeneas.Deep.Expr.denote (HashMap.insert.deep)
-      (self ::ₕ key ::ₕ value ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ value ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::contains_key_in_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 217:8-229:5
     Visibility: public -/
 def HashMap.contains_key_in_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result Bool) :=
-  (.match_ (.var (.succ .zero)) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result .bool) :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ .zero)))))
-         (.ok (.lit true))
-         (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::contains_key_in_list^loop0")
-                       (fun (i : Std.Usize) (a : AList T) =>
-                       (HashMap.contains_key_in_list_loop i a : Result Bool)))
-           (.var (.succ (.succ (.succ .zero))))) (.var (.succ (.succ .zero)))))
-  (.cons (.ok (.lit false))
+         (.ok (.boolLit true))
+         (.call (.crate FunName.HashMap_contains_key_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result .bool) rfl rfl
+           (.cons (.var (.succ (.succ (.succ .zero))))
+             (.cons (.var (.succ (.succ .zero))) .nil))))
+  (.cons (.ok (.boolLit false))
   .nil)))
 
 theorem HashMap.contains_key_in_list_loop.deep_eq {T : Type _}
   (key : Std.Usize) (ls : AList T) :
   HashMap.contains_key_in_list_loop key ls =
     Aeneas.Deep.Expr.denote (HashMap.contains_key_in_list_loop.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.contains_key_in_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::contains_key_in_list]:
     Source: 'tests/src/hashmap.rs', lines 216:4-229:5
     Visibility: public -/
 def HashMap.contains_key_in_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result Bool) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::contains_key_in_list^loop0")
-                (fun (i : Std.Usize) (a : AList T) =>
-                (HashMap.contains_key_in_list_loop i a : Result Bool)))
-    (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result .bool) :=
+  (.call (.crate FunName.HashMap_contains_key_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result .bool) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.contains_key_in_list.deep_eq {T : Type _} (key : Std.Usize)
   (ls : AList T) :
   HashMap.contains_key_in_list key ls =
     Aeneas.Deep.Expr.denote (HashMap.contains_key_in_list.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::contains_key]:
     Source: 'tests/src/hashmap.rs', lines 209:4-213:5
     Visibility: public -/
 def HashMap.contains_key.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize] (Result Bool) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result .bool) :=
   (.bind
-    (.app (.leaf (.fn "hashmap::hash_key") (fun (i : Std.Usize) =>
-            (hash_key i : Result Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.crate FunName.hash_key) [] [] [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var (.succ .zero))))
-    .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic.%::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 % i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ .zero))) .nil)) .var
+  (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.AList) [(.var 0)] []))))
                   (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
                   (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
                     (AList T)) v i1 : Result (AList T))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
         (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) .var
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::contains_key_in_list")
-                (fun (i1 : Std.Usize) (a1 : AList T) =>
-                (HashMap.contains_key_in_list i1 a1 : Result Bool)))
-    (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.var .zero))))))
+  (.call (.crate FunName.HashMap_contains_key_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result .bool) rfl rfl
+    (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+      (.cons (.var .zero) .nil)))))))
 
 theorem HashMap.contains_key.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) :
   HashMap.contains_key self key =
     Aeneas.Deep.Expr.denote (HashMap.contains_key.deep)
-      (self ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get_in_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 235:8-243:5 -/
 def HashMap.get_in_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result (Option T)) :=
-  (.match_ (.var (.succ .zero)) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.adt (.builtin .option) [(.var 0)] [])) :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ .zero)))))
          (.ok
-           (.app (.leaf (.ctor "core::option::Option::Some") (fun (t : T) =>
-                   (some t : Option T))) (.var (.succ .zero))))
-         (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_in_list^loop0")
-                       (fun (i : Std.Usize) (a : AList T) =>
-                       (HashMap.get_in_list_loop i a : Result (Option T))))
-           (.var (.succ (.succ (.succ .zero))))) (.var (.succ (.succ .zero)))))
-  (.cons (.ok (.leaf (.ctor "core::option::Option::None") (none : Option T)))
+           (.ctor (.builtin .option) 1 [(.var 0)] [] [(.var 0)] rfl
+             (.cons (.var (.succ .zero)) .nil)))
+         (.call (.crate FunName.HashMap_get_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.builtin .option) [(.var 0)] [])) rfl rfl
+           (.cons (.var (.succ (.succ (.succ .zero))))
+             (.cons (.var (.succ (.succ .zero))) .nil))))
+  (.cons (.ok (.ctor (.builtin .option) 0 [(.var 0)] [] [] rfl .nil))
   .nil)))
 
 theorem HashMap.get_in_list_loop.deep_eq {T : Type _} (key : Std.Usize)
   (ls : AList T) :
   HashMap.get_in_list_loop key ls =
     Aeneas.Deep.Expr.denote (HashMap.get_in_list_loop.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.get_in_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get_in_list]:
     Source: 'tests/src/hashmap.rs', lines 234:4-243:5 -/
 def HashMap.get_in_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result (Option T)) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_in_list^loop0")
-                (fun (i : Std.Usize) (a : AList T) =>
-                (HashMap.get_in_list_loop i a : Result (Option T))))
-    (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.adt (.builtin .option) [(.var 0)] [])) :=
+  (.call (.crate FunName.HashMap_get_in_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.builtin .option) [(.var 0)] [])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.get_in_list.deep_eq {T : Type _} (key : Std.Usize)
   (ls : AList T) :
   HashMap.get_in_list key ls =
     Aeneas.Deep.Expr.denote (HashMap.get_in_list.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get]:
     Source: 'tests/src/hashmap.rs', lines 245:4-249:5
     Visibility: public -/
 def HashMap.get.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize] (Result (Option T)) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result (.adt (.builtin .option) [(.var 0)] [])) :=
   (.bind
-    (.app (.leaf (.fn "hashmap::hash_key") (fun (i : Std.Usize) =>
-            (hash_key i : Result Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.crate FunName.hash_key) [] [] [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var (.succ .zero))))
-    .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic.%::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 % i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ .zero))) .nil)) .var
+  (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.AList) [(.var 0)] []))))
                   (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
                   (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
                     (AList T)) v i1 : Result (AList T))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
         (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) .var
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_in_list")
-                (fun (i1 : Std.Usize) (a1 : AList T) =>
-                (HashMap.get_in_list i1 a1 : Result (Option T))))
-    (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) (.var .zero))))))
+  (.call (.crate FunName.HashMap_get_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.builtin .option) [(.var 0)] [])) rfl rfl
+    (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+      (.cons (.var .zero) .nil)))))))
 
 theorem HashMap.get.deep_eq {T : Type _} (self : HashMap T) (key : Std.Usize) :
   HashMap.get self key =
     Aeneas.Deep.Expr.denote (HashMap.get.deep)
-      (self ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get_mut_in_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 252:8-260:5
     Visibility: public -/
 def HashMap.get_mut_in_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [AList T, Std.Usize] (Result ((Option T) × (Option T →
-    AList T))) :=
-  (.match_ (.var .zero) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))]))
+  :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var .zero)
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ (.succ .zero))))))
          (.ok
-           (.pair
-             (.app (.leaf (.ctor "core::option::Option::Some") (fun (t : T) =>
-                     (some t : Option T))) (.var (.succ .zero)))
-             (.lam .var
-               (.let_
-                 (.shallow (fun «deep env» =>
-                   let o := Aeneas.Deep.Var.get .zero «deep env»
-                   let ckey := Aeneas.Deep.Var.get (.succ .zero) «deep env»
-                   let cvalue := Aeneas.Deep.Var.get (.succ (.succ .zero)) «deep env»
-                   let tl := Aeneas.Deep.Var.get (.succ (.succ (.succ .zero))) «deep env»
-                   let ls := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ .zero)))) «deep env»
-                   let key := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ (.succ .zero))))) «deep env»
-                   (match o with
-                    | some t => t
-                    | _ => cvalue))) .var
-               (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                                   (fun (i : Std.Usize) (t1 : T) (a : AList T)
-                                     => (AList.Cons i t1 a : AList T)))
-                 (.var (.succ (.succ .zero)))) (.var .zero))
-                 (.var (.succ (.succ (.succ (.succ .zero))))))))))
+           (.tuple
+             (.cons (.ctor (.builtin .option) 1 [(.var 0)] [] [(.var 0)] rfl
+                      (.cons (.var (.succ .zero)) .nil))
+               (.cons (.lam (.adt (.builtin .option) [(.var 0)] []) .var
+                        (.let_
+                          (.shallow (.var 0) (fun «deep env» =>
+                            let o := Aeneas.Deep.Var.get .zero «deep env»
+                            let ckey := Aeneas.Deep.Var.get (.succ .zero) «deep env»
+                            let cvalue := Aeneas.Deep.Var.get (.succ (.succ .zero)) «deep env»
+                            let tl := Aeneas.Deep.Var.get (.succ (.succ (.succ .zero))) «deep env»
+                            let ls := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ .zero)))) «deep env»
+                            let key := Aeneas.Deep.Var.get (.succ (.succ (.succ (.succ (.succ .zero))))) «deep env»
+                            (match o with
+                             | some t => t
+                             | _ => cvalue : T))) .var
+                        (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+                          (.cons (.var (.succ (.succ .zero)))
+                            (.cons (.var .zero)
+                            (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                            .nil)))))) .nil))))
          (.bind
-           (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_mut_in_list^loop0")
-                         (fun (a : AList T) (i : Std.Usize) =>
-                         (HashMap.get_mut_in_list_loop a i : Result ((Option T)
-                           × (Option T → AList T)))))
-             (.var (.succ (.succ .zero))))
-             (.var (.succ (.succ (.succ (.succ .zero)))))) (.pair .var .var)
+           (.call (.crate FunName.HashMap_get_mut_in_list_loop) [(.var 0)] [] [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))])) rfl rfl
+             (.cons (.var (.succ (.succ .zero)))
+               (.cons (.var (.succ (.succ (.succ (.succ .zero))))) .nil)))
+           (.tuple (.cons .var (.cons .var .nil)))
          (.let_
-           (.lam .var
+           (.lam (.adt (.builtin .option) [(.var 0)] []) .var
              (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
-             (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                                 (fun (i : Std.Usize) (t : T) (a1 : AList T) =>
-                                 (AList.Cons i t a1 : AList T)))
-               (.var (.succ (.succ (.succ (.succ .zero))))))
-               (.var (.succ (.succ (.succ (.succ (.succ .zero)))))))
-               (.var .zero)))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+             (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+               (.cons (.var (.succ (.succ (.succ (.succ .zero)))))
+                 (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
+                 (.cons (.var .zero) .nil)))))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
   (.cons (.ok
-           (.pair
-             (.leaf (.ctor "core::option::Option::None") (none : Option T))
-             (.lam .var
-               (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T)))))
+           (.tuple
+             (.cons (.ctor (.builtin .option) 0 [(.var 0)] [] [] rfl .nil)
+               (.cons (.lam (.adt (.builtin .option) [(.var 0)] []) .var
+                        (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl
+                          .nil)) .nil))))
   .nil)))
 
 theorem HashMap.get_mut_in_list_loop.deep_eq {T : Type _} (ls : AList T)
   (key : Std.Usize) :
   HashMap.get_mut_in_list_loop ls key =
     Aeneas.Deep.Expr.denote (HashMap.get_mut_in_list_loop.deep)
-      (ls ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.get_mut_in_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get_mut_in_list]:
     Source: 'tests/src/hashmap.rs', lines 251:4-260:5
     Visibility: public -/
 def HashMap.get_mut_in_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [AList T, Std.Usize] (Result ((Option T) × (Option T →
-    AList T))) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_mut_in_list^loop0")
-                (fun (a : AList T) (i : Std.Usize) =>
-                (HashMap.get_mut_in_list_loop a i : Result ((Option T) ×
-                  (Option T → AList T))))) (.var .zero))
-    (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))]))
+  :=
+  (.call (.crate FunName.HashMap_get_mut_in_list_loop) [(.var 0)] [] [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.get_mut_in_list.deep_eq {T : Type _} (ls : AList T)
   (key : Std.Usize) :
   HashMap.get_mut_in_list ls key =
     Aeneas.Deep.Expr.denote (HashMap.get_mut_in_list.deep)
-      (ls ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (ls ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::get_mut]:
     Source: 'tests/src/hashmap.rs', lines 263:4-267:5
     Visibility: public -/
 def HashMap.get_mut.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize] (Result ((Option T) × (Option T →
-    HashMap T))) :=
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))]))
+  :=
   (.bind
-    (.app (.leaf (.fn "hashmap::hash_key") (fun (i : Std.Usize) =>
-            (hash_key i : Result Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.crate FunName.hash_key) [] [] [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var (.succ .zero))))
-    .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic.%::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 % i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ .zero))) .nil)) .var
+  (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
                   (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
                     Result ((AList T) × (AList T → alloc.vec.Vec (AList
                     T))))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) (.pair .var .var)
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::get_mut_in_list")
-                  (fun (a1 : AList T) (i1 : Std.Usize) =>
-                  (HashMap.get_mut_in_list a1 i1 : Result ((Option T) ×
-                    (Option T → AList T))))) (.var .zero))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))) (.pair .var
-    .var)
+    (.call (.crate FunName.HashMap_get_mut_in_list) [(.var 0)] [] [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))])) rfl rfl
+      (.cons (.var .zero)
+        (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+        .nil))) (.tuple (.cons .var (.cons .var .nil)))
   (.let_
-    (.lam .var
+    (.lam (.adt (.builtin .option) [(.var 0)] []) .var
       (.let_ (.app (.var (.succ (.succ .zero))) (.var .zero)) .var
       (.let_
         (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
           (.var .zero)) .var
       (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                    (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
                     (fun (hm : HashMap T) (v1 : alloc.vec.Vec (AList T)) =>
                     ({ hm with slots := v1 } : HashMap T)))
         (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
         (.var .zero))))) .var
-  (.ok (.pair (.var (.succ .zero)) (.var .zero)))))))))
+  (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))))))
 
 theorem HashMap.get_mut.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) :
   HashMap.get_mut self key =
     Aeneas.Deep.Expr.denote (HashMap.get_mut.deep)
-      (self ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::remove_from_list]: loop 0:
     Source: 'tests/src/hashmap.rs', lines 273:12-297:5 -/
 def HashMap.remove_from_list_loop.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result ((Option T) × (AList T))) :=
-  (.match_ (.var (.succ .zero)) AList.deepElim
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]))
+  :=
+  (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+    (.var (.succ .zero))
   (.cons (.ite (.eq (.var .zero) (.var (.succ (.succ (.succ .zero)))))
          (.let_
            (.app (.app (.leaf (.fn "core::mem::replace")
+                         (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])))
                          (fun (a : AList T) (a1 : AList T) =>
                          (core.mem.replace a a1 : ((AList T) × (AList T)))))
              (.var (.succ (.succ (.succ (.succ .zero))))))
-             (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T)))
-           (.pair .var .ignore)
-         (.match_ (.var .zero) AList.deepElim
+             (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl .nil))
+           (.tuple (.cons .var (.cons .ignore .nil)))
+         (.match_ (.crate TypeName.AList) [(.var 0)] [] [[(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])], []] rfl
+           (.var .zero)
          (.cons (.ok
-                  (.pair
-                    (.app (.leaf (.ctor "core::option::Option::Some")
-                            (fun (t1 : T) => (some t1 : Option T)))
-                      (.var (.succ .zero))) (.var (.succ (.succ .zero)))))
-         (.cons (.fail panic)
+                  (.tuple
+                    (.cons (.ctor (.builtin .option) 1 [(.var 0)] [] [(.var 0)] rfl
+                             (.cons (.var (.succ .zero)) .nil))
+                      (.cons (.var (.succ (.succ .zero))) .nil))))
+         (.cons (.fail (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]) panic)
          .nil))))
          (.bind
-           (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::remove_from_list^loop0")
-                         (fun (i : Std.Usize) (a : AList T) =>
-                         (HashMap.remove_from_list_loop i a : Result ((Option
-                           T) × (AList T)))))
-             (.var (.succ (.succ (.succ .zero)))))
-             (.var (.succ (.succ .zero)))) (.pair .var .var)
+           (.call (.crate FunName.HashMap_remove_from_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+             (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ (.succ .zero))) .nil))) (.tuple (.cons .var
+           (.cons .var .nil)))
          (.let_
-           (.app (.app (.app (.leaf (.ctor "hashmap::AList::Cons")
-                               (fun (i : Std.Usize) (t1 : T) (a : AList T) =>
-                               (AList.Cons i t1 a : AList T)))
-             (.var (.succ (.succ .zero))))
-             (.var (.succ (.succ (.succ .zero))))) (.var (.succ .zero))) .var
-         (.ok (.pair (.var (.succ .zero)) (.var .zero))))))
+           (.ctor (.crate TypeName.AList) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] rfl
+             (.cons (.var (.succ (.succ .zero)))
+               (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.var (.succ .zero)) .nil)))) .var
+         (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil)))))))
   (.cons (.ok
-           (.pair
-             (.leaf (.ctor "core::option::Option::None") (none : Option T))
-             (.leaf (.ctor "hashmap::AList::Nil") (AList.Nil : AList T))))
+           (.tuple
+             (.cons (.ctor (.builtin .option) 0 [(.var 0)] [] [] rfl .nil)
+               (.cons (.ctor (.crate TypeName.AList) 1 [(.var 0)] [] [] rfl
+                        .nil) .nil))))
   .nil)))
 
 theorem HashMap.remove_from_list_loop.deep_eq {T : Type _} (key : Std.Usize)
   (ls : AList T) :
   HashMap.remove_from_list_loop key ls =
     Aeneas.Deep.Expr.denote (HashMap.remove_from_list_loop.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by unfold HashMap.remove_from_list_loop; deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::remove_from_list]:
     Source: 'tests/src/hashmap.rs', lines 271:4-297:5 -/
 def HashMap.remove_from_list.deep {T : Type _} :
-  Aeneas.Deep.Expr [Std.Usize, AList T] (Result ((Option T) × (AList T))) :=
-  (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::remove_from_list^loop0")
-                (fun (i : Std.Usize) (a : AList T) =>
-                (HashMap.remove_from_list_loop i a : Result ((Option T) ×
-                  (AList T))))) (.var .zero)) (.var (.succ .zero)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])]))
+  :=
+  (.call (.crate FunName.HashMap_remove_from_list_loop) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem HashMap.remove_from_list.deep_eq {T : Type _} (key : Std.Usize)
   (ls : AList T) :
   HashMap.remove_from_list key ls =
     Aeneas.Deep.Expr.denote (HashMap.remove_from_list.deep)
-      (key ::ₕ ls ::ₕ Aeneas.Deep.HList.nil)
+      (key ::ₑ ls ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [hashmap::{hashmap::HashMap<T>}::remove]:
     Source: 'tests/src/hashmap.rs', lines 300:4-312:5
     Visibility: public -/
 def HashMap.remove.deep {T : Type _} :
-  Aeneas.Deep.Expr [HashMap T, Std.Usize] (Result ((Option T) × (HashMap T)))
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T], []⟩
+    [(.adt (.crate TypeName.HashMap) [(.var 0)] []), (.scalar (.u .Usize))]
+    (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.HashMap) [(.var 0)] [])]))
   :=
   (.bind
-    (.app (.leaf (.fn "hashmap::hash_key") (fun (i : Std.Usize) =>
-            (hash_key i : Result Std.Usize))) (.var (.succ .zero))) .var
+    (.call (.crate FunName.hash_key) [] [] [(.scalar (.u .Usize))] (.result (.scalar (.u .Usize))) rfl rfl
+      (.cons (.var (.succ .zero)) .nil)) .var
   (.let_
-    (.app (.leaf (.fn "alloc::vec::{alloc::vec::Vec<T>}::len")
-            (fun (v : alloc.vec.Vec (AList T)) =>
-            (alloc.vec.Vec.len v : Std.Usize)))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T)))) (.var (.succ .zero))))
-    .var
-  (.bind
-    (.app (.app (.leaf (.binop "panic.%::<usize>")
-                  (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                  (i1 % i2 : Result Std.Usize))) (.var (.succ .zero)))
-      (.var .zero)) .var
+    (.call (.prim .vecLen) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] (.scalar (.u .Usize)) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ .zero))) .nil)) .var
+  (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
     (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
+                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
                   (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
                   (alloc.vec.Vec.index_mut
                     (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
                     Result ((AList T) × (AList T → alloc.vec.Vec (AList
                     T))))))
-      (.app (.leaf (.proj "slots") (fun (hm : HashMap T) =>
-              (hm.slots : alloc.vec.Vec (AList T))))
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) (.pair .var .var)
+      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
-    (.app (.app (.leaf (.fn "hashmap::{hashmap::HashMap<T>}::remove_from_list")
-                  (fun (i1 : Std.Usize) (a1 : AList T) =>
-                  (HashMap.remove_from_list i1 a1 : Result ((Option T) ×
-                    (AList T)))))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-      (.var .zero)) (.pair .var .var)
-  (.match_ (.var .zero) Aeneas.Deep.Option.deepElim
+    (.call (.crate FunName.HashMap_remove_from_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
+      (.cons (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))
+        (.cons (.var .zero) .nil))) (.tuple (.cons .var (.cons .var .nil)))
+  (.match_ (.builtin .option) [(.var 0)] [] [[], [(.var 0)]] rfl (.var .zero)
   (.cons (.let_
            (.app (.var (.succ (.succ (.succ .zero)))) (.var (.succ .zero)))
            .var
          (.ok
-           (.pair
-             (.leaf (.ctor "core::option::Option::None") (none : Option T))
-             (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                           (fun (hm : HashMap T) (v1 : alloc.vec.Vec (AList T))
-                             => ({ hm with slots := v1 } : HashMap T)))
-               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-               (.var .zero)))))
+           (.tuple
+             (.cons (.ctor (.builtin .option) 0 [(.var 0)] [] [] rfl .nil)
+               (.cons (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                                    (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
+                                    (fun (hm : HashMap T) (v1 : alloc.vec.Vec
+                                      (AList T)) =>
+                                    ({ hm with slots := v1 } : HashMap T)))
+                        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.var .zero)) .nil)))))
   (.cons (.bind
-           (.app (.app (.leaf (.binop "panic.-::<usize>")
-                         (fun (i1 : Std.Usize) (i2 : Std.Usize) =>
-                         (i1 - i2 : Result Std.Usize)))
-             (.app (.leaf (.proj "num_entries") (fun (hm : HashMap T) =>
-                     (hm.num_entries : Std.Usize)))
-               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
-             (.lit 1#usize)) .var
+           (.scalarBinop .sub (.u .Usize)
+             (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+             (.uscalarLit .Usize 1 (by decide))) .var
          (.let_
            (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
              (.var (.succ (.succ (.succ .zero))))) .var
          (.ok
-           (.pair (.var (.succ (.succ (.succ .zero))))
-             (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                                 (fun (hm : HashMap T) (i2 : Std.Usize)
-                                   (v1 : alloc.vec.Vec (AList T)) =>
-                                 ({ hm with num_entries := i2, slots := v1 } :
-                                   HashMap T)))
-               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
-               (.var (.succ .zero))) (.var .zero))))))
+           (.tuple
+             (.cons (.var (.succ (.succ (.succ .zero))))
+               (.cons (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
+                                          (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
+                                          (fun (hm : HashMap T)
+                                            (i2 : Std.Usize)
+                                            (v1 : alloc.vec.Vec (AList T)) =>
+                                          ({
+                                             hm
+                                               with
+                                               num_entries := i2, slots := v1
+                                           } : HashMap T)))
+                        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+                        (.var (.succ .zero))) (.var .zero)) .nil))))))
   .nil))))))))
 
 theorem HashMap.remove.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) :
   HashMap.remove self key =
     Aeneas.Deep.Expr.denote (HashMap.remove.deep)
-      (self ::ₕ key ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ key ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end hashmap

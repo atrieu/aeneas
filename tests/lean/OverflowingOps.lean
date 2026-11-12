@@ -21,291 +21,1454 @@ set_option maxRecDepth 2048
 namespace overflowing_ops
 
 /-- [overflowing_ops::u8_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 3:0-5:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 4:0-6:1 -/
 def u8_overflowing_add
   (x : Std.U8) (y : Std.U8) : Result (Std.U8 × Bool) := do
   ok (core.num.U8.overflowing_add x y)
 
 /-- [overflowing_ops::u16_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 6:0-8:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 7:0-9:1 -/
 def u16_overflowing_add
   (x : Std.U16) (y : Std.U16) : Result (Std.U16 × Bool) := do
   ok (core.num.U16.overflowing_add x y)
 
 /-- [overflowing_ops::u32_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 9:0-11:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 10:0-12:1 -/
 def u32_overflowing_add
   (x : Std.U32) (y : Std.U32) : Result (Std.U32 × Bool) := do
   ok (core.num.U32.overflowing_add x y)
 
 /-- [overflowing_ops::u64_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 12:0-14:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 13:0-15:1 -/
 def u64_overflowing_add
   (x : Std.U64) (y : Std.U64) : Result (Std.U64 × Bool) := do
   ok (core.num.U64.overflowing_add x y)
 
 /-- [overflowing_ops::u128_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 15:0-17:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 16:0-18:1 -/
 def u128_overflowing_add
   (x : Std.U128) (y : Std.U128) : Result (Std.U128 × Bool) := do
   ok (core.num.U128.overflowing_add x y)
 
 /-- [overflowing_ops::usize_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 18:0-20:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 19:0-21:1 -/
 def usize_overflowing_add
   (x : Std.Usize) (y : Std.Usize) : Result (Std.Usize × Bool) := do
   ok (core.num.Usize.overflowing_add x y)
 
 /-- [overflowing_ops::i8_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 22:0-24:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 23:0-25:1 -/
 def i8_overflowing_add
   (x : Std.I8) (y : Std.I8) : Result (Std.I8 × Bool) := do
   ok (core.num.I8.overflowing_add x y)
 
 /-- [overflowing_ops::i16_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 25:0-27:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 26:0-28:1 -/
 def i16_overflowing_add
   (x : Std.I16) (y : Std.I16) : Result (Std.I16 × Bool) := do
   ok (core.num.I16.overflowing_add x y)
 
 /-- [overflowing_ops::i32_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 28:0-30:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 29:0-31:1 -/
 def i32_overflowing_add
   (x : Std.I32) (y : Std.I32) : Result (Std.I32 × Bool) := do
   ok (core.num.I32.overflowing_add x y)
 
 /-- [overflowing_ops::i64_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 31:0-33:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 32:0-34:1 -/
 def i64_overflowing_add
   (x : Std.I64) (y : Std.I64) : Result (Std.I64 × Bool) := do
   ok (core.num.I64.overflowing_add x y)
 
 /-- [overflowing_ops::i128_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 34:0-36:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 35:0-37:1 -/
 def i128_overflowing_add
   (x : Std.I128) (y : Std.I128) : Result (Std.I128 × Bool) := do
   ok (core.num.I128.overflowing_add x y)
 
 /-- [overflowing_ops::isize_overflowing_add]:
-    Source: 'tests/src/overflowing-ops.rs', lines 37:0-39:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 38:0-40:1 -/
 def isize_overflowing_add
   (x : Std.Isize) (y : Std.Isize) : Result (Std.Isize × Bool) := do
   ok (core.num.Isize.overflowing_add x y)
 
 /-- [overflowing_ops::u8_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 41:0-43:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 42:0-44:1 -/
 def u8_overflowing_sub
   (x : Std.U8) (y : Std.U8) : Result (Std.U8 × Bool) := do
   ok (core.num.U8.overflowing_sub x y)
 
 /-- [overflowing_ops::u16_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 44:0-46:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 45:0-47:1 -/
 def u16_overflowing_sub
   (x : Std.U16) (y : Std.U16) : Result (Std.U16 × Bool) := do
   ok (core.num.U16.overflowing_sub x y)
 
 /-- [overflowing_ops::u32_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 47:0-49:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 48:0-50:1 -/
 def u32_overflowing_sub
   (x : Std.U32) (y : Std.U32) : Result (Std.U32 × Bool) := do
   ok (core.num.U32.overflowing_sub x y)
 
 /-- [overflowing_ops::u64_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 50:0-52:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 51:0-53:1 -/
 def u64_overflowing_sub
   (x : Std.U64) (y : Std.U64) : Result (Std.U64 × Bool) := do
   ok (core.num.U64.overflowing_sub x y)
 
 /-- [overflowing_ops::u128_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 53:0-55:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 54:0-56:1 -/
 def u128_overflowing_sub
   (x : Std.U128) (y : Std.U128) : Result (Std.U128 × Bool) := do
   ok (core.num.U128.overflowing_sub x y)
 
 /-- [overflowing_ops::usize_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 56:0-58:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 57:0-59:1 -/
 def usize_overflowing_sub
   (x : Std.Usize) (y : Std.Usize) : Result (Std.Usize × Bool) := do
   ok (core.num.Usize.overflowing_sub x y)
 
 /-- [overflowing_ops::i8_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 60:0-62:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 61:0-63:1 -/
 def i8_overflowing_sub
   (x : Std.I8) (y : Std.I8) : Result (Std.I8 × Bool) := do
   ok (core.num.I8.overflowing_sub x y)
 
 /-- [overflowing_ops::i16_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 63:0-65:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 64:0-66:1 -/
 def i16_overflowing_sub
   (x : Std.I16) (y : Std.I16) : Result (Std.I16 × Bool) := do
   ok (core.num.I16.overflowing_sub x y)
 
 /-- [overflowing_ops::i32_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 66:0-68:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 67:0-69:1 -/
 def i32_overflowing_sub
   (x : Std.I32) (y : Std.I32) : Result (Std.I32 × Bool) := do
   ok (core.num.I32.overflowing_sub x y)
 
 /-- [overflowing_ops::i64_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 69:0-71:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 70:0-72:1 -/
 def i64_overflowing_sub
   (x : Std.I64) (y : Std.I64) : Result (Std.I64 × Bool) := do
   ok (core.num.I64.overflowing_sub x y)
 
 /-- [overflowing_ops::i128_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 72:0-74:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 73:0-75:1 -/
 def i128_overflowing_sub
   (x : Std.I128) (y : Std.I128) : Result (Std.I128 × Bool) := do
   ok (core.num.I128.overflowing_sub x y)
 
 /-- [overflowing_ops::isize_overflowing_sub]:
-    Source: 'tests/src/overflowing-ops.rs', lines 75:0-77:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 76:0-78:1 -/
 def isize_overflowing_sub
   (x : Std.Isize) (y : Std.Isize) : Result (Std.Isize × Bool) := do
   ok (core.num.Isize.overflowing_sub x y)
 
 /-- [overflowing_ops::u8_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 79:0-81:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 80:0-82:1 -/
 def u8_overflowing_mul
   (x : Std.U8) (y : Std.U8) : Result (Std.U8 × Bool) := do
   ok (core.num.U8.overflowing_mul x y)
 
 /-- [overflowing_ops::u16_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 82:0-84:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 83:0-85:1 -/
 def u16_overflowing_mul
   (x : Std.U16) (y : Std.U16) : Result (Std.U16 × Bool) := do
   ok (core.num.U16.overflowing_mul x y)
 
 /-- [overflowing_ops::u32_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 85:0-87:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 86:0-88:1 -/
 def u32_overflowing_mul
   (x : Std.U32) (y : Std.U32) : Result (Std.U32 × Bool) := do
   ok (core.num.U32.overflowing_mul x y)
 
 /-- [overflowing_ops::u64_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 88:0-90:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 89:0-91:1 -/
 def u64_overflowing_mul
   (x : Std.U64) (y : Std.U64) : Result (Std.U64 × Bool) := do
   ok (core.num.U64.overflowing_mul x y)
 
 /-- [overflowing_ops::u128_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 91:0-93:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 92:0-94:1 -/
 def u128_overflowing_mul
   (x : Std.U128) (y : Std.U128) : Result (Std.U128 × Bool) := do
   ok (core.num.U128.overflowing_mul x y)
 
 /-- [overflowing_ops::usize_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 94:0-96:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 95:0-97:1 -/
 def usize_overflowing_mul
   (x : Std.Usize) (y : Std.Usize) : Result (Std.Usize × Bool) := do
   ok (core.num.Usize.overflowing_mul x y)
 
 /-- [overflowing_ops::i8_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 98:0-100:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 99:0-101:1 -/
 def i8_overflowing_mul
   (x : Std.I8) (y : Std.I8) : Result (Std.I8 × Bool) := do
   ok (core.num.I8.overflowing_mul x y)
 
 /-- [overflowing_ops::i16_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 101:0-103:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 102:0-104:1 -/
 def i16_overflowing_mul
   (x : Std.I16) (y : Std.I16) : Result (Std.I16 × Bool) := do
   ok (core.num.I16.overflowing_mul x y)
 
 /-- [overflowing_ops::i32_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 104:0-106:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 105:0-107:1 -/
 def i32_overflowing_mul
   (x : Std.I32) (y : Std.I32) : Result (Std.I32 × Bool) := do
   ok (core.num.I32.overflowing_mul x y)
 
 /-- [overflowing_ops::i64_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 107:0-109:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 108:0-110:1 -/
 def i64_overflowing_mul
   (x : Std.I64) (y : Std.I64) : Result (Std.I64 × Bool) := do
   ok (core.num.I64.overflowing_mul x y)
 
 /-- [overflowing_ops::i128_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 110:0-112:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 111:0-113:1 -/
 def i128_overflowing_mul
   (x : Std.I128) (y : Std.I128) : Result (Std.I128 × Bool) := do
   ok (core.num.I128.overflowing_mul x y)
 
 /-- [overflowing_ops::isize_overflowing_mul]:
-    Source: 'tests/src/overflowing-ops.rs', lines 113:0-115:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 114:0-116:1 -/
 def isize_overflowing_mul
   (x : Std.Isize) (y : Std.Isize) : Result (Std.Isize × Bool) := do
   ok (core.num.Isize.overflowing_mul x y)
 
 /-- [overflowing_ops::u8_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 117:0-119:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 118:0-120:1 -/
 def u8_overflowing_div
   (x : Std.U8) (y : Std.U8) : Result (Std.U8 × Bool) := do
   core.num.U8.overflowing_div x y
 
 /-- [overflowing_ops::u16_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 120:0-122:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 121:0-123:1 -/
 def u16_overflowing_div
   (x : Std.U16) (y : Std.U16) : Result (Std.U16 × Bool) := do
   core.num.U16.overflowing_div x y
 
 /-- [overflowing_ops::u32_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 123:0-125:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 124:0-126:1 -/
 def u32_overflowing_div
   (x : Std.U32) (y : Std.U32) : Result (Std.U32 × Bool) := do
   core.num.U32.overflowing_div x y
 
 /-- [overflowing_ops::u64_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 126:0-128:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 127:0-129:1 -/
 def u64_overflowing_div
   (x : Std.U64) (y : Std.U64) : Result (Std.U64 × Bool) := do
   core.num.U64.overflowing_div x y
 
 /-- [overflowing_ops::u128_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 129:0-131:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 130:0-132:1 -/
 def u128_overflowing_div
   (x : Std.U128) (y : Std.U128) : Result (Std.U128 × Bool) := do
   core.num.U128.overflowing_div x y
 
 /-- [overflowing_ops::usize_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 132:0-134:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 133:0-135:1 -/
 def usize_overflowing_div
   (x : Std.Usize) (y : Std.Usize) : Result (Std.Usize × Bool) := do
   core.num.Usize.overflowing_div x y
 
 /-- [overflowing_ops::i8_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 136:0-138:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 137:0-139:1 -/
 def i8_overflowing_div
   (x : Std.I8) (y : Std.I8) : Result (Std.I8 × Bool) := do
   core.num.I8.overflowing_div x y
 
 /-- [overflowing_ops::i16_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 139:0-141:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 140:0-142:1 -/
 def i16_overflowing_div
   (x : Std.I16) (y : Std.I16) : Result (Std.I16 × Bool) := do
   core.num.I16.overflowing_div x y
 
 /-- [overflowing_ops::i32_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 142:0-144:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 143:0-145:1 -/
 def i32_overflowing_div
   (x : Std.I32) (y : Std.I32) : Result (Std.I32 × Bool) := do
   core.num.I32.overflowing_div x y
 
 /-- [overflowing_ops::i64_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 145:0-147:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 146:0-148:1 -/
 def i64_overflowing_div
   (x : Std.I64) (y : Std.I64) : Result (Std.I64 × Bool) := do
   core.num.I64.overflowing_div x y
 
 /-- [overflowing_ops::i128_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 148:0-150:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 149:0-151:1 -/
 def i128_overflowing_div
   (x : Std.I128) (y : Std.I128) : Result (Std.I128 × Bool) := do
   core.num.I128.overflowing_div x y
 
 /-- [overflowing_ops::isize_overflowing_div]:
-    Source: 'tests/src/overflowing-ops.rs', lines 151:0-153:1 -/
+    Source: 'tests/src/overflowing-ops.rs', lines 152:0-154:1 -/
 def isize_overflowing_div
   (x : Std.Isize) (y : Std.Isize) : Result (Std.Isize × Bool) := do
   core.num.Isize.overflowing_div x y
+
+/-! ## Deep embedding of the function bodies -/
+set_option maxRecDepth 10000
+
+/-- The type declarations of the crate -/
+inductive TypeName where
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote t _ := nomatch t
+  variants t := nomatch t
+
+
+/-- The functions of the crate -/
+inductive FunName where
+  | u8_overflowing_add
+  | u16_overflowing_add
+  | u32_overflowing_add
+  | u64_overflowing_add
+  | u128_overflowing_add
+  | usize_overflowing_add
+  | i8_overflowing_add
+  | i16_overflowing_add
+  | i32_overflowing_add
+  | i64_overflowing_add
+  | i128_overflowing_add
+  | isize_overflowing_add
+  | u8_overflowing_sub
+  | u16_overflowing_sub
+  | u32_overflowing_sub
+  | u64_overflowing_sub
+  | u128_overflowing_sub
+  | usize_overflowing_sub
+  | i8_overflowing_sub
+  | i16_overflowing_sub
+  | i32_overflowing_sub
+  | i64_overflowing_sub
+  | i128_overflowing_sub
+  | isize_overflowing_sub
+  | u8_overflowing_mul
+  | u16_overflowing_mul
+  | u32_overflowing_mul
+  | u64_overflowing_mul
+  | u128_overflowing_mul
+  | usize_overflowing_mul
+  | i8_overflowing_mul
+  | i16_overflowing_mul
+  | i32_overflowing_mul
+  | i64_overflowing_mul
+  | i128_overflowing_mul
+  | isize_overflowing_mul
+  | u8_overflowing_div
+  | u16_overflowing_div
+  | u32_overflowing_div
+  | u64_overflowing_div
+  | u128_overflowing_div
+  | usize_overflowing_div
+  | i8_overflowing_div
+  | i16_overflowing_div
+  | i32_overflowing_div
+  | i64_overflowing_div
+  | i128_overflowing_div
+  | isize_overflowing_div
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.u8_overflowing_add =>
+      ⟨⟨[(.scalar (.u .U8)), (.scalar (.u .U8))],
+      (.result (.tuple [(.scalar (.u .U8)), .bool]))⟩,
+      fun _ => u8_overflowing_add⟩
+    | FunName.u16_overflowing_add =>
+      ⟨⟨[(.scalar (.u .U16)), (.scalar (.u .U16))],
+      (.result (.tuple [(.scalar (.u .U16)), .bool]))⟩,
+      fun _ => u16_overflowing_add⟩
+    | FunName.u32_overflowing_add =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.tuple [(.scalar (.u .U32)), .bool]))⟩,
+      fun _ => u32_overflowing_add⟩
+    | FunName.u64_overflowing_add =>
+      ⟨⟨[(.scalar (.u .U64)), (.scalar (.u .U64))],
+      (.result (.tuple [(.scalar (.u .U64)), .bool]))⟩,
+      fun _ => u64_overflowing_add⟩
+    | FunName.u128_overflowing_add =>
+      ⟨⟨[(.scalar (.u .U128)), (.scalar (.u .U128))],
+      (.result (.tuple [(.scalar (.u .U128)), .bool]))⟩,
+      fun _ => u128_overflowing_add⟩
+    | FunName.usize_overflowing_add =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.u .Usize)), .bool]))⟩,
+      fun _ => usize_overflowing_add⟩
+    | FunName.i8_overflowing_add =>
+      ⟨⟨[(.scalar (.i .I8)), (.scalar (.i .I8))],
+      (.result (.tuple [(.scalar (.i .I8)), .bool]))⟩,
+      fun _ => i8_overflowing_add⟩
+    | FunName.i16_overflowing_add =>
+      ⟨⟨[(.scalar (.i .I16)), (.scalar (.i .I16))],
+      (.result (.tuple [(.scalar (.i .I16)), .bool]))⟩,
+      fun _ => i16_overflowing_add⟩
+    | FunName.i32_overflowing_add =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.tuple [(.scalar (.i .I32)), .bool]))⟩,
+      fun _ => i32_overflowing_add⟩
+    | FunName.i64_overflowing_add =>
+      ⟨⟨[(.scalar (.i .I64)), (.scalar (.i .I64))],
+      (.result (.tuple [(.scalar (.i .I64)), .bool]))⟩,
+      fun _ => i64_overflowing_add⟩
+    | FunName.i128_overflowing_add =>
+      ⟨⟨[(.scalar (.i .I128)), (.scalar (.i .I128))],
+      (.result (.tuple [(.scalar (.i .I128)), .bool]))⟩,
+      fun _ => i128_overflowing_add⟩
+    | FunName.isize_overflowing_add =>
+      ⟨⟨[(.scalar (.i .Isize)), (.scalar (.i .Isize))],
+      (.result (.tuple [(.scalar (.i .Isize)), .bool]))⟩,
+      fun _ => isize_overflowing_add⟩
+    | FunName.u8_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .U8)), (.scalar (.u .U8))],
+      (.result (.tuple [(.scalar (.u .U8)), .bool]))⟩,
+      fun _ => u8_overflowing_sub⟩
+    | FunName.u16_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .U16)), (.scalar (.u .U16))],
+      (.result (.tuple [(.scalar (.u .U16)), .bool]))⟩,
+      fun _ => u16_overflowing_sub⟩
+    | FunName.u32_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.tuple [(.scalar (.u .U32)), .bool]))⟩,
+      fun _ => u32_overflowing_sub⟩
+    | FunName.u64_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .U64)), (.scalar (.u .U64))],
+      (.result (.tuple [(.scalar (.u .U64)), .bool]))⟩,
+      fun _ => u64_overflowing_sub⟩
+    | FunName.u128_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .U128)), (.scalar (.u .U128))],
+      (.result (.tuple [(.scalar (.u .U128)), .bool]))⟩,
+      fun _ => u128_overflowing_sub⟩
+    | FunName.usize_overflowing_sub =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.u .Usize)), .bool]))⟩,
+      fun _ => usize_overflowing_sub⟩
+    | FunName.i8_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .I8)), (.scalar (.i .I8))],
+      (.result (.tuple [(.scalar (.i .I8)), .bool]))⟩,
+      fun _ => i8_overflowing_sub⟩
+    | FunName.i16_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .I16)), (.scalar (.i .I16))],
+      (.result (.tuple [(.scalar (.i .I16)), .bool]))⟩,
+      fun _ => i16_overflowing_sub⟩
+    | FunName.i32_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.tuple [(.scalar (.i .I32)), .bool]))⟩,
+      fun _ => i32_overflowing_sub⟩
+    | FunName.i64_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .I64)), (.scalar (.i .I64))],
+      (.result (.tuple [(.scalar (.i .I64)), .bool]))⟩,
+      fun _ => i64_overflowing_sub⟩
+    | FunName.i128_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .I128)), (.scalar (.i .I128))],
+      (.result (.tuple [(.scalar (.i .I128)), .bool]))⟩,
+      fun _ => i128_overflowing_sub⟩
+    | FunName.isize_overflowing_sub =>
+      ⟨⟨[(.scalar (.i .Isize)), (.scalar (.i .Isize))],
+      (.result (.tuple [(.scalar (.i .Isize)), .bool]))⟩,
+      fun _ => isize_overflowing_sub⟩
+    | FunName.u8_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .U8)), (.scalar (.u .U8))],
+      (.result (.tuple [(.scalar (.u .U8)), .bool]))⟩,
+      fun _ => u8_overflowing_mul⟩
+    | FunName.u16_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .U16)), (.scalar (.u .U16))],
+      (.result (.tuple [(.scalar (.u .U16)), .bool]))⟩,
+      fun _ => u16_overflowing_mul⟩
+    | FunName.u32_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.tuple [(.scalar (.u .U32)), .bool]))⟩,
+      fun _ => u32_overflowing_mul⟩
+    | FunName.u64_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .U64)), (.scalar (.u .U64))],
+      (.result (.tuple [(.scalar (.u .U64)), .bool]))⟩,
+      fun _ => u64_overflowing_mul⟩
+    | FunName.u128_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .U128)), (.scalar (.u .U128))],
+      (.result (.tuple [(.scalar (.u .U128)), .bool]))⟩,
+      fun _ => u128_overflowing_mul⟩
+    | FunName.usize_overflowing_mul =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.u .Usize)), .bool]))⟩,
+      fun _ => usize_overflowing_mul⟩
+    | FunName.i8_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .I8)), (.scalar (.i .I8))],
+      (.result (.tuple [(.scalar (.i .I8)), .bool]))⟩,
+      fun _ => i8_overflowing_mul⟩
+    | FunName.i16_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .I16)), (.scalar (.i .I16))],
+      (.result (.tuple [(.scalar (.i .I16)), .bool]))⟩,
+      fun _ => i16_overflowing_mul⟩
+    | FunName.i32_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.tuple [(.scalar (.i .I32)), .bool]))⟩,
+      fun _ => i32_overflowing_mul⟩
+    | FunName.i64_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .I64)), (.scalar (.i .I64))],
+      (.result (.tuple [(.scalar (.i .I64)), .bool]))⟩,
+      fun _ => i64_overflowing_mul⟩
+    | FunName.i128_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .I128)), (.scalar (.i .I128))],
+      (.result (.tuple [(.scalar (.i .I128)), .bool]))⟩,
+      fun _ => i128_overflowing_mul⟩
+    | FunName.isize_overflowing_mul =>
+      ⟨⟨[(.scalar (.i .Isize)), (.scalar (.i .Isize))],
+      (.result (.tuple [(.scalar (.i .Isize)), .bool]))⟩,
+      fun _ => isize_overflowing_mul⟩
+    | FunName.u8_overflowing_div =>
+      ⟨⟨[(.scalar (.u .U8)), (.scalar (.u .U8))],
+      (.result (.tuple [(.scalar (.u .U8)), .bool]))⟩,
+      fun _ => u8_overflowing_div⟩
+    | FunName.u16_overflowing_div =>
+      ⟨⟨[(.scalar (.u .U16)), (.scalar (.u .U16))],
+      (.result (.tuple [(.scalar (.u .U16)), .bool]))⟩,
+      fun _ => u16_overflowing_div⟩
+    | FunName.u32_overflowing_div =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))],
+      (.result (.tuple [(.scalar (.u .U32)), .bool]))⟩,
+      fun _ => u32_overflowing_div⟩
+    | FunName.u64_overflowing_div =>
+      ⟨⟨[(.scalar (.u .U64)), (.scalar (.u .U64))],
+      (.result (.tuple [(.scalar (.u .U64)), .bool]))⟩,
+      fun _ => u64_overflowing_div⟩
+    | FunName.u128_overflowing_div =>
+      ⟨⟨[(.scalar (.u .U128)), (.scalar (.u .U128))],
+      (.result (.tuple [(.scalar (.u .U128)), .bool]))⟩,
+      fun _ => u128_overflowing_div⟩
+    | FunName.usize_overflowing_div =>
+      ⟨⟨[(.scalar (.u .Usize)), (.scalar (.u .Usize))],
+      (.result (.tuple [(.scalar (.u .Usize)), .bool]))⟩,
+      fun _ => usize_overflowing_div⟩
+    | FunName.i8_overflowing_div =>
+      ⟨⟨[(.scalar (.i .I8)), (.scalar (.i .I8))],
+      (.result (.tuple [(.scalar (.i .I8)), .bool]))⟩,
+      fun _ => i8_overflowing_div⟩
+    | FunName.i16_overflowing_div =>
+      ⟨⟨[(.scalar (.i .I16)), (.scalar (.i .I16))],
+      (.result (.tuple [(.scalar (.i .I16)), .bool]))⟩,
+      fun _ => i16_overflowing_div⟩
+    | FunName.i32_overflowing_div =>
+      ⟨⟨[(.scalar (.i .I32)), (.scalar (.i .I32))],
+      (.result (.tuple [(.scalar (.i .I32)), .bool]))⟩,
+      fun _ => i32_overflowing_div⟩
+    | FunName.i64_overflowing_div =>
+      ⟨⟨[(.scalar (.i .I64)), (.scalar (.i .I64))],
+      (.result (.tuple [(.scalar (.i .I64)), .bool]))⟩,
+      fun _ => i64_overflowing_div⟩
+    | FunName.i128_overflowing_div =>
+      ⟨⟨[(.scalar (.i .I128)), (.scalar (.i .I128))],
+      (.result (.tuple [(.scalar (.i .I128)), .bool]))⟩,
+      fun _ => i128_overflowing_div⟩
+    | FunName.isize_overflowing_div =>
+      ⟨⟨[(.scalar (.i .Isize)), (.scalar (.i .Isize))],
+      (.result (.tuple [(.scalar (.i .Isize)), .bool]))⟩,
+      fun _ => isize_overflowing_div⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
+
+/-- [overflowing_ops::u8_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 4:0-6:1 -/
+def u8_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.scalar (.u .U8))]
+    (.result (.tuple [(.scalar (.u .U8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u8}::overflowing_add")
+                  (.arrow (.scalar (.u .U8)) (.arrow (.scalar (.u .U8)) (.tuple [(.scalar (.u .U8)), .bool])))
+                  (fun (i : Std.U8) (i1 : Std.U8) =>
+                  (core.num.U8.overflowing_add i i1 : (Std.U8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u8_overflowing_add.deep_eq (x : Std.U8) (y : Std.U8) :
+  u8_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (u8_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u16_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 7:0-9:1 -/
+def u16_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16)), (.scalar (.u .U16))]
+    (.result (.tuple [(.scalar (.u .U16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u16}::overflowing_add")
+                  (.arrow (.scalar (.u .U16)) (.arrow (.scalar (.u .U16)) (.tuple [(.scalar (.u .U16)), .bool])))
+                  (fun (i : Std.U16) (i1 : Std.U16) =>
+                  (core.num.U16.overflowing_add i i1 : (Std.U16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u16_overflowing_add.deep_eq (x : Std.U16) (y : Std.U16) :
+  u16_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (u16_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u32_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 10:0-12:1 -/
+def u32_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.tuple [(.scalar (.u .U32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::overflowing_add")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.tuple [(.scalar (.u .U32)), .bool])))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.overflowing_add i i1 : (Std.U32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u32_overflowing_add.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (u32_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u64_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 13:0-15:1 -/
+def u64_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.scalar (.u .U64))]
+    (.result (.tuple [(.scalar (.u .U64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u64}::overflowing_add")
+                  (.arrow (.scalar (.u .U64)) (.arrow (.scalar (.u .U64)) (.tuple [(.scalar (.u .U64)), .bool])))
+                  (fun (i : Std.U64) (i1 : Std.U64) =>
+                  (core.num.U64.overflowing_add i i1 : (Std.U64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u64_overflowing_add.deep_eq (x : Std.U64) (y : Std.U64) :
+  u64_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (u64_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u128_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 16:0-18:1 -/
+def u128_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U128)), (.scalar (.u .U128))]
+    (.result (.tuple [(.scalar (.u .U128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u128}::overflowing_add")
+                  (.arrow (.scalar (.u .U128)) (.arrow (.scalar (.u .U128)) (.tuple [(.scalar (.u .U128)), .bool])))
+                  (fun (i : Std.U128) (i1 : Std.U128) =>
+                  (core.num.U128.overflowing_add i i1 : (Std.U128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u128_overflowing_add.deep_eq (x : Std.U128) (y : Std.U128) :
+  u128_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (u128_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::usize_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 19:0-21:1 -/
+def usize_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.u .Usize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{usize}::overflowing_add")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.tuple [(.scalar (.u .Usize)), .bool])))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.overflowing_add i i1 : (Std.Usize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem usize_overflowing_add.deep_eq (x : Std.Usize) (y : Std.Usize) :
+  usize_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (usize_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i8_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 23:0-25:1 -/
+def i8_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I8)), (.scalar (.i .I8))]
+    (.result (.tuple [(.scalar (.i .I8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i8}::overflowing_add")
+                  (.arrow (.scalar (.i .I8)) (.arrow (.scalar (.i .I8)) (.tuple [(.scalar (.i .I8)), .bool])))
+                  (fun (i : Std.I8) (i1 : Std.I8) =>
+                  (core.num.I8.overflowing_add i i1 : (Std.I8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i8_overflowing_add.deep_eq (x : Std.I8) (y : Std.I8) :
+  i8_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (i8_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i16_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 26:0-28:1 -/
+def i16_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I16)), (.scalar (.i .I16))]
+    (.result (.tuple [(.scalar (.i .I16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i16}::overflowing_add")
+                  (.arrow (.scalar (.i .I16)) (.arrow (.scalar (.i .I16)) (.tuple [(.scalar (.i .I16)), .bool])))
+                  (fun (i : Std.I16) (i1 : Std.I16) =>
+                  (core.num.I16.overflowing_add i i1 : (Std.I16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i16_overflowing_add.deep_eq (x : Std.I16) (y : Std.I16) :
+  i16_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (i16_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i32_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 29:0-31:1 -/
+def i32_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.tuple [(.scalar (.i .I32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::overflowing_add")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), .bool])))
+                  (fun (i : Std.I32) (i1 : Std.I32) =>
+                  (core.num.I32.overflowing_add i i1 : (Std.I32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i32_overflowing_add.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (i32_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i64_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 32:0-34:1 -/
+def i64_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I64)), (.scalar (.i .I64))]
+    (.result (.tuple [(.scalar (.i .I64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i64}::overflowing_add")
+                  (.arrow (.scalar (.i .I64)) (.arrow (.scalar (.i .I64)) (.tuple [(.scalar (.i .I64)), .bool])))
+                  (fun (i : Std.I64) (i1 : Std.I64) =>
+                  (core.num.I64.overflowing_add i i1 : (Std.I64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i64_overflowing_add.deep_eq (x : Std.I64) (y : Std.I64) :
+  i64_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (i64_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i128_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 35:0-37:1 -/
+def i128_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I128)), (.scalar (.i .I128))]
+    (.result (.tuple [(.scalar (.i .I128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i128}::overflowing_add")
+                  (.arrow (.scalar (.i .I128)) (.arrow (.scalar (.i .I128)) (.tuple [(.scalar (.i .I128)), .bool])))
+                  (fun (i : Std.I128) (i1 : Std.I128) =>
+                  (core.num.I128.overflowing_add i i1 : (Std.I128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i128_overflowing_add.deep_eq (x : Std.I128) (y : Std.I128) :
+  i128_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (i128_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::isize_overflowing_add]:
+    Source: 'tests/src/overflowing-ops.rs', lines 38:0-40:1 -/
+def isize_overflowing_add.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .Isize)), (.scalar (.i .Isize))]
+    (.result (.tuple [(.scalar (.i .Isize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{isize}::overflowing_add")
+                  (.arrow (.scalar (.i .Isize)) (.arrow (.scalar (.i .Isize)) (.tuple [(.scalar (.i .Isize)), .bool])))
+                  (fun (i : Std.Isize) (i1 : Std.Isize) =>
+                  (core.num.Isize.overflowing_add i i1 : (Std.Isize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem isize_overflowing_add.deep_eq (x : Std.Isize) (y : Std.Isize) :
+  isize_overflowing_add x y =
+    Aeneas.Deep.Expr.denote (isize_overflowing_add.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u8_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 42:0-44:1 -/
+def u8_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.scalar (.u .U8))]
+    (.result (.tuple [(.scalar (.u .U8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u8}::overflowing_sub")
+                  (.arrow (.scalar (.u .U8)) (.arrow (.scalar (.u .U8)) (.tuple [(.scalar (.u .U8)), .bool])))
+                  (fun (i : Std.U8) (i1 : Std.U8) =>
+                  (core.num.U8.overflowing_sub i i1 : (Std.U8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u8_overflowing_sub.deep_eq (x : Std.U8) (y : Std.U8) :
+  u8_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (u8_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u16_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 45:0-47:1 -/
+def u16_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16)), (.scalar (.u .U16))]
+    (.result (.tuple [(.scalar (.u .U16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u16}::overflowing_sub")
+                  (.arrow (.scalar (.u .U16)) (.arrow (.scalar (.u .U16)) (.tuple [(.scalar (.u .U16)), .bool])))
+                  (fun (i : Std.U16) (i1 : Std.U16) =>
+                  (core.num.U16.overflowing_sub i i1 : (Std.U16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u16_overflowing_sub.deep_eq (x : Std.U16) (y : Std.U16) :
+  u16_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (u16_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u32_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 48:0-50:1 -/
+def u32_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.tuple [(.scalar (.u .U32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::overflowing_sub")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.tuple [(.scalar (.u .U32)), .bool])))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.overflowing_sub i i1 : (Std.U32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u32_overflowing_sub.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (u32_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u64_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 51:0-53:1 -/
+def u64_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.scalar (.u .U64))]
+    (.result (.tuple [(.scalar (.u .U64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u64}::overflowing_sub")
+                  (.arrow (.scalar (.u .U64)) (.arrow (.scalar (.u .U64)) (.tuple [(.scalar (.u .U64)), .bool])))
+                  (fun (i : Std.U64) (i1 : Std.U64) =>
+                  (core.num.U64.overflowing_sub i i1 : (Std.U64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u64_overflowing_sub.deep_eq (x : Std.U64) (y : Std.U64) :
+  u64_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (u64_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u128_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 54:0-56:1 -/
+def u128_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U128)), (.scalar (.u .U128))]
+    (.result (.tuple [(.scalar (.u .U128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u128}::overflowing_sub")
+                  (.arrow (.scalar (.u .U128)) (.arrow (.scalar (.u .U128)) (.tuple [(.scalar (.u .U128)), .bool])))
+                  (fun (i : Std.U128) (i1 : Std.U128) =>
+                  (core.num.U128.overflowing_sub i i1 : (Std.U128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u128_overflowing_sub.deep_eq (x : Std.U128) (y : Std.U128) :
+  u128_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (u128_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::usize_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 57:0-59:1 -/
+def usize_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.u .Usize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{usize}::overflowing_sub")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.tuple [(.scalar (.u .Usize)), .bool])))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.overflowing_sub i i1 : (Std.Usize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem usize_overflowing_sub.deep_eq (x : Std.Usize) (y : Std.Usize) :
+  usize_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (usize_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i8_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 61:0-63:1 -/
+def i8_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I8)), (.scalar (.i .I8))]
+    (.result (.tuple [(.scalar (.i .I8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i8}::overflowing_sub")
+                  (.arrow (.scalar (.i .I8)) (.arrow (.scalar (.i .I8)) (.tuple [(.scalar (.i .I8)), .bool])))
+                  (fun (i : Std.I8) (i1 : Std.I8) =>
+                  (core.num.I8.overflowing_sub i i1 : (Std.I8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i8_overflowing_sub.deep_eq (x : Std.I8) (y : Std.I8) :
+  i8_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (i8_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i16_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 64:0-66:1 -/
+def i16_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I16)), (.scalar (.i .I16))]
+    (.result (.tuple [(.scalar (.i .I16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i16}::overflowing_sub")
+                  (.arrow (.scalar (.i .I16)) (.arrow (.scalar (.i .I16)) (.tuple [(.scalar (.i .I16)), .bool])))
+                  (fun (i : Std.I16) (i1 : Std.I16) =>
+                  (core.num.I16.overflowing_sub i i1 : (Std.I16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i16_overflowing_sub.deep_eq (x : Std.I16) (y : Std.I16) :
+  i16_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (i16_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i32_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 67:0-69:1 -/
+def i32_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.tuple [(.scalar (.i .I32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::overflowing_sub")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), .bool])))
+                  (fun (i : Std.I32) (i1 : Std.I32) =>
+                  (core.num.I32.overflowing_sub i i1 : (Std.I32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i32_overflowing_sub.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (i32_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i64_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 70:0-72:1 -/
+def i64_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I64)), (.scalar (.i .I64))]
+    (.result (.tuple [(.scalar (.i .I64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i64}::overflowing_sub")
+                  (.arrow (.scalar (.i .I64)) (.arrow (.scalar (.i .I64)) (.tuple [(.scalar (.i .I64)), .bool])))
+                  (fun (i : Std.I64) (i1 : Std.I64) =>
+                  (core.num.I64.overflowing_sub i i1 : (Std.I64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i64_overflowing_sub.deep_eq (x : Std.I64) (y : Std.I64) :
+  i64_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (i64_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i128_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 73:0-75:1 -/
+def i128_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I128)), (.scalar (.i .I128))]
+    (.result (.tuple [(.scalar (.i .I128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i128}::overflowing_sub")
+                  (.arrow (.scalar (.i .I128)) (.arrow (.scalar (.i .I128)) (.tuple [(.scalar (.i .I128)), .bool])))
+                  (fun (i : Std.I128) (i1 : Std.I128) =>
+                  (core.num.I128.overflowing_sub i i1 : (Std.I128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i128_overflowing_sub.deep_eq (x : Std.I128) (y : Std.I128) :
+  i128_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (i128_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::isize_overflowing_sub]:
+    Source: 'tests/src/overflowing-ops.rs', lines 76:0-78:1 -/
+def isize_overflowing_sub.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .Isize)), (.scalar (.i .Isize))]
+    (.result (.tuple [(.scalar (.i .Isize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{isize}::overflowing_sub")
+                  (.arrow (.scalar (.i .Isize)) (.arrow (.scalar (.i .Isize)) (.tuple [(.scalar (.i .Isize)), .bool])))
+                  (fun (i : Std.Isize) (i1 : Std.Isize) =>
+                  (core.num.Isize.overflowing_sub i i1 : (Std.Isize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem isize_overflowing_sub.deep_eq (x : Std.Isize) (y : Std.Isize) :
+  isize_overflowing_sub x y =
+    Aeneas.Deep.Expr.denote (isize_overflowing_sub.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u8_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 80:0-82:1 -/
+def u8_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.scalar (.u .U8))]
+    (.result (.tuple [(.scalar (.u .U8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u8}::overflowing_mul")
+                  (.arrow (.scalar (.u .U8)) (.arrow (.scalar (.u .U8)) (.tuple [(.scalar (.u .U8)), .bool])))
+                  (fun (i : Std.U8) (i1 : Std.U8) =>
+                  (core.num.U8.overflowing_mul i i1 : (Std.U8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u8_overflowing_mul.deep_eq (x : Std.U8) (y : Std.U8) :
+  u8_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (u8_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u16_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 83:0-85:1 -/
+def u16_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16)), (.scalar (.u .U16))]
+    (.result (.tuple [(.scalar (.u .U16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u16}::overflowing_mul")
+                  (.arrow (.scalar (.u .U16)) (.arrow (.scalar (.u .U16)) (.tuple [(.scalar (.u .U16)), .bool])))
+                  (fun (i : Std.U16) (i1 : Std.U16) =>
+                  (core.num.U16.overflowing_mul i i1 : (Std.U16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u16_overflowing_mul.deep_eq (x : Std.U16) (y : Std.U16) :
+  u16_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (u16_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u32_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 86:0-88:1 -/
+def u32_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.tuple [(.scalar (.u .U32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u32}::overflowing_mul")
+                  (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.tuple [(.scalar (.u .U32)), .bool])))
+                  (fun (i : Std.U32) (i1 : Std.U32) =>
+                  (core.num.U32.overflowing_mul i i1 : (Std.U32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u32_overflowing_mul.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (u32_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u64_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 89:0-91:1 -/
+def u64_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.scalar (.u .U64))]
+    (.result (.tuple [(.scalar (.u .U64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u64}::overflowing_mul")
+                  (.arrow (.scalar (.u .U64)) (.arrow (.scalar (.u .U64)) (.tuple [(.scalar (.u .U64)), .bool])))
+                  (fun (i : Std.U64) (i1 : Std.U64) =>
+                  (core.num.U64.overflowing_mul i i1 : (Std.U64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u64_overflowing_mul.deep_eq (x : Std.U64) (y : Std.U64) :
+  u64_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (u64_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u128_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 92:0-94:1 -/
+def u128_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U128)), (.scalar (.u .U128))]
+    (.result (.tuple [(.scalar (.u .U128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{u128}::overflowing_mul")
+                  (.arrow (.scalar (.u .U128)) (.arrow (.scalar (.u .U128)) (.tuple [(.scalar (.u .U128)), .bool])))
+                  (fun (i : Std.U128) (i1 : Std.U128) =>
+                  (core.num.U128.overflowing_mul i i1 : (Std.U128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem u128_overflowing_mul.deep_eq (x : Std.U128) (y : Std.U128) :
+  u128_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (u128_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::usize_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 95:0-97:1 -/
+def usize_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.u .Usize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{usize}::overflowing_mul")
+                  (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.tuple [(.scalar (.u .Usize)), .bool])))
+                  (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                  (core.num.Usize.overflowing_mul i i1 : (Std.Usize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem usize_overflowing_mul.deep_eq (x : Std.Usize) (y : Std.Usize) :
+  usize_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (usize_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i8_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 99:0-101:1 -/
+def i8_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I8)), (.scalar (.i .I8))]
+    (.result (.tuple [(.scalar (.i .I8)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i8}::overflowing_mul")
+                  (.arrow (.scalar (.i .I8)) (.arrow (.scalar (.i .I8)) (.tuple [(.scalar (.i .I8)), .bool])))
+                  (fun (i : Std.I8) (i1 : Std.I8) =>
+                  (core.num.I8.overflowing_mul i i1 : (Std.I8 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i8_overflowing_mul.deep_eq (x : Std.I8) (y : Std.I8) :
+  i8_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (i8_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i16_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 102:0-104:1 -/
+def i16_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I16)), (.scalar (.i .I16))]
+    (.result (.tuple [(.scalar (.i .I16)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i16}::overflowing_mul")
+                  (.arrow (.scalar (.i .I16)) (.arrow (.scalar (.i .I16)) (.tuple [(.scalar (.i .I16)), .bool])))
+                  (fun (i : Std.I16) (i1 : Std.I16) =>
+                  (core.num.I16.overflowing_mul i i1 : (Std.I16 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i16_overflowing_mul.deep_eq (x : Std.I16) (y : Std.I16) :
+  i16_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (i16_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i32_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 105:0-107:1 -/
+def i32_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.tuple [(.scalar (.i .I32)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i32}::overflowing_mul")
+                  (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.tuple [(.scalar (.i .I32)), .bool])))
+                  (fun (i : Std.I32) (i1 : Std.I32) =>
+                  (core.num.I32.overflowing_mul i i1 : (Std.I32 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i32_overflowing_mul.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (i32_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i64_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 108:0-110:1 -/
+def i64_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I64)), (.scalar (.i .I64))]
+    (.result (.tuple [(.scalar (.i .I64)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i64}::overflowing_mul")
+                  (.arrow (.scalar (.i .I64)) (.arrow (.scalar (.i .I64)) (.tuple [(.scalar (.i .I64)), .bool])))
+                  (fun (i : Std.I64) (i1 : Std.I64) =>
+                  (core.num.I64.overflowing_mul i i1 : (Std.I64 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i64_overflowing_mul.deep_eq (x : Std.I64) (y : Std.I64) :
+  i64_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (i64_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i128_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 111:0-113:1 -/
+def i128_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I128)), (.scalar (.i .I128))]
+    (.result (.tuple [(.scalar (.i .I128)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{i128}::overflowing_mul")
+                  (.arrow (.scalar (.i .I128)) (.arrow (.scalar (.i .I128)) (.tuple [(.scalar (.i .I128)), .bool])))
+                  (fun (i : Std.I128) (i1 : Std.I128) =>
+                  (core.num.I128.overflowing_mul i i1 : (Std.I128 × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem i128_overflowing_mul.deep_eq (x : Std.I128) (y : Std.I128) :
+  i128_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (i128_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::isize_overflowing_mul]:
+    Source: 'tests/src/overflowing-ops.rs', lines 114:0-116:1 -/
+def isize_overflowing_mul.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .Isize)), (.scalar (.i .Isize))]
+    (.result (.tuple [(.scalar (.i .Isize)), .bool])) :=
+  (.ok
+    (.app (.app (.leaf (.fn "core::num::{isize}::overflowing_mul")
+                  (.arrow (.scalar (.i .Isize)) (.arrow (.scalar (.i .Isize)) (.tuple [(.scalar (.i .Isize)), .bool])))
+                  (fun (i : Std.Isize) (i1 : Std.Isize) =>
+                  (core.num.Isize.overflowing_mul i i1 : (Std.Isize × Bool))))
+      (.var .zero)) (.var (.succ .zero))))
+
+theorem isize_overflowing_mul.deep_eq (x : Std.Isize) (y : Std.Isize) :
+  isize_overflowing_mul x y =
+    Aeneas.Deep.Expr.denote (isize_overflowing_mul.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u8_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 118:0-120:1 -/
+def u8_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U8)), (.scalar (.u .U8))]
+    (.result (.tuple [(.scalar (.u .U8)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{u8}::overflowing_div")
+                (.arrow (.scalar (.u .U8)) (.arrow (.scalar (.u .U8)) (.result (.tuple [(.scalar (.u .U8)), .bool]))))
+                (fun (i : Std.U8) (i1 : Std.U8) =>
+                (core.num.U8.overflowing_div i i1 : Result (Std.U8 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem u8_overflowing_div.deep_eq (x : Std.U8) (y : Std.U8) :
+  u8_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (u8_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u16_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 121:0-123:1 -/
+def u16_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U16)), (.scalar (.u .U16))]
+    (.result (.tuple [(.scalar (.u .U16)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{u16}::overflowing_div")
+                (.arrow (.scalar (.u .U16)) (.arrow (.scalar (.u .U16)) (.result (.tuple [(.scalar (.u .U16)), .bool]))))
+                (fun (i : Std.U16) (i1 : Std.U16) =>
+                (core.num.U16.overflowing_div i i1 : Result (Std.U16 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem u16_overflowing_div.deep_eq (x : Std.U16) (y : Std.U16) :
+  u16_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (u16_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u32_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 124:0-126:1 -/
+def u32_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U32)), (.scalar (.u .U32))]
+    (.result (.tuple [(.scalar (.u .U32)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{u32}::overflowing_div")
+                (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.result (.tuple [(.scalar (.u .U32)), .bool]))))
+                (fun (i : Std.U32) (i1 : Std.U32) =>
+                (core.num.U32.overflowing_div i i1 : Result (Std.U32 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem u32_overflowing_div.deep_eq (x : Std.U32) (y : Std.U32) :
+  u32_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (u32_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u64_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 127:0-129:1 -/
+def u64_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U64)), (.scalar (.u .U64))]
+    (.result (.tuple [(.scalar (.u .U64)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{u64}::overflowing_div")
+                (.arrow (.scalar (.u .U64)) (.arrow (.scalar (.u .U64)) (.result (.tuple [(.scalar (.u .U64)), .bool]))))
+                (fun (i : Std.U64) (i1 : Std.U64) =>
+                (core.num.U64.overflowing_div i i1 : Result (Std.U64 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem u64_overflowing_div.deep_eq (x : Std.U64) (y : Std.U64) :
+  u64_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (u64_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::u128_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 130:0-132:1 -/
+def u128_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .U128)), (.scalar (.u .U128))]
+    (.result (.tuple [(.scalar (.u .U128)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{u128}::overflowing_div")
+                (.arrow (.scalar (.u .U128)) (.arrow (.scalar (.u .U128)) (.result (.tuple [(.scalar (.u .U128)), .bool]))))
+                (fun (i : Std.U128) (i1 : Std.U128) =>
+                (core.num.U128.overflowing_div i i1 : Result (Std.U128 ×
+                  Bool)))) (.var .zero)) (.var (.succ .zero)))
+
+theorem u128_overflowing_div.deep_eq (x : Std.U128) (y : Std.U128) :
+  u128_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (u128_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::usize_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 133:0-135:1 -/
+def usize_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.u .Usize)), (.scalar (.u .Usize))]
+    (.result (.tuple [(.scalar (.u .Usize)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{usize}::overflowing_div")
+                (.arrow (.scalar (.u .Usize)) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.scalar (.u .Usize)), .bool]))))
+                (fun (i : Std.Usize) (i1 : Std.Usize) =>
+                (core.num.Usize.overflowing_div i i1 : Result (Std.Usize ×
+                  Bool)))) (.var .zero)) (.var (.succ .zero)))
+
+theorem usize_overflowing_div.deep_eq (x : Std.Usize) (y : Std.Usize) :
+  usize_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (usize_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i8_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 137:0-139:1 -/
+def i8_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I8)), (.scalar (.i .I8))]
+    (.result (.tuple [(.scalar (.i .I8)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{i8}::overflowing_div")
+                (.arrow (.scalar (.i .I8)) (.arrow (.scalar (.i .I8)) (.result (.tuple [(.scalar (.i .I8)), .bool]))))
+                (fun (i : Std.I8) (i1 : Std.I8) =>
+                (core.num.I8.overflowing_div i i1 : Result (Std.I8 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem i8_overflowing_div.deep_eq (x : Std.I8) (y : Std.I8) :
+  i8_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (i8_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i16_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 140:0-142:1 -/
+def i16_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I16)), (.scalar (.i .I16))]
+    (.result (.tuple [(.scalar (.i .I16)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{i16}::overflowing_div")
+                (.arrow (.scalar (.i .I16)) (.arrow (.scalar (.i .I16)) (.result (.tuple [(.scalar (.i .I16)), .bool]))))
+                (fun (i : Std.I16) (i1 : Std.I16) =>
+                (core.num.I16.overflowing_div i i1 : Result (Std.I16 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem i16_overflowing_div.deep_eq (x : Std.I16) (y : Std.I16) :
+  i16_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (i16_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i32_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 143:0-145:1 -/
+def i32_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I32)), (.scalar (.i .I32))]
+    (.result (.tuple [(.scalar (.i .I32)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{i32}::overflowing_div")
+                (.arrow (.scalar (.i .I32)) (.arrow (.scalar (.i .I32)) (.result (.tuple [(.scalar (.i .I32)), .bool]))))
+                (fun (i : Std.I32) (i1 : Std.I32) =>
+                (core.num.I32.overflowing_div i i1 : Result (Std.I32 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem i32_overflowing_div.deep_eq (x : Std.I32) (y : Std.I32) :
+  i32_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (i32_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i64_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 146:0-148:1 -/
+def i64_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I64)), (.scalar (.i .I64))]
+    (.result (.tuple [(.scalar (.i .I64)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{i64}::overflowing_div")
+                (.arrow (.scalar (.i .I64)) (.arrow (.scalar (.i .I64)) (.result (.tuple [(.scalar (.i .I64)), .bool]))))
+                (fun (i : Std.I64) (i1 : Std.I64) =>
+                (core.num.I64.overflowing_div i i1 : Result (Std.I64 × Bool))))
+    (.var .zero)) (.var (.succ .zero)))
+
+theorem i64_overflowing_div.deep_eq (x : Std.I64) (y : Std.I64) :
+  i64_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (i64_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::i128_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 149:0-151:1 -/
+def i128_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .I128)), (.scalar (.i .I128))]
+    (.result (.tuple [(.scalar (.i .I128)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{i128}::overflowing_div")
+                (.arrow (.scalar (.i .I128)) (.arrow (.scalar (.i .I128)) (.result (.tuple [(.scalar (.i .I128)), .bool]))))
+                (fun (i : Std.I128) (i1 : Std.I128) =>
+                (core.num.I128.overflowing_div i i1 : Result (Std.I128 ×
+                  Bool)))) (.var .zero)) (.var (.succ .zero)))
+
+theorem i128_overflowing_div.deep_eq (x : Std.I128) (y : Std.I128) :
+  i128_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (i128_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
+
+/-- [overflowing_ops::isize_overflowing_div]:
+    Source: 'tests/src/overflowing-ops.rs', lines 152:0-154:1 -/
+def isize_overflowing_div.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.scalar (.i .Isize)), (.scalar (.i .Isize))]
+    (.result (.tuple [(.scalar (.i .Isize)), .bool])) :=
+  (.app (.app (.leaf (.fn "core::num::{isize}::overflowing_div")
+                (.arrow (.scalar (.i .Isize)) (.arrow (.scalar (.i .Isize)) (.result (.tuple [(.scalar (.i .Isize)), .bool]))))
+                (fun (i : Std.Isize) (i1 : Std.Isize) =>
+                (core.num.Isize.overflowing_div i i1 : Result (Std.Isize ×
+                  Bool)))) (.var .zero)) (.var (.succ .zero)))
+
+theorem isize_overflowing_div.deep_eq (x : Std.Isize) (y : Std.Isize) :
+  isize_overflowing_div x y =
+    Aeneas.Deep.Expr.denote (isize_overflowing_div.deep)
+      (x ::ₑ y ::ₑ Aeneas.Deep.Env.nil)
+  := by deep_rfl
 
 end overflowing_ops

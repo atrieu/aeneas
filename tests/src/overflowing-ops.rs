@@ -1,4 +1,5 @@
 //@ [!lean] skip
+//@ [lean] aeneas-args=-deep
 
 fn u8_overflowing_add(x: u8, y: u8) -> (u8, bool) {
     x.overflowing_add(y)

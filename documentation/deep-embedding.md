@@ -1,32 +1,30 @@
 # Deep Embedding of the Translated Code (`-deep`)
 
 With the `-deep` option, the Lean backend generates, for every translated function and
-global, a **deep term**: a Lean value of type `Aeneas.Deep.Expr Γ τ` which constructs the
-abstract syntax tree of the body, together with a **theorem** stating that the denotation
-of this term is the (shallow) definition itself. The shallow output is unchanged: the deep
-terms are an addition, and the theorems are the link between the two.
+global, a **deep term**: a Lean value of type
+`Aeneas.Deep.Expr TypeName FunName GlobalName σ Γ τ` which constructs the abstract syntax
+tree of the body, together with a **theorem** stating that
+the denotation of this term is the (shallow) definition itself. The shallow output is
+unchanged: the deep terms are an addition, and the theorems are the link between the two.
 
 ```lean
 /-- [demo::mul2_add1]: ... -/
-def mul2_add1.deep : Aeneas.Deep.Expr [Std.U32] (Result Std.U32) :=
-  (.bind
-    (.app (.app (.leaf (.binop "panic.+::<u32>")
-                  (fun (i : Std.U32) (i1 : Std.U32) =>
-                  (i + i1 : Result Std.U32))) (.var .zero)) (.var .zero)) .var
-  (.app (.app (.leaf (.binop "panic.+::<u32>")
-                (fun (i1 : Std.U32) (i2 : Std.U32) =>
-                (i1 + i2 : Result Std.U32))) (.var .zero)) (.lit 1#u32)))
+def mul2_add1.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [(.scalar (.u .U32))]
+    (.result (.scalar (.u .U32))) :=
+  (.bind (.scalarBinop .add (.u .U32) (.var .zero) (.var .zero)) .var
+  (.scalarBinop .add (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide))))
 
 theorem mul2_add1.deep_eq (x : Std.U32) :
   mul2_add1 x =
-    Aeneas.Deep.Expr.denote (mul2_add1.deep) (x ::ₕ Aeneas.Deep.HList.nil)
+    Aeneas.Deep.Expr.denote (mul2_add1.deep) (x ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 ```
 
-The deep term is a first-order, inspectable representation of the function body: one can
-write structurally recursive functions over it (count the monadic binds, collect the
-called functions, …) and transport their results to the shallow definition through the
-theorem.
+The deep term is a first-order, inspectable representation of the function body, and its
+types are first-order too: one can write structurally recursive functions over it (count
+the monadic binds, collect the called functions, compile it to another language, …) and
+transport their results to the shallow definition through the theorem.
 
 ## Usage
 
@@ -50,67 +48,206 @@ In the tests, `//@ [lean] aeneas-args=-deep` enables the mode for a test file.
 
 ## What is generated
 
+### The closed world of the crate
+
+The deep section starts with the **closed world** of the crate: the enumerations of its
+type, function and global names, with instances describing each name.
+
+**Types.** Type names are `Aeneas.Deep.TypeRef TypeName`: either a builtin type the
+library describes (`.builtin .option`, `.vec`, `.range`, `.ordering`: the standard-library
+types whose Lean model mirrors the Rust declaration, or `Vec`), or a type of the crate
+(`.crate TypeName.CList`). The crate part is an enumeration
+`TypeName` with one constructor per type declaration (local types, but also the builtin
+and opaque types the crate uses: `Option`, `alloc.vec.Vec`, …), and an instance of
+`Aeneas.Deep.TypeNames TypeName` giving, for each name, its Lean type as a function of the
+interpretation of its parameters, and the field types of its variants as descriptors over
+the parameters of the declaration:
+
+```lean
+inductive TypeName where
+  | CList
+  | String
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.CList, ρ => CList (Aeneas.Deep.tyAt ρ.types 0)
+    | TypeName.String, _ => String
+  variants
+    | TypeName.CList => [[(.var 0), (.adt (.crate TypeName.CList) [(.var 0)] [])], []]
+    | TypeName.String => []
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.CList) 0 :=
+  ⟨fun _ => fun a0 a1 => CList.CCons a0 a1⟩
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.CList) 1 := ⟨fun _ => CList.CNil⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.CList) :=
+  ⟨fun _ => fun x alts => CList.casesOn x alts.1 alts.2.1⟩
+```
+
+For every type whose variants are described, the constructor (`CtorFn`, one per variant),
+projector (`ProjFn`, one per field of a structure) and eliminator (`ElimFn`, `T.casesOn`
+with a constant motive) instances are generated: they are what the `ctor`, `proj` and
+`match_` nodes denote to. The variants are described for the local inductive types; the
+library provides them, with the instances, for the builtin `Option`, `Range` and
+`Ordering`. The other builtin and opaque types (`Vec`, `String`, …) are in the closed
+world without variants (their values can only flow through the deep terms, not be built
+or inspected).
+
+Tuple structs are tuples, and type declarations with trait clauses are not in the closed
+world (their instantiations become type variables of the terms which use them, see
+below).
+
+**Functions and globals.** An enumeration `FunName` with one constructor per translated
+function (including the functions generated for loops and loop bodies, and the opaque
+ones), and an instance of `Aeneas.Deep.FunNames FunName TypeName` giving, for each
+function, a record of its signature (descriptors over its parameters) and of its
+(shallow) implementation at any interpretation of the parameters; likewise `GlobalName`
+and `Aeneas.Deep.GlobalNames GlobalName TypeName` for the globals:
+
+```lean
+inductive FunName where
+  | list_nth
+  | sum_loop
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.list_nth =>
+      ⟨⟨[(.adt (.crate TypeName.CList) [(.var 0)] []), (.scalar (.u .U32))], (.result (.var 0))⟩,
+       fun ρ => @list_nth (Aeneas.Deep.tyAt ρ.types 0)⟩
+    | FunName.sum_loop =>
+      ⟨⟨[(.scalar (.u .U32)), (.scalar (.u .U32))], (.result (.scalar (.u .U32)))⟩, fun _ => sum_loop⟩
+```
+
+(The signature and the implementation are bundled in one record per function so that
+the arms of the table are independent: with separate `sig` and `impl` tables, the type
+of every `impl` arm unfolds the whole `sig` table, which does not elaborate in reasonable
+time for crates with thousands of functions.)
+
+A call to such a function, applied to all its arguments, is a `call` node carrying the
+name (`.crate FunName.list_nth`) and the type arguments; a global is a `global` node.
+Function names are `Aeneas.Deep.FunRef FunName`: besides the functions of the crate, the
+library describes the **primitives** (`Aeneas.Deep.Prim`): the builtins of the
+translation (`lift`, the array and slice accessors `Array.index_usize`, `Array.update`,
+…) and a few standard-library functions (`Array.repeat`, `Array.to_slice`, `Slice.len`,
+`Vec.len`, `Vec.push`, `Vec.new`), with their signatures and implementations
+(`Prim.def`), so that a consumer of the deep terms knows their semantics; calls to them
+are `call` nodes with a `.prim` name. The functions with trait clauses (we don't
+describe trait instances), the other standard-library functions and the trait methods
+called through an instance are not in the closed world: calls to them are leaves.
+
+### The terms and theorems
+
 For every transparent function or global `f` with inputs of types `T₁ … Tₙ` and output
 type `T`:
 
-- `def f.deep : Aeneas.Deep.Expr [T₁, …, Tₙ] T`, the deep term of the body. The generic
-  parameters of `f` (types, const generics, trait clauses) are binders of `f.deep`: the
-  deep embedding only covers the body, the signature stays shallow.
-- `theorem f.deep_eq … : f x₁ … xₙ = Aeneas.Deep.Expr.denote (f.deep …) (x₁ ::ₕ … ::ₕ xₙ ::ₕ Aeneas.Deep.HList.nil)`.
+- `def f.deep : Aeneas.Deep.Expr TypeName FunName GlobalName σ [T₁, …, Tₙ] T`, the deep
+  term of the body,
+  where the types are descriptors and `σ : Aeneas.Deep.TyEnv` is the **type environment**
+  of the term: the list of the Lean types which the descriptor variables `.var i` stand
+  for, and the list of the `Usize` values which the const-generic variables stand for.
+  The generic parameters of `f` (types, const generics, trait clauses) are binders of
+  `f.deep`, and the first entries of `σ` are its type and const-generic parameters
+  (`⟨[T], [N]⟩` for `f<T, const N: usize>`). The deep embedding only covers the body; the
+  signature stays shallow.
+- `theorem f.deep_eq … : f x₁ … xₙ = Aeneas.Deep.Expr.denote (f.deep …) (x₁ ::ₑ … ::ₑ xₙ ::ₑ Aeneas.Deep.Env.nil)`.
   The proof is `by deep_rfl` for non-recursive functions, and `by unfold f; deep_rfl` for
   recursive functions (`partial_fixpoint`), loops extracted as recursive functions and
   globals (which are `@[irreducible]`): the theorem then states that the deep term
   denotes one unfolding of the definition.
 
-For every type extracted as an inductive, a **deep eliminator**
-`T.deepElim : Aeneas.Deep.Elim (T params) [[fields of variant 0], [fields of variant 1], …]`
-is generated, defined as `fun x alts => T.casesOn x alts.1 alts.2.1 …`. It is what the
-`match` nodes use. The library provides the eliminators of the builtin types (`Option`,
-`Ordering`, `Prod`, `ControlFlow`, `Bool`).
+Opaque functions, builtin definitions (mapped to the standard library models) and trait
+declarations/implementations have no deep term.
 
-Opaque functions and types, builtin definitions (mapped to the standard library models)
-and trait declarations/implementations have no deep term.
+### Types the descriptors can not express
+
+The descriptor language (`Aeneas.Deep.Ty`) covers type variables, scalars, `Bool`, `Char`,
+`Unit`, `Str`, tuples, the ADTs (builtin or of the crate) with their type and const-generic
+arguments, arrays (with a literal or variable size), slices, `Result`, `ControlFlow` and
+arrows. Any other type (trait-associated types such as `inst.Item`, raw pointers, types
+with trait clauses, the `State` and `Error` types, …) is **turned into a type variable**:
+it is appended to the type environment of the term, after the type parameters of the
+definition, and referred to as `.var i`. Likewise for const generics which are not
+literals or parameters. Nothing is lost for the theorem, and a consumer of the deep term
+sees these types as abstract. The type environment is printed in the header of the deep
+term, so the escaped types are visible at a glance:
+
+```lean
+def foo.deep {T : Type _} (inst : Iterator T) :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[T, inst.Item], []⟩ [(.var 1)]
+    (.result (.var 1)) := …
+```
 
 ## The AST
 
 The AST lives in `backends/lean/Aeneas/Deep/Basic.lean`. It is **intrinsically typed over
-shallow Lean types**: `Expr Γ τ` is the type of the terms of type `τ` in a context `Γ :
-List Type`, and the denotation `Expr.denote : Expr Γ τ → HList Γ → τ` is a structurally
-recursive function with no partiality, which is what makes the theorems provable by
-reflexivity.
+type descriptors**: `Expr N F G σ Γ τ` is the type of the terms of type `τ : Ty N` in a
+context `Γ : List (Ty N)`, over a closed world of types `N`, functions `F` and globals `G`
+(with their `TypeNames N`, `FunNames F N`, `GlobalNames G N` instances) and a type
+environment `σ : TyEnv`. The denotation
+`Expr.denote : Expr N F G σ Γ τ → Env N σ Γ → τ.denote σ`
+is a structurally recursive function with no partiality, which is what makes the theorems
+provable by reflexivity. `Ty.denote σ : Ty N → Type` interprets the descriptors
+(`Ty.var i` is `tyAt σ.types i`, a reducible lookup so that instance resolution sees
+through it, `Ty.adt T targs cargs` is `TypeRef.denote T` at the interpretation of the
+arguments, …), and `Env N σ Γ` is the heterogeneous list of
+the values of the variables (`x ::ₑ y ::ₑ .nil`).
 
 | Node | Meaning | Denotation |
 |---|---|---|
-| `var v` | a bound variable (`Var Γ τ`, typed de Bruijn index: `.zero`, `.succ .zero`, …) | lookup in the environment |
-| `leaf tag c` | a shallow leaf: literal, function, constructor, projector, operator… | `c` |
+| `var v` | a bound variable (`Var N Γ τ`, typed de Bruijn index: `.zero`, `.succ .zero`, …) | lookup in the environment |
+| `leaf tag τ c` | a shallow leaf: called function, global, … | `c` |
 | `app f a` | application | `(f.denote env) (a.denote env)` |
-| `lam p body` | `fun p => body` | `fun x => body.denote (p.bindEnv x ++ env)` |
+| `lam α p body` | `fun p => body` | `fun x => body.denote (p.bindEnv x ++ env)` |
 | `let_ e p k` | pure `let p := e; k` | `let x := e.denote env; k.denote (…)` |
 | `bind e p k` | monadic `let p ← e; k` | `Std.bind (e.denote env) (fun x => …)` |
 | `ite c t e` | `if c then t else e` | `ite` on the proposition of `c` |
+| `scalarBinop op ty a b`, `scalarBitop`, `neg`, `bitNot`, `cast`, `castFromBool` | the scalar primitives, as data | fixed tables mirroring the shallow notations |
+| `boolBinop op a b`, `boolNot`, `bne` | `&&`, `\|\|`, `^^`, `¬`, `!=` | idem |
+| `uscalarLit ty n h`, `iscalarLit`, `boolLit`, `unitLit` | literals, as data | `UScalar.ofNat n h`, … |
 | `decide c` | a condition used as a boolean | `decide` |
 | `assert c` | `massert c` | `massert` |
-| `match_ s elim brs` | `match s with …`, one branch per variant | `elim (s.denote env) (branches)` |
+| `ok e`, `fail τ err` | `ok e`, `fail err` | `Result.ok`, `Result.fail` |
+| `tuple es` | a tuple | right-nested pairs |
+| `ctor T v targs cargs fields h args` | the constructor of variant `v` of the type `T : TypeRef N` applied to `args` | the `CtorFn` instance |
+| `proj T f targs cargs τ h e` | the projection of field `f` of the structure `T` | the `ProjFn` instance |
+| `match_ T targs cargs shape h s brs` | `match s with …`, one branch per variant | the `ElimFn` instance |
+| `call f targs cargs inputs output h₁ h₂ args` | a call to the primitive or crate function `f : FunRef F`, with all its arguments | `FunRef.impl f` at the type arguments |
+| `global g targs cargs τ h` | the global `g` of the crate | `GlobalNames.impl g` at the type arguments |
+| `continue_ α β e`, `break_ α β e` | `ControlFlow.cont e`, `ControlFlow.done e` | idem |
 | `loop body init` | the `loop` fixed-point combinator | `Std.loop` |
-| `shallow f` | escape hatch: an arbitrary function of the environment | `f env` |
+| `shallow τ f` | escape hatch: an arbitrary function of the environment | `f env` |
 
-`Pat α Δ` are the irrefutable patterns (`var`, `ignore`, `pair`), `Δ` being the types they
-bind. `Cond Γ` are the `if` conditions: `bool b` (a boolean, elaborated to `b = true`), and
-the comparisons `eq`, `lt`, `le`, `gt`, `ge`, which Lean elaborates to propositions; a
-condition carries the `Decidable` instance the shallow code uses.
+`Pat N α Δ` are the irrefutable patterns (`var`, `ignore`, `tuple ps`), `Δ` being the
+types they bind. `Cond N F G σ Γ` are the `if` conditions: `bool b` (a boolean, elaborated to
+`b = true`), `not c`, and the comparisons `eq`, `lt`, `le`, `gt`, `ge`, which Lean
+elaborates to propositions; a condition carries the `Decidable` instance the shallow code
+uses (found by instance resolution, through the reducible `Ty.denote`).
 
-**Leaves are shallow.** A call `f x y` is printed as
-`(.app (.app (.leaf (.fn "crate::f") (fun (x : T₁) (y : T₂) => (f x y : T))) x') y')`: the
-head is the shallow term, eta-expanded over its arguments and printed by the regular
-printer, so that the denotation beta-reduces to exactly the shallow term. The tag
-(`.fn`, `.ctor`, `.proj`, `.binop`, `.unop`, `.global`, `.lit`, …) carries the identity
-of the leaf for inspection and plays no role in the denotation. Function tags use the Rust
-name of the function, with `^loopN` / `^loopN^body` suffixes for the functions generated
-for loops, and `@name` for the builtins of the translation (`@assert`, `@toResult`,
-`@arrayIndex`, …).
+The ADT and call nodes carry both the type arguments (`targs`, `cargs`) and the
+instantiated field or signature types (`fields`, `shape`, `τ`, `inputs`, `output`),
+together with a proof `h` that the latter agree with the declaration at these arguments. The printer emits `rfl` for `h` (the two sides compute to
+the same Lean types): the denotation reduces by iota through the proof, so no cast
+remains, and a consumer of the term can read the field types directly, or use `h` in
+its correctness proof.
 
-Helper abbreviations keep the terms short: `.lit c`, `.call name f`, `.ok e`, `.fail err`,
-`.pair a b`, `.binop name op a b`, `.app2`, `.app3`.
+The scalar and boolean primitives are first-order data (`ScalarTy`, `ScalarBinop`,
+`ScalarBitop`, `BoolBinop`, literals with their bound proofs) with a fixed denotation: for
+instance `ScalarBinop.denote .add (.u .U32)` *is* `fun x y => x + y` on `U32`, so a term
+that uses them can be compiled or interpreted without looking at any shallow value.
+
+**Leaves are shallow** for everything else (standard-library calls, trait methods called
+through an instance, functions with trait clauses, partial applications, constructors and
+projections of the types outside the closed world). Such a call `f x y` is printed as
+`(.app (.app (.leaf (.fn "crate::f") TY (fun (x : T₁) (y : T₂) => (f x y : T))) x') y')`:
+the head is the shallow term, eta-expanded over its arguments and printed by the regular
+printer, so that the denotation beta-reduces to exactly the shallow term; `TY` is the
+descriptor of its type. The tag (`.fn`, `.ctor`, `.proj`, `.binop`, `.unop`, `.global`,
+`.lit`, …) carries the identity of the leaf for inspection and plays no role in the
+denotation. Function tags use the Rust name of the function, with `^loopN` /
+`^loopN^body` suffixes for the functions generated for loops, and `@name` for the
+builtins of the translation (`@assert`, `@toResult`, `@arrayIndex`, …).
+
+Helper abbreviations keep hand-written terms short: `.lit τ c`, `.call name τ f`,
+`.pair a b`, `.app2`, `.app3`.
 
 ## The tactics
 
@@ -129,18 +266,23 @@ of a deep eliminator.
 
 ```lean
 mutual
-  def Expr.numBinds {Γ : List Type} {τ : Type} (e : Aeneas.Deep.Expr Γ τ) : Nat :=
+  def Expr.numBinds {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N]
+      {σ : TyEnv} {Γ : List (Ty N)} {τ : Ty N} (e : Expr N F G σ Γ τ) : Nat :=
     match e with
     | .bind _ _ k => 1 + k.numBinds
     | .let_ e _ k => e.numBinds + k.numBinds
     | .app f a => f.numBinds + a.numBinds
-    | .lam _ b => b.numBinds
+    | .lam _ _ b => b.numBinds
     | .ite c t e => c.numBinds + t.numBinds + e.numBinds
-    | .match_ s _ brs => s.numBinds + brs.numBinds
+    | .match_ _ (inst := _) _ _ _ _ s brs => s.numBinds + brs.numBinds
+    | .ctor _ _ (inst := _) _ _ _ _ args => args.numBinds
+    | .call _ _ _ _ _ _ _ args => args.numBinds
     | .loop b i => b.numBinds + i.numBinds
     | _ => 0
   termination_by structural e
-  def Cond.numBinds {Γ : List Type} (c : Aeneas.Deep.Cond Γ) : Nat :=
+  def Exprs.numBinds … 
+  def Cond.numBinds {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N]
+      {σ : TyEnv} {Γ : List (Ty N)} (c : Cond N F G σ Γ) : Nat :=
     match c with
     | .bool b => b.numBinds
     | .eq (inst := _inst) a b => a.numBinds + b.numBinds
@@ -151,10 +293,10 @@ mutual
 end
 ```
 
-The instance arguments of the `Cond` constructors must be bound explicitly in patterns
+The instance arguments of the constructors must be bound explicitly in patterns
 (`(inst := _inst)`, `(ord := _ord)`), otherwise instance synthesis gets stuck on the
 pattern. See `backends/lean/Aeneas/Deep/Tests.lean` for complete examples, including the
-hand-written counterparts of the generated terms.
+hand-written counterparts of the generated terms and of the closed world.
 
 ## Limitations: the escape hatch
 
@@ -162,7 +304,7 @@ Constructs the printer does not handle are printed through `Expr.shallow`: the w
 sub-expression is printed shallowly, as a function of the environment:
 
 ```lean
-(.shallow (fun «deep env» =>
+(.shallow TY (fun «deep env» =>
   let x := Aeneas.Deep.Var.get .zero «deep env»
   let y := Aeneas.Deep.Var.get (.succ .zero) «deep env»
   (BODY)))
@@ -179,7 +321,8 @@ currently the case for:
   the underlying bit-vector with `Eq.ndrec_symm` casts.
 - Nested patterns, and non-monadic `let` bindings of a comparison (which bind a `Prop` in
   the shallow code).
-- Matches on builtin types other than `Option` and `Ordering`.
+- Matches on types outside the closed world, or whose variants are not described
+  (`Result`, the builtin types other than the four listed above).
 - Bodies with more than 500 let-bindings (the whole body is escaped). The deep term of a
   let-chain is quadratic in its length, because every node carries its context, and
   chains of several hundred bindings exceed the elaboration budget. In practice only
@@ -187,7 +330,9 @@ currently the case for:
 
 Everything else is deep, including struct patterns (`let ⟨ a, b ⟩ := …` on structures
 and single-variant enums, printed as single-branch matches), tuples, closures, loops,
-trait method calls, struct construction and update, and globals.
+calls to the functions of the crate, trait method calls (as leaves), struct construction
+(a `ctor` node when all the fields are given, a leaf for updates `{ s with … }`) and
+globals.
 
 **Large closed terms.** A sub-expression without free variables and with more than 64
 nodes is printed as a single shallow leaf (`.lit` when it is constant data,
@@ -199,20 +344,24 @@ as precomputed tables is of no interest while elaborating it is expensive.
 
 The kernel check of a theorem is linear in the size of the body. The deep term itself is
 quadratic in the nesting depth, because every node carries its context as an implicit
-argument. On the test suite the deep sections cost at most about a second per module
-(the Loops module goes from 3.5 s to 4.4 s). On curve25519-dalek (1,046 functions,
-65,000 lines of shallow code), the deep file holds 1,912 theorems and builds in 95 s,
-against 46 s for the shallow definitions; the longest function body that is fully deep
-has 260 monadic binds. The mode is opt-in per test for this reason.
+argument. On the test suite the deep sections cost a few seconds per module (the Loops
+module, 109 theorems, builds in 16 s). On curve25519-dalek (1,046 functions, 65,000 lines
+of shallow code), the deep file holds 1,912 theorems and builds in about three and a half
+minutes, against 46 s for the shallow definitions; the longest function body that is
+fully deep has 260 monadic binds. The mode is opt-in per test for this reason.
 
 ## Implementation notes
 
 The printer is `src/extract/ExtractDeep.ml`; it runs as a second pass over the declaration
-groups with a dedicated `gen_config`. Its invariant is that **the denotation of every node
-must reduce to exactly the term the elaborator produces for the shallow code**: the custom
-`do` elaborator (`backends/lean/Aeneas/Do/Elab.lean`) fixes the shape of binds, tuple
-patterns (`uncurry`), struct patterns (`casesOn`) and conditions. Two facts about the
-pure AST matter for the printer: comparisons are typed `Bool` in the AST but elaborate to
-`Prop` under `if` and `massert` (hence `Cond`, `decide` and `assert`), and the `ty` field
-of application nodes is not always reliable after the micro-passes, so the printer
-prefers the expected type known from the enclosing binder or signature.
+groups with a dedicated `gen_config`, after `extract_closed_world` has computed the
+closed world and printed `TypeName`, `FunName`, `GlobalName` and their instances. Each body is printed twice: a first pass
+to a null formatter discovers the types which must be escaped (they are listed in the
+type environment, which is part of the header), the second pass prints the term. Its
+invariant is that **the denotation of every node must reduce to exactly the term the
+elaborator produces for the shallow code**: the custom `do` elaborator
+(`backends/lean/Aeneas/Do/Elab.lean`) fixes the shape of binds, tuple patterns
+(`uncurry`), struct patterns (`casesOn`) and conditions. Two facts about the pure AST
+matter for the printer: comparisons are typed `Bool` in the AST but elaborate to `Prop`
+under `if` and `massert` (hence `Cond`, `decide` and `assert`), and the `ty` field of
+application nodes is not always reliable after the micro-passes, so the printer prefers
+the expected type known from the enclosing binder or signature.

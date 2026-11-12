@@ -49,31 +49,64 @@ def BigStruct :=
 /-! ## Deep embedding of the function bodies -/
 set_option maxRecDepth 10000
 
-/-- Deep eliminator for [adt::Struct]
-    Source: 'tests/src/adt.rs', lines 4:0-6:1 -/
-@[reducible] def Struct.deepElim : Aeneas.Deep.Elim Struct [[Std.Usize]] :=
-  fun x alts => Struct.casesOn x alts.1
+/-- The type declarations of the crate -/
+inductive TypeName where
+  | Struct
+
+instance : Aeneas.Deep.TypeNames TypeName where
+  denote
+    | TypeName.Struct, _ => Struct
+  variants
+    | TypeName.Struct => [[(.scalar (.u .Usize))]]
+
+instance : Aeneas.Deep.CtorFn TypeName (.crate TypeName.Struct) 0 :=
+  ⟨fun _ => fun a0 => Struct.mk a0⟩
+instance : Aeneas.Deep.ProjFn TypeName (.crate TypeName.Struct) 0 :=
+  ⟨fun _ => fun x => x.len⟩
+instance : Aeneas.Deep.ElimFn TypeName (.crate TypeName.Struct) :=
+  ⟨fun _ => fun x alts => Struct.casesOn x alts.1⟩
+
+/-- The functions of the crate -/
+inductive FunName where
+  | Struct_impl_len
+  | Struct_f
+
+instance : Aeneas.Deep.FunNames FunName TypeName where
+  defs
+    | FunName.Struct_impl_len => ⟨⟨[(.adt (.crate TypeName.Struct) [] [])],
+      (.result (.scalar (.u .Usize)))⟩, fun _ => Struct.impl.len⟩
+    | FunName.Struct_f => ⟨⟨[], (.result .unit)⟩, fun _ => Struct.f⟩
+
+/-- The globals of the crate -/
+inductive GlobalName where
+
+instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
+  defs g := nomatch g
 
 /-- [adt::{adt::Struct}::len]:
     Source: 'tests/src/adt.rs', lines 9:4-11:5 -/
-def Struct.impl.len.deep : Aeneas.Deep.Expr [Struct] (Result Std.Usize) :=
+def Struct.impl.len.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
+    [(.adt (.crate TypeName.Struct) [] [])] (.result (.scalar (.u .Usize))) :=
   (.ok
-    (.app (.leaf (.proj "len") (fun (s : Struct) => (s.len : Std.Usize)))
+    (.proj (.crate TypeName.Struct) 0 [] [] (.scalar (.u .Usize)) rfl
       (.var .zero)))
 
 theorem Struct.impl.len.deep_eq (self : Struct) :
   Struct.impl.len self =
     Aeneas.Deep.Expr.denote (Struct.impl.len.deep)
-      (self ::ₕ Aeneas.Deep.HList.nil)
+      (self ::ₑ Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 /-- [adt::{adt::Struct}::f]:
     Source: 'tests/src/adt.rs', lines 12:4-12:13 -/
-def Struct.f.deep : Aeneas.Deep.Expr [] (Result Unit) :=
-  (.ok (.lit ()))
+def Struct.f.deep :
+  Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ [] (.result .unit)
+  :=
+  (.ok .unitLit)
 
 theorem Struct.f.deep_eq :
-  Struct.f = Aeneas.Deep.Expr.denote (Struct.f.deep) (Aeneas.Deep.HList.nil)
+  Struct.f = Aeneas.Deep.Expr.denote (Struct.f.deep) (Aeneas.Deep.Env.nil)
   := by deep_rfl
 
 end adt
