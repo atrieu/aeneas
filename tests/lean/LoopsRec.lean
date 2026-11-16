@@ -1038,6 +1038,7 @@ inductive TypeName where
   | List
   | AList
   | alloc_alloc_Global
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -1149,6 +1150,7 @@ inductive FunName where
   | issue500_2_bar
   | issue270_box_get_borrow
   | reborrow_const_reborrow
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -1424,6 +1426,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 /-- The globals of the crate -/
 inductive GlobalName where
   | copy_carray_CARRAY
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs

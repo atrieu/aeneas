@@ -166,6 +166,7 @@ set_option maxRecDepth 10000
 inductive TypeName where
   | core_panicking_AssertKind
   | core_fmt_Arguments
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -192,6 +193,7 @@ inductive FunName where
   | test_ceil_usize
   | num_chunks
   | test_num_chunks
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -228,6 +230,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

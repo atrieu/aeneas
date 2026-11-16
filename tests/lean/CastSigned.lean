@@ -177,6 +177,7 @@ set_option maxRecDepth 10000
 
 /-- The type declarations of the crate -/
 inductive TypeName where
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote t _ := nomatch t
@@ -200,6 +201,7 @@ inductive FunName where
   | test_i128_cast_unsigned_neg_one
   | test_usize_cast_roundtrip
   | test_isize_cast_unsigned_neg_one
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -236,6 +238,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

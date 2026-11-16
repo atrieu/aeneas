@@ -123,6 +123,7 @@ set_option maxRecDepth 10000
 inductive TypeName where
   | Enum
   | SharedBool
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -158,6 +159,7 @@ inductive FunName where
   | call_choose
   | shared_bool_scrutinee
   | shared_integer_scrutinee
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -189,6 +191,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

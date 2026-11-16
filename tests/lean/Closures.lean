@@ -310,6 +310,7 @@ inductive TypeName where
   | alloc_alloc_Global
   | core_iter_adapters_map_Map
   | alloc_vec_into_iter_IntoIter
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -345,6 +346,7 @@ inductive FunName where
   | call_closure2_closure_1_Insts_CoreOpsFunctionFnOnceTupleU32_call_once
   | call_closure2_closure_1_Insts_CoreOpsFunctionFnMutTupleU32_call_mut
   | P_Insts_CoreOpsFunctionFnOnceTupleU8U8_call_once
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -407,6 +409,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

@@ -358,6 +358,7 @@ inductive TypeName where
   | core_ops_control_flow_ControlFlow
   | core_fmt_Formatter
   | core_fmt_Error
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -421,6 +422,7 @@ inductive FunName where
   | use_question_mark
   | test_question_mark_ok
   | test_question_mark_err
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -528,6 +530,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

@@ -27,6 +27,7 @@ inductive TypeName where
   | Fraction
   | HashMap
   | alloc_alloc_Global
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -103,6 +104,7 @@ inductive FunName where
   | HashMap_remove_from_list
   | HashMap_remove_from_list_loop
   | HashMap_remove
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -228,6 +230,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

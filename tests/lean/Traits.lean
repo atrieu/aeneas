@@ -652,6 +652,7 @@ inductive TypeName where
   | Foo
   | String
   | core_result_Result
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -697,6 +698,7 @@ inductive FunName where
   | Bool_Insts_TraitsWithConstTyU8U6432_f
   | U32_Insts_TraitsChildTrait2U32U32_convert
   | TestType_test_TestType1_Insts_TraitsTestTypeTestTestTrait_test
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -743,6 +745,7 @@ inductive GlobalName where
   | WithConstTy_LEN2_default
   | Bool_Insts_TraitsWithConstTyU8U6432_LEN1
   | Array_Insts_TraitsTrait_LEN
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs

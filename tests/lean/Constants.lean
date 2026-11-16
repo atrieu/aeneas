@@ -204,6 +204,7 @@ inductive TypeName where
   | Pair
   | Wrap
   | V
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote
@@ -249,6 +250,7 @@ inductive FunName where
   | get_z2
   | use_v
   | Wrap_new
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -296,6 +298,7 @@ inductive GlobalName where
   | S4
   | get_z1_Z1
   | V_LEN
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs

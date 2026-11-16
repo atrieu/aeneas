@@ -538,3 +538,88 @@ first use and now cost about ten seconds, charged to the heartbeats of the theor
 triggers them (`maxHeartbeats 1000000` in `CompileCorrect.lean`); `Array.set` must be
 qualified (`Std.Array.set`) in the IR, the root `Array.set` being Lean's.
 
+## 11. Phase P log
+
+### P.1 The trusted C printer (2026-11-16)
+
+Done, in `backends/lean/Aeneas/Deep/CPrint.lean` (the printer, about 700 lines of plain
+Lean, no proof) and `CDriver.lean` (the `#deep_c "file.c"` command), with the differential
+test `Aeneas/Deep/Tests/C/` (`harness.c`, `run.sh`).
+
+**Shape.** `printFunction name e` compiles the deep term `e` (`Compile.compile`) and prints
+the IR as one C function; the driver runs it on every *closed* deep term of the
+environment through the Lean interpreter (`evalExpr`: the IR value never leaves Lean,
+the printer is an ordinary function on `Stmt`) and assembles the translation unit: a
+prelude (the `<stdint.h>` scalars, `unit_t`, the error codes), the struct definitions
+collected on demand in dependency order, the prototypes of every callee, the functions.
+The tables of the crate (`FunNames`, `GlobalNames`) are parameters of the type of every
+deep term but the printer never consults them (the call nodes carry their instantiated
+signatures), and they may be noncomputable (dalek's shallow functions call axiomatized
+externals): the driver casts the term to the type with computable stand-ins
+(`unsafeCast`, sound because the constructors do not store the parameters) and evaluates
+with `safety := .unsafe`. The C names of the functions, globals and types are the names
+of the constructors of the generated enumerations (`deriving Repr`, now emitted by
+`-deep`); the driver derives the name of a definition from its Lean name with the same
+sanitisation, relative to the crate namespace (the namespace of the enumerations).
+Printing is in continuation style: a statement receives a *destination* for its value
+(`return` through the out-parameter, `return` of a pure value, an assignment, nothing),
+pure expressions are rendered to C expressions and may emit statements first (the
+application of a backward function, an `if` expression with effects, `Array::repeat`).
+
+**What is trusted** (the list at the top of `CPrint.lean`, section 7 of this plan):
+
+- *Types.* Scalars to the fixed-width C types (`usize` to `size_t`, 128-bit scalars to the
+  `__int128` extension; 64-bit target assumed); `Unit` to a byte; tuples and the ADTs of
+  the closed world to structs, with a tag and a union of field structs for the types with
+  several variants; `Array α n` to a struct holding a C array, so that assignment copies;
+  `Slice α` and `Vec α` to pointer-and-length *views*; `ControlFlow` to a tagged union.
+  Type variables (the printer handles monomorphic terms; a call to a generic callee gets
+  a mangled prototype), recursive types (a C realisation needs boxing), opaque types,
+  strings and closures as values are refused and reported.
+- *Calling convention.* `Result τ` functions return an error code and write their value
+  to `*out` (none for `Result Unit`); pure functions return their value; globals are
+  nullary functions; calls propagate the code.
+- *Primitives.* `__builtin_*_overflow` for the checked arithmetic; explicit checks for
+  the divisor (and `MIN / -1`; `MIN % -1` is `0` as in the model), the shift amount
+  (computed in the unsigned type), the index; casts are C casts (two's complement);
+  `update`/`push` copy an array and write a slice or a vector in place; vectors grow with
+  `realloc` and are never freed.
+- *Borrows.* A `borrow` reads the element after its bounds check and records the
+  container and the index; `appVar back x'` copies the container (arrays) or writes in
+  place (slices, vectors) and stores the element. For the views the old value is updated
+  too: the realisation assumes, as Rust guarantees, that it is dead.
+
+**Differential tests.** `run.sh` generates the C of the hand-written terms of
+`Tests.lean`, compiles it with `harness.c` and runs the values the Lean tests check
+(`reducesOn`/`execOn`): all 18 checks pass (checked arithmetic and its overflow, the
+recursion of `i32_id`, the loop of `sum`, matches on `Option`, structures, the array and
+vector borrows with their bounds checks). `run_loops.sh` does the same on the generated
+`loops` crate (`harness_loops.c`, expected values from the Rust source): 10 checks pass
+(the `while` loops with their tuple state, the sums with mutable and shared borrows, the
+overflow of `sum 100000`, `clear` on a vector updated in place, the loops ignoring their
+input borrow, `copy_carray` with its array literal constant provided by the harness since
+array literals are still leaves).
+
+**On the generated crates.** The test crates print and compile (`clang -std=c11 -Wall`,
+no warning): `loops` 59 of its 77 closed deep terms (the others: closures, the recursive
+`List` type, the array literal constant), `loops_rec` 54 of 70, `demo` 22 of 24,
+`scalars` 27 of 60 (standard-library leaves), `hashmap` its 2 closed terms (the crate is
+generic in `T`: monomorphization is the next step of this phase). On curve25519-dalek,
+947 of the 1,599 closed deep terms are printed: 24,000 lines of C, 2,135 functions and
+prototypes, compiled by `clang -std=c11 -Wall` without a warning (the field arithmetic,
+`pow2k` and its loop, the reductions, the scalar arithmetic, the global constants as
+nullary functions). Of the rest, 472 are outside the fragment of the compiler, 17 have no
+compiled code (a shallow leaf of theirs refers to a noncomputable function), and 163 are
+refused by the printer: 157 use an opaque type it cannot lay out, `subtle::Choice` in 75
+of them (among which the `conditional_assign`/`conditional_swap` of the field elements
+whose borrows phase C recovered) and the iterator adapters (`Rev<Range<usize>>`,
+`StepBy`, `Iter`) in the others, and 6 carry a closure in a value.
+
+**What the C does not yet do.** Monomorphization of the generic functions (the printer
+prints the closed terms; a call to `list_nth [U32]` gets a prototype and no body); a
+table of C definitions for the external types of a crate (`subtle::Choice` is a `u8`),
+the first blocker on dalek; recursive types (boxing); the `-loops-to-rec` loops are
+recursive C functions (no tail-call promise); no memory management for vectors; the
+warnings `clang -Wall` emits on the output (`-Wparentheses-equality`, unused temporaries)
+are cosmetic and disabled by the harness scripts.
+

@@ -378,6 +378,42 @@ set_option maxHeartbeats 0 in
 #deep_report
 ```
 
+## The C printer
+
+`Aeneas/Deep/CPrint.lean` is the *trusted* printer from the IR to C (phase P of
+`PLAN-compiler.md`): a plain function `printFunction` over `Stmt`, with no proof, kept
+small enough to review. `#deep_c "file.c"` (`CDriver.lean`) compiles every closed deep
+term of the environment (the functions and globals without type or const-generic
+parameters), prints the ones in the fragment and writes the translation unit:
+
+```lean
+import Aeneas.Deep.CDriver
+import MyCrate.Deep
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
+#deep_c "mycrate.c"
+```
+
+The command evaluates the printer with the Lean interpreter (`evalExpr`), which needs the
+generated enumerations to derive `Repr` (the printer derives the C names of the functions,
+globals and types from the names of their constructors; `-deep` emits the `deriving`).
+What the C realisation decides, and is trusted for, is listed at the top of `CPrint.lean`:
+the C types (scalars to `<stdint.h>`, tuples and ADTs to structs and tagged unions,
+arrays to structs holding a C array, slices and vectors to pointer-and-length *views*
+updated in place), the calling convention (`Result τ` functions return an error code and
+write their value to an out-parameter), the checked primitives (`__builtin_*_overflow`,
+explicit checks for division, shifts and indexing), and the rendering of the borrows (a
+read, then stores through the recorded container and index). A function outside the
+fragment, or using a type the printer does not support (type variables, recursive or opaque
+types, strings, closures as values), is printed as a comment and reported; its callers
+get a prototype.
+
+The printer is checked by differential testing: `Aeneas/Deep/Tests/C/run.sh` generates
+the C of the hand-written terms of `Tests.lean`, compiles it with `harness.c` and runs the
+checks of `Tests.lean` (`reducesOn`/`execOn`) against the C; `run_loops.sh` (from
+`tests/lean`) does the same for the generated `loops` crate with `harness_loops.c`, whose
+expected values follow the Rust source.
+
 ## Performance
 
 The kernel check of a theorem is linear in the size of the body. The deep term itself is

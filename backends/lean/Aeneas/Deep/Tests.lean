@@ -27,6 +27,7 @@ namespace Aeneas.Deep.Tests
 inductive TypeName where
   | CList
   | Pair
+  deriving Repr
 
 instance : TypeNames TypeName where
   denote
@@ -75,6 +76,7 @@ instance : FunNames FunName TypeName where
     | .sum_loop => ⟨⟨[U32T, U32T, U32T], .result U32T⟩, fun _ => sum_loop⟩
 
 inductive GlobalName where
+  deriving Repr
 
 instance : GlobalNames GlobalName TypeName where
   defs g := nomatch g

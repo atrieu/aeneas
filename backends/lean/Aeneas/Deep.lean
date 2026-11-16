@@ -5,4 +5,6 @@ public import Aeneas.Deep.IR
 public import Aeneas.Deep.Compile
 public import Aeneas.Deep.CompileCorrect
 public import Aeneas.Deep.Report
+public import Aeneas.Deep.CPrint
+public import Aeneas.Deep.CDriver
 public import Aeneas.Deep.Tests

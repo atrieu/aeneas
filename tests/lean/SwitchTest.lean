@@ -33,6 +33,7 @@ set_option maxRecDepth 10000
 
 /-- The type declarations of the crate -/
 inductive TypeName where
+  deriving Repr
 
 instance : Aeneas.Deep.TypeNames TypeName where
   denote t _ := nomatch t
@@ -42,6 +43,7 @@ instance : Aeneas.Deep.TypeNames TypeName where
 /-- The functions of the crate -/
 inductive FunName where
   | match_u32
+  deriving Repr
 
 instance : Aeneas.Deep.FunNames FunName TypeName where
   defs
@@ -50,6 +52,7 @@ instance : Aeneas.Deep.FunNames FunName TypeName where
 
 /-- The globals of the crate -/
 inductive GlobalName where
+  deriving Repr
 
 instance : Aeneas.Deep.GlobalNames GlobalName TypeName where
   defs g := nomatch g

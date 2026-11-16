@@ -630,6 +630,9 @@ let extract_closed_world (ctx : extraction_ctx) (fmt : F.formatter) : unit =
             (String.length type_name_enum + 1)
             (String.length info.ctor_name - String.length type_name_enum - 1)))
     infos;
+  (* The C printer needs the names of the constructors *)
+  F.pp_print_cut fmt ();
+  F.pp_print_string fmt "deriving Repr";
   F.pp_close_box fmt ();
   F.pp_print_break fmt 0 0;
   (* The [TypeNames] instance *)
@@ -854,6 +857,8 @@ let extract_closed_world (ctx : extraction_ctx) (fmt : F.formatter) : unit =
       F.pp_print_cut fmt ();
       F.pp_print_string fmt ("| " ^ strip fun_name_enum info.fun_ctor))
     funs;
+  F.pp_print_cut fmt ();
+  F.pp_print_string fmt "deriving Repr";
   F.pp_close_box fmt ();
   F.pp_print_break fmt 0 0;
   F.pp_print_break fmt 0 0;
@@ -945,6 +950,8 @@ let extract_closed_world (ctx : extraction_ctx) (fmt : F.formatter) : unit =
       F.pp_print_cut fmt ();
       F.pp_print_string fmt ("| " ^ strip global_name_enum info.global_ctor))
     globals;
+  F.pp_print_cut fmt ();
+  F.pp_print_string fmt "deriving Repr";
   F.pp_close_box fmt ();
   F.pp_print_break fmt 0 0;
   F.pp_print_break fmt 0 0;
