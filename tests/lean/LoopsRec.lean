@@ -1650,13 +1650,8 @@ def clear_loop.deep :
       (.cons (.var .zero) .nil)) .var
   (.ite (.lt (.var (.succ (.succ .zero))) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.scalar (.u .U32))] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.scalar (.u .U32)), (.arrow (.scalar (.u .U32)) (.adt (.builtin .vec) [(.scalar (.u .U32))] []))]))))
-                  (fun (v1 : alloc.vec.Vec Std.U32) (i2 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice Std.U32) v1 i2 :
-                    Result (Std.U32 × (Std.U32 → alloc.vec.Vec Std.U32)))))
-      (.var (.succ .zero))) (.var (.succ (.succ .zero))))
+    (.call (.prim .vecIndexMut) [(.scalar (.u .U32))] [] [(.adt (.builtin .vec) [(.scalar (.u .U32))] []), (.scalar (.u .Usize))] (.result (.tuple [(.scalar (.u .U32)), (.arrow (.scalar (.u .U32)) (.adt (.builtin .vec) [(.scalar (.u .U32))] []))])) rfl rfl
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil)))
     (.tuple (.cons .ignore (.cons .var .nil)))
   (.bind
     (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
@@ -1875,15 +1870,9 @@ def get_elem_mut.deep :
     (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))]))
   :=
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []), (.arrow (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (List Std.Usize)) (i : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (List Std.Usize)) v
-                    i : Result ((List Std.Usize) × (List Std.Usize →
-                    alloc.vec.Vec (List Std.Usize)))))) (.var .zero))
-      (.uscalarLit .Usize 0 (by decide))) (.tuple (.cons .var (.cons .var
-    .nil)))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []), (.arrow (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []))])) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
+    (.tuple (.cons .var (.cons .var .nil)))
   (.bind
     (.call (.crate FunName.get_elem_mut_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.tuple [(.scalar (.u .Usize)), (.arrow (.scalar (.u .Usize)) (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))])) rfl rfl
       (.cons (.var (.succ (.succ (.succ .zero)))) (.cons (.var .zero) .nil)))
@@ -1933,12 +1922,9 @@ def get_elem_shared.deep :
     [(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))]
     (.result (.scalar (.u .Usize))) :=
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] []))))
-                  (fun (v : alloc.vec.Vec (List Std.Usize)) (i : Std.Usize) =>
-                  (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
-                    (List Std.Usize)) v i : Result (List Std.Usize))))
-      (.var .zero)) (.uscalarLit .Usize 0 (by decide))) .var
+    (.call (.prim .vecIndex) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] []), (.scalar (.u .Usize))] (.result (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])) rfl rfl
+      (.cons (.var .zero) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
+    .var
   (.call (.crate FunName.get_elem_shared_loop) [] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.List) [(.scalar (.u .Usize))] [])] (.result (.scalar (.u .Usize))) rfl rfl
     (.cons (.var (.succ (.succ .zero))) (.cons (.var .zero) .nil))))
 

@@ -365,13 +365,8 @@ def HashMap.clear_loop.deep {T : Type _} :
       (.cons (.var .zero) .nil)) .var
   (.ite (.lt (.var (.succ (.succ .zero))) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i2 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (AList T)) v i2 :
-                    Result ((AList T) × (AList T → alloc.vec.Vec (AList
-                    T)))))) (.var (.succ .zero))) (.var (.succ (.succ .zero))))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))])) rfl rfl
+      (.cons (.var (.succ .zero)) (.cons (.var (.succ (.succ .zero))) .nil)))
     (.tuple (.cons .ignore (.cons .var .nil)))
   (.bind
     (.scalarBinop .add (.u .Usize) (.var (.succ (.succ (.succ .zero))))
@@ -403,12 +398,14 @@ def HashMap.clear.deep {T : Type _} :
                (.var .zero)) (.cons (.uscalarLit .Usize 0 (by decide)) .nil)))
     .var
   (.ok
-    (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
-                        (fun (hm : HashMap T) (i : Std.Usize)
-                          (v : alloc.vec.Vec (AList T)) =>
-                        ({ hm with num_entries := i, slots := v } : HashMap T)))
-      (.var (.succ .zero))) (.uscalarLit .Usize 0 (by decide))) (.var .zero))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.uscalarLit .Usize 0 (by decide))
+      (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+               (.var (.succ .zero)))
+      (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ .zero)))
+      (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+               (.var (.succ .zero))) (.cons (.var .zero) .nil))))))))
 
 theorem HashMap.clear.deep_eq {T : Type _} (self : HashMap T) :
   HashMap.clear self =
@@ -508,15 +505,9 @@ def HashMap.insert_no_resize.deep {T : Type _} :
                (.var (.succ .zero))) .nil)) .var
   (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
-                    Result ((AList T) × (AList T → alloc.vec.Vec (AList
-                    T))))))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.var .zero) .nil)))
     (.tuple (.cons .var (.cons .var .nil)))
   (.bind
     (.call (.crate FunName.HashMap_insert_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.var 0), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [.bool, (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
@@ -533,22 +524,27 @@ def HashMap.insert_no_resize.deep {T : Type _} :
     (.app (.var (.succ (.succ (.succ (.succ .zero)))))
       (.var (.succ (.succ .zero)))) .var
   (.ok
-    (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
-                        (fun (hm : HashMap T) (i2 : Std.Usize)
-                          (v1 : alloc.vec.Vec (AList T)) =>
-                        ({ hm with num_entries := i2, slots := v1 } : HashMap
-                          T)))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
-      (.var (.succ .zero))) (.var .zero)))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.var (.succ .zero))
+      (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero)))))))))))
+      (.cons (.var .zero) .nil)))))))))
   (.let_ (.app (.var (.succ (.succ (.succ .zero)))) (.var (.succ .zero))) .var
   (.ok
-    (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                  (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
-                  (fun (hm : HashMap T) (v1 : alloc.vec.Vec (AList T)) =>
-                  ({ hm with slots := v1 } : HashMap T)))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-      (.var .zero))))))))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+      (.cons (.var .zero) .nil))))))))))))))
 
 theorem HashMap.insert_no_resize.deep_eq {T : Type _} (self : HashMap T)
   (key : Std.Usize) (value : T) :
@@ -610,15 +606,10 @@ def HashMap.move_elements_loop.deep {T : Type _} :
       (.cons (.var (.succ .zero)) .nil)) .var
   (.ite (.lt (.var (.succ (.succ (.succ .zero)))) (.var .zero))
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i2 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (AList T)) v i2 :
-                    Result ((AList T) × (AList T → alloc.vec.Vec (AList
-                    T)))))) (.var (.succ (.succ .zero))))
-      (.var (.succ (.succ (.succ .zero))))) (.tuple (.cons .var (.cons .var
-    .nil)))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))])) rfl rfl
+      (.cons (.var (.succ (.succ .zero)))
+        (.cons (.var (.succ (.succ (.succ .zero)))) .nil))) (.tuple (.cons .var
+    (.cons .var .nil)))
   (.let_
     (.app (.app (.leaf (.fn "core::mem::replace")
                   (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])))
@@ -706,22 +697,27 @@ def HashMap.try_resize.deep {T : Type _} :
                  (.var (.succ (.succ (.succ (.succ (.succ .zero))))))) .nil)))
     (.tuple (.cons .var (.cons .ignore .nil)))
   (.ok
-    (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                        (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
-                        (fun (hm : HashMap T) (i2 : Std.Usize)
-                          (v : alloc.vec.Vec (AList T)) =>
-                        ({ hm with max_load := i2, slots := v } : HashMap T)))
-      (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
-      (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
-        (.var .zero)))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var .zero)))))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var .zero))
+      (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+               (.var (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var .zero)) .nil))))))))))
   (.ok
-    (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                  (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow .bool (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
-                  (fun (hm : HashMap T) (b : Bool) =>
-                  ({ hm with saturated := b } : HashMap T)))
-      (.var (.succ (.succ (.succ .zero))))) (.boolLit true)))))))
+    (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+      (.cons (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ .zero)))))
+      (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+               (.var (.succ (.succ (.succ .zero)))))
+      (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.boolLit true)
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) .nil)))))))))))
 
 theorem HashMap.try_resize.deep_eq {T : Type _} (self : HashMap T) :
   HashMap.try_resize self =
@@ -820,13 +816,10 @@ def HashMap.contains_key.deep {T : Type _} :
                (.var (.succ .zero))) .nil)) .var
   (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.AList) [(.var 0)] []))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
-                  (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
-                    (AList T)) v i1 : Result (AList T))))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) .var
+    (.call (.prim .vecIndex) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.crate TypeName.AList) [(.var 0)] [])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.var .zero) .nil)))
+    .var
   (.call (.crate FunName.HashMap_contains_key_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result .bool) rfl rfl
     (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
       (.cons (.var .zero) .nil)))))))
@@ -895,13 +888,10 @@ def HashMap.get.deep {T : Type _} :
                (.var (.succ .zero))) .nil)) .var
   (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::Index<I, Clause0_Output> for alloc::vec::Vec<T>}::index")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.adt (.crate TypeName.AList) [(.var 0)] []))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
-                  (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice
-                    (AList T)) v i1 : Result (AList T))))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero)) .var
+    (.call (.prim .vecIndex) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.adt (.crate TypeName.AList) [(.var 0)] [])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.var .zero) .nil)))
+    .var
   (.call (.crate FunName.HashMap_get_in_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.adt (.builtin .option) [(.var 0)] [])) rfl rfl
     (.cons (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
       (.cons (.var .zero) .nil)))))))
@@ -1007,15 +997,9 @@ def HashMap.get_mut.deep {T : Type _} :
                (.var (.succ .zero))) .nil)) .var
   (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
-                    Result ((AList T) × (AList T → alloc.vec.Vec (AList
-                    T))))))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.var .zero) .nil)))
     (.tuple (.cons .var (.cons .var .nil)))
   (.bind
     (.call (.crate FunName.HashMap_get_mut_in_list) [(.var 0)] [] [(.adt (.crate TypeName.AList) [(.var 0)] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.arrow (.adt (.builtin .option) [(.var 0)] []) (.adt (.crate TypeName.AList) [(.var 0)] []))])) rfl rfl
@@ -1028,12 +1012,16 @@ def HashMap.get_mut.deep {T : Type _} :
       (.let_
         (.app (.var (.succ (.succ (.succ (.succ (.succ .zero))))))
           (.var .zero)) .var
-      (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                    (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
-                    (fun (hm : HashMap T) (v1 : alloc.vec.Vec (AList T)) =>
-                    ({ hm with slots := v1 } : HashMap T)))
-        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
-        (.var .zero))))) .var
+      (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+        (.cons (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+        (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+        (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+        (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+        (.cons (.var .zero) .nil))))))))) .var
   (.ok (.tuple (.cons (.var (.succ .zero)) (.cons (.var .zero) .nil))))))))))
 
 theorem HashMap.get_mut.deep_eq {T : Type _} (self : HashMap T)
@@ -1129,15 +1117,9 @@ def HashMap.remove.deep {T : Type _} :
                (.var (.succ .zero))) .nil)) .var
   (.bind (.scalarBinop .rem (.u .Usize) (.var (.succ .zero)) (.var .zero)) .var
   (.bind
-    (.app (.app (.leaf (.fn "alloc::vec::{impl core::ops::index::IndexMut<I, Clause0_Output> for alloc::vec::Vec<T>}::index_mut")
-                  (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.arrow (.scalar (.u .Usize)) (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))]))))
-                  (fun (v : alloc.vec.Vec (AList T)) (i1 : Std.Usize) =>
-                  (alloc.vec.Vec.index_mut
-                    (core.slice.index.SliceIndexUsizeSlice (AList T)) v i1 :
-                    Result ((AList T) × (AList T → alloc.vec.Vec (AList
-                    T))))))
-      (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
-        (.var (.succ (.succ (.succ .zero)))))) (.var .zero))
+    (.call (.prim .vecIndexMut) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [] [(.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []), (.scalar (.u .Usize))] (.result (.tuple [(.adt (.crate TypeName.AList) [(.var 0)] []), (.arrow (.adt (.crate TypeName.AList) [(.var 0)] []) (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []))])) rfl rfl
+      (.cons (.proj (.crate TypeName.HashMap) 4 [(.var 0)] [] (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) rfl
+               (.var (.succ (.succ (.succ .zero))))) (.cons (.var .zero) .nil)))
     (.tuple (.cons .var (.cons .var .nil)))
   (.bind
     (.call (.crate FunName.HashMap_remove_from_list) [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.AList) [(.var 0)] [])] (.result (.tuple [(.adt (.builtin .option) [(.var 0)] []), (.adt (.crate TypeName.AList) [(.var 0)] [])])) rfl rfl
@@ -1150,13 +1132,16 @@ def HashMap.remove.deep {T : Type _} :
          (.ok
            (.tuple
              (.cons (.ctor (.builtin .option) 0 [(.var 0)] [] [] rfl .nil)
-               (.cons (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                                    (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] [])))
-                                    (fun (hm : HashMap T) (v1 : alloc.vec.Vec
-                                      (AList T)) =>
-                                    ({ hm with slots := v1 } : HashMap T)))
-                        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
-                        (.var .zero)) .nil)))))
+               (.cons (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+                        (.cons (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))
+                        (.cons (.var .zero) .nil)))))) .nil)))))
   (.cons (.bind
            (.scalarBinop .sub (.u .Usize)
              (.proj (.crate TypeName.HashMap) 0 [(.var 0)] [] (.scalar (.u .Usize)) rfl
@@ -1168,18 +1153,15 @@ def HashMap.remove.deep {T : Type _} :
          (.ok
            (.tuple
              (.cons (.var (.succ (.succ (.succ .zero))))
-               (.cons (.app (.app (.app (.leaf (.ctor "hashmap::HashMap")
-                                          (.arrow (.adt (.crate TypeName.HashMap) [(.var 0)] []) (.arrow (.scalar (.u .Usize)) (.arrow (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] []) (.adt (.crate TypeName.HashMap) [(.var 0)] []))))
-                                          (fun (hm : HashMap T)
-                                            (i2 : Std.Usize)
-                                            (v1 : alloc.vec.Vec (AList T)) =>
-                                          ({
-                                             hm
-                                               with
-                                               num_entries := i2, slots := v1
-                                           } : HashMap T)))
-                        (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
-                        (.var (.succ .zero))) (.var .zero)) .nil))))))
+               (.cons (.ctor (.crate TypeName.HashMap) 0 [(.var 0)] [] [(.scalar (.u .Usize)), (.adt (.crate TypeName.Fraction) [] []), (.scalar (.u .Usize)), .bool, (.adt (.builtin .vec) [(.adt (.crate TypeName.AList) [(.var 0)] [])] [])] rfl
+                        (.cons (.var (.succ .zero))
+                        (.cons (.proj (.crate TypeName.HashMap) 1 [(.var 0)] [] (.adt (.crate TypeName.Fraction) [] []) rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+                        (.cons (.proj (.crate TypeName.HashMap) 2 [(.var 0)] [] (.scalar (.u .Usize)) rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+                        (.cons (.proj (.crate TypeName.HashMap) 3 [(.var 0)] [] .bool rfl
+                                 (.var (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ (.succ .zero))))))))))))
+                        (.cons (.var .zero) .nil)))))) .nil))))))
   .nil))))))))
 
 theorem HashMap.remove.deep_eq {T : Type _} (self : HashMap T)

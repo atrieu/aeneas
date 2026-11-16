@@ -8,10 +8,12 @@ public import Aeneas.Deep.IR
 The compiler recognises the first-order fragment of the deep terms and restructures it into
 the A-normal form of the IR: pure sub-terms become `IExpr`s, the monadic spine becomes
 statements, a `bind`/`let` of a non-trivial computation (an `if` or a `match` computing a
-value) becomes a `bindStmt`/`letStmt`, and the `loop` combinator applied to a lambda becomes
-the `loop` statement. Everything the IR can not express (shallow leaves, lambdas and
-applications, the escape hatch) is reported as `Unsupported`, which the coverage report
-(`#deep_report`) aggregates.
+value) becomes a `bindStmt`/`letStmt`, the `loop` combinator applied to a lambda becomes
+the `loop` statement, and the borrow idiom of the translation (`let (x, back) ← index_mut v i;
+…; back x'`) becomes a `borrow` statement whose backward function is applied with `appVar`.
+Everything the IR can not express (shallow leaves, lambdas and other applications, the
+escape hatch, a closure used otherwise than as the backward function of a borrow) is
+reported as `Unsupported`, which the coverage report (`#deep_report`) aggregates.
 
 The compiler is total and structural; its correctness (`Stmt.exec (compile e) = e.denote`)
 is the object of phase D of `PLAN-compiler.md`. -/
@@ -35,6 +37,10 @@ inductive Unsupported where
   | effectInExpr
   /-- A fallible call or global in a position where a pure expression is expected -/
   | fallibleInExpr
+  /-- A closure used otherwise than as the backward function of a borrow applied to the new
+  value of the element: a closure escaping into a value, or the result of an `index_mut`
+  primitive bound otherwise than by a `borrow` (see `Stmt.borrowsOk`) -/
+  | closureVar
   deriving Repr, Inhabited
 
 /-- Is this a `Result` type? -/
@@ -78,11 +84,15 @@ mutual
     | .continue_ α β e => do pure (.continue_ α β (← compileExpr e))
     | .break_ α β e => do pure (.break_ α β (← compileExpr e))
     | .leaf tag _ _ => throw (.leaf tag)
-    | .app f _ => do
-      -- Report the head of the application when it is a leaf (a call to a function
-      -- outside the closed world); an application of a variable is a closure call
-      let _ ← compileExpr f
-      throw .application
+    | .app f a =>
+      match f with
+      -- the application of a variable: the backward function of a borrow
+      | .var v => do pure (.appVar v (← compileExpr a))
+      | _ => do
+        -- Report the head of the application when it is a leaf (a call to a function
+        -- outside the closed world)
+        let _ ← compileExpr f
+        throw .application
     | .lam _ _ _ => throw .lambda
     | .shallow _ _ => throw .shallow
     | .let_ _ _ _ => throw .effectInExpr
@@ -122,7 +132,17 @@ end
 mutual
   def compileStmt {Γ : List (Ty N)} {τ : Ty N} : Expr N F G σ Γ τ →
       Except Unsupported (Stmt N F G σ Γ τ)
-    | .bind e p k => do pure (.bindStmt (← compileStmt e) p (← compileStmt k))
+    | .bind e p k =>
+      -- the borrow idiom: the bind of an `index_mut` primitive becomes a `borrow`
+      match e, compileStmt e with
+      | .call (.prim .arrayIndexMut) targs cargs inputs _ h₁ h₂ args, _ => do
+        pure (.borrow .array targs cargs inputs h₁ h₂ (← compileExprs args) p (← compileStmt k))
+      | .call (.prim .sliceIndexMut) targs cargs inputs _ h₁ h₂ args, _ => do
+        pure (.borrow .slice targs cargs inputs h₁ h₂ (← compileExprs args) p (← compileStmt k))
+      | .call (.prim .vecIndexMut) targs cargs inputs _ h₁ h₂ args, _ => do
+        pure (.borrow .vec targs cargs inputs h₁ h₂ (← compileExprs args) p (← compileStmt k))
+      | _, .ok e' => do pure (.bindStmt e' p (← compileStmt k))
+      | _, .error u => throw u
     | .let_ e p k => do
       let k' ← compileStmt k
       match compileExpr e with
@@ -162,9 +182,11 @@ mutual
   termination_by structural bs => bs
 end
 
-/-- Compile the body of a function -/
+/-- Compile the body of a function, and check the discipline of the closures
+(`Stmt.borrowsOk`) -/
 def compile {Γ : List (Ty N)} {τ : Ty N} (e : Expr N F G σ Γ τ) :
-    Except Unsupported (Stmt N F G σ Γ τ) :=
-  compileStmt e
+    Except Unsupported (Stmt N F G σ Γ τ) := do
+  let s ← compileStmt e
+  if s.borrowsOk [] then pure s else throw .closureVar
 
 end Aeneas.Deep.Compile

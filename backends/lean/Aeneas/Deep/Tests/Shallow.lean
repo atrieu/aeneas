@@ -136,4 +136,22 @@ def mk_some {T : Type _} (x : T) : Option T := some x
 
 def vec_len {T : Type _} (v : alloc.vec.Vec T) : Std.Usize := alloc.vec.Vec.len v
 
+/-- The borrow idiom of the translation: `a[i] += 1` -/
+def arr_incr (a : Array Std.U32 4#usize) (i : Std.Usize) : Result (Array Std.U32 4#usize) := do
+  let (x, index_mut_back) ← Array.index_mut_usize a i
+  let x1 ← x + 1#u32
+  ok (index_mut_back x1)
+
+/-- `v[i] = x` on a vector -/
+def vec_set (v : alloc.vec.Vec Std.U32) (i : Std.Usize) (x : Std.U32) :
+    Result (alloc.vec.Vec Std.U32) := do
+  let (_, index_mut_back) ←
+    alloc.vec.Vec.index_mut (core.slice.index.SliceIndexUsizeSlice Std.U32) v i
+  ok (index_mut_back x)
+
+/-- A borrow whose backward function escapes: not in the fragment of the compiler -/
+def arr_borrow (a : Array Std.U32 4#usize) (i : Std.Usize) :
+    Result (Std.U32 × (Std.U32 → Array Std.U32 4#usize)) :=
+  Array.index_mut_usize a i
+
 end Aeneas.Deep.Tests.Shallow

@@ -331,8 +331,8 @@ currently the case for:
 Everything else is deep, including struct patterns (`let ⟨ a, b ⟩ := …` on structures
 and single-variant enums, printed as single-branch matches), tuples, closures, loops,
 calls to the functions of the crate, trait method calls (as leaves), struct construction
-(a `ctor` node when all the fields are given, a leaf for updates `{ s with … }`) and
-globals.
+(a `ctor` node; an update `{ s with f := v }` is the constructor applied to `v` and to the
+projections of the other fields of `s`, as the elaborator makes it) and globals.
 
 **Large closed terms.** A sub-expression without free variables and with more than 64
 nodes is printed as a single shallow leaf (`.lit` when it is constant data,
@@ -345,13 +345,30 @@ as precomputed tables is of no interest while elaborating it is expensive.
 `Aeneas/Deep/IR.lean` defines the C-shaped intermediate representation targeted by the
 verified compiler of `PLAN-compiler.md`: pure expressions (`IExpr`) and statements
 (`Stmt`: returns, failures, block-scoped bindings of pure values and of the results of
-fallible statements, calls, checked operations, `if`, `switch`, `loop`), with the typing
-discipline of the deep AST and an interpreter `Stmt.exec` into the same `Result` monad.
+fallible statements, calls, checked operations, `if`, `switch`, `loop`, and the mutable
+borrow of an element, `borrow`), with the typing discipline of the deep AST and an
+interpreter `Stmt.exec` into the same `Result` monad.
 `Aeneas/Deep/Compile.lean` compiles the first-order fragment of the deep terms to it
 (`Compile.compile`), reporting the unsupported nodes (`Unsupported`: shallow leaves with
-their tag, lambdas, applications, the escape hatch), and `CompileCorrect.lean` proves
-`compile e = .ok s → s.exec env = e.denote env`. `#deep_report` (`Report.lean`) runs the
-compiler on every deep term of the environment and lists the unsupported ones by reason:
+their tag, lambdas, applications, the escape hatch, closures used otherwise than as
+described below), and `CompileCorrect.lean` proves
+`compile e = .ok s → s.exec env = e.denote env`.
+
+The borrow idiom of the translation, `let (x, back) ← index_mut v i; …; back x'` for the
+array, slice and `Vec` primitives (`arrayIndexMut`, `sliceIndexMut`, `vecIndexMut`), is
+compiled to a `borrow` statement which binds the element and its backward function, and
+the applications of the backward function (`app (var back) x'` in the deep term) to
+`IExpr.appVar`. The semantics of `borrow` reads the element and binds the setter at the
+index as the backward function: this is what the standard-library models define
+`index_mut` to be (`MutIndex.borrow_eq`, one lemma per primitive), so a C realisation
+reads `v[i]` and renders the application of the backward function as the store
+`v[i] = x'`. The compiler checks that the only closures of a body are these backward
+functions and that they are only applied (`Stmt.borrowsOk`); the closures returned by the
+functions of the crate (`list_nth_mut`-style functions and the `IndexMut` impls of the
+crate) are outside the fragment.
+
+`#deep_report` (`Report.lean`) runs the compiler on every deep term of the environment and
+lists the unsupported ones by reason:
 
 ```lean
 import Aeneas.Deep.Report

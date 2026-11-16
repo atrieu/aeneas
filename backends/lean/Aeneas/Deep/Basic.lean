@@ -405,6 +405,11 @@ inductive Prim where
   | vecLen
   | vecPush
   | vecNew
+  /-- `Vec::index` at a `usize` index (the `Index` impl with the `SliceIndex<usize, [T]>`
+  instance) -/
+  | vecIndex
+  /-- `Vec::index_mut` at a `usize` index -/
+  | vecIndexMut
   deriving DecidableEq, Repr
 
 /-- The signature and the implementation of each primitive: `.var 0` is the element type,
@@ -446,6 +451,15 @@ inductive Prim where
      fun ρ => @alloc.vec.Vec.push (tyAt ρ.types 0)⟩
   | .vecNew =>
     ⟨⟨[], .adt (.builtin .vec) [.var 0] []⟩, fun ρ => alloc.vec.Vec.new (tyAt ρ.types 0)⟩
+  | .vecIndex =>
+    ⟨⟨[.adt (.builtin .vec) [.var 0] [], .scalar (.u .Usize)], .result (.var 0)⟩,
+     fun ρ => @alloc.vec.Vec.index (tyAt ρ.types 0) Usize (tyAt ρ.types 0)
+       (core.slice.index.SliceIndexUsizeSlice (tyAt ρ.types 0))⟩
+  | .vecIndexMut =>
+    ⟨⟨[.adt (.builtin .vec) [.var 0] [], .scalar (.u .Usize)],
+      .result (.tuple [.var 0, .arrow (.var 0) (.adt (.builtin .vec) [.var 0] [])])⟩,
+     fun ρ => @alloc.vec.Vec.index_mut (tyAt ρ.types 0) Usize (tyAt ρ.types 0)
+       (core.slice.index.SliceIndexUsizeSlice (tyAt ρ.types 0))⟩
 
 /-- A function name: a primitive, or a function of the crate -/
 inductive FunRef (F : Type) where
@@ -505,6 +519,11 @@ def Var.get {N : Type} [TypeNames N] {σ : TyEnv} :
     {Γ : List (Ty N)} → {τ : Ty N} → Var N Γ τ → Env N σ Γ → τ.denote σ
   | _, _, .zero, .cons x _ => x
   | _, _, .succ v, .cons _ xs => v.get xs
+
+/-- The de Bruijn index, as a number -/
+def Var.toNat {N : Type} : {Γ : List (Ty N)} → {τ : Ty N} → Var N Γ τ → Nat
+  | _, _, .zero => 0
+  | _, _, .succ v => v.toNat + 1
 
 mutual
   /-- Irrefutable patterns. `Δ` lists the types of the bound variables, in binding order

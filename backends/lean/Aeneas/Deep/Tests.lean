@@ -318,6 +318,45 @@ def vec_len.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.adt (.builtin .vec) [.var
 theorem vec_len.deep_eq {T : Type} (v : alloc.vec.Vec T) :
     vec_len v = vec_len.deep.denote (v ::ₑ .nil) := by deep_rfl
 
+/-! ## Mutable borrows: `let (x, back) ← index_mut v i; …; back x'` -/
+
+def arr_incr.deep : DeepExpr ⟨[], []⟩ [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)]
+    (.result (.array U32T (.lit 4 (by decide)))) :=
+  .bind (.call (.prim .arrayIndexMut) [U32T] [.lit 4 (by decide)]
+          [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)]
+          (.result (.tuple [U32T, .arrow U32T (.array U32T (.lit 4 (by decide)))])) rfl rfl
+          (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+    (.tuple (.cons .var (.cons .var .nil)))
+    -- x=0, back=1, a=2, i=3
+    (.bind (.scalarBinop .add (.u .U32) (.var .zero) (.uscalarLit .U32 1 (by decide))) .var
+      -- x1=0, x=1, back=2, a=3, i=4
+      (.ok (.app (.var (.succ (.succ .zero))) (.var .zero))))
+
+theorem arr_incr.deep_eq (a : Array Std.U32 4#usize) (i : Std.Usize) :
+    arr_incr a i = arr_incr.deep.denote (a ::ₑ i ::ₑ .nil) := by deep_rfl
+
+def vec_set.deep : DeepExpr ⟨[], []⟩ [.adt (.builtin .vec) [U32T] [], .scalar (.u .Usize), U32T]
+    (.result (.adt (.builtin .vec) [U32T] [])) :=
+  .bind (.call (.prim .vecIndexMut) [U32T] [] [.adt (.builtin .vec) [U32T] [], .scalar (.u .Usize)]
+          (.result (.tuple [U32T, .arrow U32T (.adt (.builtin .vec) [U32T] [])])) rfl rfl
+          (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
+    (.tuple (.cons .ignore (.cons .var .nil)))
+    -- back=0, v=1, i=2, x=3
+    (.ok (.app (.var .zero) (.var (.succ (.succ (.succ .zero))))))
+
+theorem vec_set.deep_eq (v : alloc.vec.Vec Std.U32) (i : Std.Usize) (x : Std.U32) :
+    vec_set v i x = vec_set.deep.denote (v ::ₑ i ::ₑ x ::ₑ .nil) := by deep_rfl
+
+def arr_borrow.deep : DeepExpr ⟨[], []⟩ [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)]
+    (.result (.tuple [U32T, .arrow U32T (.array U32T (.lit 4 (by decide)))])) :=
+  .call (.prim .arrayIndexMut) [U32T] [.lit 4 (by decide)]
+    [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)]
+    (.result (.tuple [U32T, .arrow U32T (.array U32T (.lit 4 (by decide)))])) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem arr_borrow.deep_eq (a : Array Std.U32 4#usize) (i : Std.Usize) :
+    arr_borrow a i = arr_borrow.deep.denote (a ::ₑ i ::ₑ .nil) := by deep_rfl
+
 /-! ## Compilation to the IR
 
 The hand-written terms are all in the first-order fragment: they compile, and the
@@ -354,6 +393,12 @@ example : (Compile.compile mk_pair.deep).toBool = true := by decide
 example : (Compile.compile arr_get.deep).toBool = true := by decide
 example : (Compile.compile opt_or.deep).toBool = true := by decide
 example : (Compile.compile (vec_len.deep (T := Unit))).toBool = true := by decide
+example : (Compile.compile arr_incr.deep).toBool = true := by decide
+example : (Compile.compile vec_set.deep).toBool = true := by decide
+/-- The backward function of the borrow escapes: rejected by the closure check -/
+example : (match Compile.compile arr_borrow.deep with
+    | .error .closureVar => true
+    | _ => false) = true := by decide
 
 example : reducesOn mul2_add1.deep (3#u32 ::ₑ .nil) 7#u32 := by native_decide
 example : reducesOn i32_id.deep (2#i32 ::ₑ .nil) 2#i32 := by native_decide
@@ -361,6 +406,8 @@ example : reducesOn sum.deep (4#u32 ::ₑ .nil) 12#u32 := by native_decide
 example : reducesOn pair_sum.deep (⟨1#u32, 2#u32⟩ ::ₑ .nil) 3#u32 := by native_decide
 example : execOn opt_or.deep (none ::ₑ 5#u32 ::ₑ .nil) = some 5#u32 := by decide +kernel
 example : execOn opt_or.deep (some 1#u32 ::ₑ 5#u32 ::ₑ .nil) = some 1#u32 := by decide +kernel
+example : reducesOn arr_incr.deep (Array.repeat 4#usize 0#u32 ::ₑ 1#usize ::ₑ .nil)
+    (Std.Array.set (Array.repeat 4#usize 0#u32) 1#usize 1#u32) := by native_decide
 
 /-- The calls of a compiled body -/
 example : (Compile.compile sum.deep).toOption.map (fun s => s.calls.map (·.f)) =

@@ -11,9 +11,10 @@ trusted C printer. It is a first-order imperative language in A-normal form:
   and boolean operations, tuples, the constructors and projections of the ADTs of the closed
   world, pure calls (functions whose result is not in `Result`), the loop-control values;
 - **statements** (`Stmt`) sequence the effects: fallible calls and checked scalar operations,
-  assertions, failures, returns, `if`/`switch`, `loop`, and block-scoped bindings
+  assertions, failures, returns, `if`/`switch`, `loop`, block-scoped bindings
   (`letVal` of a pure expression, `letStmt` of the value computed by a statement, `bindStmt`
-  of the result of a fallible statement).
+  of the result of a fallible statement), and the mutable borrow of an element of an array,
+  a slice or a vector (`borrow`, see `MutIndex`).
 
 The IR keeps the typing discipline of the deep AST: terms are indexed by descriptors over the
 closed world of the crate, and the store is the same environment `Env N σ Γ`. Variables are
@@ -29,11 +30,71 @@ namespace Aeneas.Deep.IR
 
 open Aeneas.Std
 
+/-! ## Mutable borrows of an element
+
+`index_mut` on an array, a slice or a vector returns the element and a backward function
+which, applied to the new value of the element, gives the updated container (this is how
+the translation models `&mut v[i]`). In the standard-library models the backward function
+*is* the functional update at the index: `index_mut_usize v i` is
+`do let x ← index_usize v i; ok (x, set v i)` (`MutIndex.borrow_eq`). The `borrow`
+statement of the IR makes this explicit: its semantics reads the element and binds the pair
+of the element and the setter closure, and the application of the closure (`IExpr.appVar`)
+is, for a C realisation, the store `v[i] = x'`. -/
+
+/-- The primitives returning a mutable borrow of an element -/
+inductive MutIndex where
+  | array
+  | slice
+  | vec
+  deriving DecidableEq, Repr
+
+/-- The `index_mut` primitive -/
+@[reducible] def MutIndex.prim : MutIndex → Prim
+  | .array => .arrayIndexMut
+  | .slice => .sliceIndexMut
+  | .vec => .vecIndexMut
+
+/-- The semantics of a borrow: the element, paired with the setter at the index as the
+backward function -/
+def MutIndex.borrow {N : Type} [TypeNames N] : (m : MutIndex) → (ρ : TyEnv) →
+    HList (Tys.denote ρ (Prim.def (N := N) m.prim).sig.inputs) →
+    Ty.denote ρ (Prim.def (N := N) m.prim).sig.output
+  | .array, _, .cons v (.cons i .nil) =>
+    Std.bind (Std.Array.index_usize v i) (fun x => Result.ok (x, Std.Array.set v i))
+  | .slice, _, .cons v (.cons i .nil) =>
+    Std.bind (Slice.index_usize v i) (fun x => Result.ok (x, Slice.set v i))
+  | .vec, _, .cons v (.cons i .nil) =>
+    Std.bind (alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice _) v i)
+      (fun x => Result.ok (x, alloc.vec.Vec.set v i))
+
+/-- The borrow is the `index_mut` primitive: one lemma per primitive, relating the model
+of `index_mut` and its backward function to the update at the index -/
+theorem MutIndex.borrow_eq {N : Type} [TypeNames N] (m : MutIndex) (ρ : TyEnv)
+    (hl : HList (Tys.denote ρ (Prim.def (N := N) m.prim).sig.inputs)) :
+    m.borrow ρ hl = Fn.apply ((Prim.def (N := N) m.prim).impl ρ) hl := by
+  cases m <;> (cases hl; rename_i v hl; cases hl; rename_i i hl; cases hl)
+  · rfl
+  · rfl
+  · change _ = alloc.vec.Vec.index_mut (core.slice.index.SliceIndexUsizeSlice _) v i
+    simp only [MutIndex.borrow, alloc.vec.Vec.index_mut, alloc.vec.Vec.index,
+      core.slice.index.Usize.index_mut, core.slice.index.Usize.index, Slice.index_mut_usize,
+      Bind.bind, Pure.pure, Std.bind_assoc, Std.bind_ok]
+    rfl
+
+/-- Is this function an `index_mut` primitive (whose result holds a closure)? -/
+def _root_.Aeneas.Deep.FunRef.isIndexMut {F : Type} : FunRef F → Bool
+  | .prim .arrayIndexMut | .prim .sliceIndexMut | .prim .vecIndexMut => true
+  | _ => false
+
 mutual
   /-- Pure, C-expressible expressions -/
   inductive IExpr (N F G : Type) [TypeNames N] [FunNames F N] [GlobalNames G N] (σ : TyEnv) :
       List (Ty N) → Ty N → Type 1 where
     | var {Γ : List (Ty N)} {τ : Ty N} (v : Var N Γ τ) : IExpr N F G σ Γ τ
+    /-- The application of a variable bound to a closure: the backward function of a
+    `borrow`, applied to the new value of the element -/
+    | appVar {Γ : List (Ty N)} {α β : Ty N} (f : Var N Γ (.arrow α β)) (a : IExpr N F G σ Γ α) :
+        IExpr N F G σ Γ β
     | uscalarLit {Γ : List (Ty N)} (ty : UScalarTy) (n : Nat) (h : n ≤ UScalar.cMax ty) :
         IExpr N F G σ Γ (.scalar (.u ty))
     | iscalarLit {Γ : List (Ty N)} (ty : IScalarTy) (n : Int)
@@ -172,6 +233,19 @@ mutual
         (p : Pat N α Δ) (init : IExpr N F G σ Γ α)
         (body : Stmt N F G σ (Δ ++ Γ) (.result (.controlFlow α β))) :
         Stmt N F G σ Γ (.result β)
+    /-- `let p ← index_mut v i; k` for the array, slice and vector primitives: `p` binds the
+    element and its backward function, the setter at the index (`MutIndex.borrow`). A C
+    realisation reads `v[i]` and renders the application of the backward function
+    (`IExpr.appVar`) as the store `v[i] = x'`. The arguments and the proofs are those of the
+    `call` node. -/
+    | borrow {Γ : List (Ty N)} {Δ : List (Ty N)} {α τ : Ty N} (m : MutIndex)
+        (targs : List (Ty N)) (cargs : List CArg) (inputs : List (Ty N))
+        (h₁ : Tys.denote σ inputs =
+          Tys.denote (Ty.argEnv σ targs cargs) (Prim.def (N := N) m.prim).sig.inputs)
+        (h₂ : Ty.denote (Ty.argEnv σ targs cargs) (Prim.def (N := N) m.prim).sig.output =
+          Ty.denote σ (.result α))
+        (args : IExprs N F G σ Γ inputs) (p : Pat N α Δ)
+        (k : Stmt N F G σ (Δ ++ Γ) (.result τ)) : Stmt N F G σ Γ (.result τ)
 
   inductive SBranches (N F G : Type) [TypeNames N] [FunNames F N] [GlobalNames G N]
       (σ : TyEnv) : List (Ty N) → List (List (Ty N)) → Ty N → Type 1 where
@@ -187,6 +261,7 @@ mutual
   def IExpr.denote {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv} :
       {Γ : List (Ty N)} → {τ : Ty N} → IExpr N F G σ Γ τ → Env N σ Γ → τ.denote σ
     | _, _, .var v, env => v.get env
+    | _, _, .appVar f a, env => (f.get env) (a.denote env)
     | _, _, .uscalarLit _ n h, _ => UScalar.ofNat n h
     | _, _, .iscalarLit _ n h, _ => IScalar.ofInt n h
     | _, _, .boolLit b, _ => b
@@ -260,6 +335,11 @@ mutual
       inst.elim (Ty.argEnv σ targs cargs) (s.denote env) (h ▸ brs.exec env)
     | _, _, .loop p init body, env =>
       Std.loop (fun x => body.exec ((p.bindEnv x).append env)) (init.denote env)
+    | _, _, .borrow (α := α) m targs cargs _ h₁ h₂ args p k, env =>
+      Std.bind
+        (h₂ ▸ m.borrow (Ty.argEnv σ targs cargs) (h₁ ▸ (args.denote env).toHList) :
+          Ty.denote σ (.result α))
+        (fun x => k.exec ((p.bindEnv x).append env))
 
   def SBranches.exec {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv} :
       {Γ : List (Ty N)} → {shape : List (List (Ty N))} → {τ : Ty N} →
@@ -284,6 +364,7 @@ structure CallSite (N F : Type) where
 mutual
   def IExpr.calls {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
       {Γ : List (Ty N)} {τ : Ty N} : IExpr N F G σ Γ τ → List (CallSite N F)
+    | .appVar _ a => a.calls
     | .scalarBitop _ _ a b => a.calls ++ b.calls
     | .bitNot _ a => a.calls
     | .cast _ _ a => a.calls
@@ -335,6 +416,7 @@ mutual
     | .ite c t e => c.calls ++ t.calls ++ e.calls
     | .switch _ (inst := _) _ _ _ _ s brs => s.calls ++ brs.calls
     | .loop _ init body => init.calls ++ body.calls
+    | .borrow m targs cargs _ _ _ args _ k => ⟨.prim m.prim, targs, cargs⟩ :: args.calls ++ k.calls
   termination_by structural s => s
   def SBranches.calls {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
       {Γ : List (Ty N)} {shape : List (List (Ty N))} {τ : Ty N} :
@@ -342,6 +424,95 @@ mutual
     | .nil => []
     | .cons b bs => b.calls ++ bs.calls
   termination_by structural bs => bs
+end
+
+/-! ## The discipline of the closures
+
+The only closures of a program are the backward functions bound by `borrow`, and their only
+use is their application (`appVar`) to the new value of the element: `borrowsOk` checks it
+(the printer renders a `borrow` as a read and the applications as stores, and could not
+print a closure value). The check is context-dependent and is not needed for the
+correctness of the compiler: the compiler runs it after compiling a body, and reports the
+bodies which fail it. -/
+
+/-- The marks of the variables bound by the pattern of a `borrow`: the second component of
+the pair is the backward function (a variable bound to the whole pair, or any other pattern,
+is marked as a closure too) -/
+def _root_.Aeneas.Deep.Pat.borrowMarks {N : Type} :
+    {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → List Bool
+  | _, _, .tuple (.cons (Δ₁ := Δ₁) _ (.cons (Δ₁ := Δ₂) _ .nil)) =>
+    List.replicate Δ₁.length false ++ List.replicate Δ₂.length true
+  | _, Δ, _ => List.replicate Δ.length true
+
+mutual
+  /-- Are the closures of the context (marked in `bs`, innermost first) only applied? -/
+  def IExpr.borrowsOk {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
+      {Γ : List (Ty N)} {τ : Ty N} (bs : List Bool) : IExpr N F G σ Γ τ → Bool
+    | .var v => !(bs.getD v.toNat false)
+    | .appVar f a => bs.getD f.toNat false && a.borrowsOk bs
+    | .scalarBitop _ _ a b => a.borrowsOk bs && b.borrowsOk bs
+    | .bitNot _ a => a.borrowsOk bs
+    | .cast _ _ a => a.borrowsOk bs
+    | .castFromBool _ a => a.borrowsOk bs
+    | .boolBinop _ a b => a.borrowsOk bs && b.borrowsOk bs
+    | .boolNot a => a.borrowsOk bs
+    | .bne (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+    | .decide c => c.borrowsOk bs
+    | .ite c t e => c.borrowsOk bs && t.borrowsOk bs && e.borrowsOk bs
+    | .tuple es => es.borrowsOk bs
+    | .ctor _ _ (inst := _) _ _ _ _ args => args.borrowsOk bs
+    | .proj _ _ (inst := _) _ _ _ _ e => e.borrowsOk bs
+    | .call _ _ _ _ _ _ _ args => args.borrowsOk bs
+    | .continue_ _ _ e => e.borrowsOk bs
+    | .break_ _ _ e => e.borrowsOk bs
+    | _ => true
+  termination_by structural e => e
+  def IExprs.borrowsOk {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
+      {Γ : List (Ty N)} {tys : List (Ty N)} (bs : List Bool) : IExprs N F G σ Γ tys → Bool
+    | .nil => true
+    | .cons e es => e.borrowsOk bs && es.borrowsOk bs
+  termination_by structural es => es
+  def ICond.borrowsOk {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
+      {Γ : List (Ty N)} (bs : List Bool) : ICond N F G σ Γ → Bool
+    | .bool b => b.borrowsOk bs
+    | .not c => c.borrowsOk bs
+    | .eq (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+    | .lt (ord := _) (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+    | .le (ord := _) (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+    | .gt (ord := _) (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+    | .ge (ord := _) (inst := _) a b => a.borrowsOk bs && b.borrowsOk bs
+  termination_by structural c => c
+end
+
+mutual
+  /-- Are the closures only the backward functions of the borrows, and only applied? The
+  result of an `index_mut` primitive must be bound by a `borrow`. -/
+  def Stmt.borrowsOk {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyEnv}
+      {Γ : List (Ty N)} {τ : Ty N} (bs : List Bool) : Stmt N F G σ Γ τ → Bool
+    | .pure e => e.borrowsOk bs
+    | .ret e => e.borrowsOk bs
+    | .fail _ _ => true
+    | .letVal (Δ := Δ) e _ k => e.borrowsOk bs && k.borrowsOk (List.replicate Δ.length false ++ bs)
+    | .letStmt (Δ := Δ) s _ k => s.borrowsOk bs && k.borrowsOk (List.replicate Δ.length false ++ bs)
+    | .bindStmt (Δ := Δ) s _ k => s.borrowsOk bs && k.borrowsOk (List.replicate Δ.length false ++ bs)
+    | .call f _ _ _ _ _ _ args => !f.isIndexMut && args.borrowsOk bs
+    | .global _ _ _ _ _ => true
+    | .scalarBinop _ _ a b => a.borrowsOk bs && b.borrowsOk bs
+    | .neg _ a => a.borrowsOk bs
+    | .assert c => c.borrowsOk bs
+    | .ite c t e => c.borrowsOk bs && t.borrowsOk bs && e.borrowsOk bs
+    | .switch _ (inst := _) _ _ _ _ s brs => s.borrowsOk bs && brs.borrowsOk bs
+    | .loop (Δ := Δ) _ init body =>
+      init.borrowsOk bs && body.borrowsOk (List.replicate Δ.length false ++ bs)
+    | .borrow _ _ _ _ _ _ args p k => args.borrowsOk bs && k.borrowsOk (p.borrowMarks ++ bs)
+  termination_by structural s => s
+  def SBranches.borrowsOk {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N]
+      {σ : TyEnv} {Γ : List (Ty N)} {shape : List (List (Ty N))} {τ : Ty N} (bs : List Bool) :
+      SBranches N F G σ Γ shape τ → Bool
+    | .nil => true
+    | .cons (Δ := Δ) b brs =>
+      b.borrowsOk (List.replicate Δ.length false ++ bs) && brs.borrowsOk bs
+  termination_by structural brs => brs
 end
 
 end Aeneas.Deep.IR

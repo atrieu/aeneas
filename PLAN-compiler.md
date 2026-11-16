@@ -443,3 +443,98 @@ and are compared by observation; `native_decide` and `#eval` on the deep terms n
 the session scratchpad (purged by the system after three days) to `build/dalek-trial/`
 (git-ignored), with the fork's Lean project now at `curve25519-dalek/lean` and its
 `lakefile.lean` pointing `aeneas` at this checkout.
+
+## 10. Phase C log
+
+### C.1 Borrow idioms (2026-11-16)
+
+Done, in the same modules as phase B (`IR.lean`, `Compile.lean`, `CompileCorrect.lean`),
+with two new primitives in `Basic.lean` and a printer change.
+
+**The data.** On curve25519-dalek the 194 applications of a variable are all applications
+of backward functions: 59 come from the array and slice `index_mut` primitives
+(`conditional_assign`/`conditional_swap` on the limbs, `square2`, `zeroize`, …), a few from
+`Vec` indexing (a leaf until now), and about 40 from the crate's own `IndexMut` impls
+(`Scalar52::index_mut`, `Scalar29::index_mut`, used by `from_bytes` and `from_bytes_wide`),
+which return a closure built by the callee. The shape is always the one of section 3:
+`bind (call indexMut [v, i]) (tuple [x, back]) …; let_ (app (var back) x') …`, the
+container `v` being a variable, a projection or a global, the index a variable or a
+literal; `back` is applied once per path (the branches of an `if` may each apply it).
+
+**The lowering.** Rather than a separate rewriting pass on the deep terms (which would
+have to remove `back` from the typing context, hence rename every variable), the IR gets a
+statement and an expression:
+
+- `Stmt.borrow m targs cargs inputs h₁ h₂ args p k`, for `m : MutIndex` (`array`, `slice`,
+  `vec`), with the arguments and the proofs of the `call` node it replaces. Its semantics
+  reads the element and binds, through the pattern `p`, the pair of the element and of the
+  *setter at the index* as the backward function (`MutIndex.borrow`); the continuation `k`
+  is typed in the same context as the deep term (the closure variable is still bound, to a
+  closure of a known shape).
+- `IExpr.appVar f a`: the application of a variable bound to a closure.
+
+The compiler recognises `bind (call (prim indexMut) …) p k` (an inner `match` in the
+`bind` arm, see below) and `app (var f) a`. A C realisation renders `borrow` as the read
+`x = v[i]` and `appVar back x'` as the store `v[i] = x'` (in place when the old value of
+`v` is dead, a copy otherwise: the printer's decision, section 7).
+
+**The lemma.** `MutIndex.borrow_eq`: the borrow *is* the `index_mut` primitive. For arrays
+and slices this is reflexivity, since `Array.index_mut_usize v i` is defined as
+`do let x ← index_usize v i; ok (x, set v i)`; for `Vec` it is the monad laws
+(`Vec.index_mut` goes through the slice). The correctness proof of the `bind` case
+rewrites with it; the trusted part gains nothing beyond "`Array.set` is the store", which
+it needed for an update primitive anyway.
+
+**The closure discipline.** The correctness theorem does not care what a closure variable
+is used for, but the printer does: `Stmt.borrowsOk` checks, with a list of marks for the
+context, that the closures of a body are only the backward functions bound by a `borrow`,
+and are only applied (`appVar`), and that the result of an `index_mut` primitive is
+bound by a `borrow` (not by a plain `bindStmt`, not returned). `compile` runs it after
+`compileStmt` and reports `closureVar`. The pattern of a `borrow` can be `(x, back)`,
+`(_, back)` or `(x, _)` (`Pat.borrowMarks`).
+
+**The printer.** `Vec::index` and `Vec::index_mut` at the `SliceIndex<usize, [T]>`
+instance become the primitives `vecIndex`/`vecIndexMut` (modelled at that instance, so a
+call at another instance, a range, stays a leaf: `prim_required_impl` and
+`prim_impl_matches` in `ExtractDeep.ml`); their single type argument is the element type.
+The second half of a borrow through a field, `let v := back x'; ok { self with slots := v }`,
+was a leaf too (a partial structure update): it is now a constructor node whose other
+fields are projections of the initial value, which is what the elaborator makes of the
+update (so the `deep_eq` theorems are still reflexivity).
+
+**Coverage** (same counting as phase B, the hand-written terms excluded). Test suite:
+276 of the 460 deep terms compile (264 after phase B); the applications of backward
+functions are all gone, the remaining failures of the borrow-heavy modules being the
+closures returned by the crate's functions (`lambda`, 40), `core::mem::replace`, the
+`usize::MAX` global and the standard-library leaves listed in section 9. On
+curve25519-dalek, 1,144 of 1,912 (1,132 after phase B): no `application` is reported any
+more; the 4 `closureVar` are `Scalar52::from_bytes`/`from_bytes_wide` and their `u32`
+twins (the crate's `IndexMut` closures), the 4 `lambda` are the two `IndexMut` impls and
+the two `square2` (a `for x in self.0.iter_mut()` loop whose state carries a closure).
+The gain on dalek is small because the functions using borrows mostly use iterators as
+well: the blockers are now the iterator adapters (`Range::next` 127, `Rev::next` 40,
+`StepBy::next` 20, `into_iter`/`next` through trait clauses about 120, `slice::Iter::next`
+17), the `Array` literals (59), `Into::into` (32), the `subtle` trait methods,
+`Clone for [T; N]` (17), `as_mut_slice` (17) and `@getTarget` (15).
+
+**What is left for closures.** The backward functions returned by the functions of the
+crate (6 definitions on dalek, about 40 call sites; `list_nth_mut`-style functions and
+the loops returning borrows in the test suite): either phase E, or a split of such a
+function into a getter and a setter derived from its deep term (sound only if the body
+is re-run for the setter, which the ITree semantics does not equate with the single run
+unless the body is effect-free: not pursued).
+
+The compiler reports the first failure of a body (the bound term before the
+continuation), so that the reasons of the report stay comparable with phase B.
+
+Found on the way: Lean's `split` on a `match` whose discriminant is a variable
+generalises the variable (the proof scripts unify with the goal instead of naming it);
+a first compiler arm whose pattern looks inside a sub-term (`bind (call (prim …) …) p k`
+before `bind e p k`) leaves the generic arm without an unconditional equation lemma, so
+`simp only [compileStmt]` can no longer unfold `compileStmt (bind e p k)` for an abstract
+`e` (hence the inner `match e, compileStmt e with` in a single `bind` arm, which `split`
+handles while keeping `e` abstract); the equation lemmas of the compiler are generated on
+first use and now cost about ten seconds, charged to the heartbeats of the theorem which
+triggers them (`maxHeartbeats 1000000` in `CompileCorrect.lean`); `Array.set` must be
+qualified (`Std.Array.set`) in the IR, the root `Array.set` being Lean's.
+

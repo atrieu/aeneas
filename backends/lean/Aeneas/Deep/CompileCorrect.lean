@@ -21,6 +21,10 @@ variable {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyE
 
 namespace Compile
 
+-- The equation lemmas of the compiler (generated on first use, with the inner matches of
+-- the `app` and `bind` arms) are costly to generate
+set_option maxHeartbeats 1000000
+
 /-- Unfold the compiler at a node and case on the results of the recursive calls: the
 hypothesis `h : compileX e = .ok e'` becomes `h : .ok (node …) = .ok e'` with one
 hypothesis `compileX sub = .ok sub'` per sub-term (or a contradiction) -/
@@ -127,6 +131,12 @@ theorem pure_correct : ∀ n : Nat,
         rename_i α β e; simp only [Expr.break_.sizeOf_spec] at hn
         deep_compile_cases h; rename_i x e' he; deep_denote
         rw [ihE e (by omega) e' he env]
+      case app =>
+        -- the application of a variable (the backward function of a borrow)
+        rename_i α f a; simp only [Expr.app.sizeOf_spec] at hn
+        deep_compile_cases h
+        -- (the split on the head generalises it: unify with the goal rather than name it)
+        all_goals (deep_denote; exact congrArg _ (ihE _ (by omega) _ (by assumption) env))
       all_goals deep_compile_cases h
     · intro Γ tys es hn es' h env
       cases es
@@ -186,10 +196,19 @@ theorem stmt_correct : ∀ n : Nat,
       case bind =>
         rename_i p e k; simp only [Expr.bind.sizeOf_spec] at hn
         deep_compile_cases h
-        simp only [Stmt.exec, Expr.denote]
-        rw [ihS e (by omega) _ (by assumption : compileStmt e = .ok _) env]
-        congr 1; funext x
-        exact ihS k (by omega) _ (by assumption : compileStmt k = .ok _) _
+        -- (the split on the bound term generalises it: unify with the goal rather than name it)
+        all_goals first
+          | -- the generic bind
+            (simp only [Stmt.exec, Expr.denote]
+             refine congrArg₂ Std.bind (ihS _ (by omega) _ (by assumption) env) ?_
+             funext x
+             exact ihS k (by omega) _ (by assumption : compileStmt k = .ok _) _)
+          | -- a borrow: `MutIndex.borrow_eq`, the borrow is the `index_mut` primitive
+            (simp only [Stmt.exec, Expr.denote, MutIndex.borrow_eq, FunRef.impl, MutIndex.prim]
+             refine congrArg₂ Std.bind ?_ ?_
+             · rw [compileExprs_correct _ _ (by assumption : compileExprs _ = .ok _) env]
+             · funext x
+               exact ihS k (by omega) _ (by assumption : compileStmt k = .ok _) _)
       case let_ =>
         rename_i p e k; simp only [Expr.let_.sizeOf_spec] at hn
         deep_compile_cases h
@@ -287,8 +306,18 @@ theorem compileStmt_correct {Γ : List (Ty N)} {τ : Ty N} (e : Expr N F G σ Γ
 the denotation of the deep term -/
 theorem compile_correct {Γ : List (Ty N)} {τ : Ty N} (e : Expr N F G σ Γ τ)
     (s : Stmt N F G σ Γ τ) (h : compile e = .ok s) (env : Env N σ Γ) :
-    s.exec env = e.denote env :=
-  compileStmt_correct e s h env
+    s.exec env = e.denote env := by
+  apply compileStmt_correct e s _ env
+  unfold compile at h
+  revert h
+  cases compileStmt e with
+  | error u => intro h; simp [Bind.bind, Except.bind] at h
+  | ok s' =>
+    intro h
+    simp only [Bind.bind, Except.bind] at h
+    split at h
+    · simp only [Pure.pure, Except.pure, Except.ok.injEq] at h; rw [h]
+    · simp [throw, throwThe, MonadExceptOf.throw] at h
 
 end Compile
 

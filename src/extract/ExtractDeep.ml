@@ -185,6 +185,17 @@ let prim_table : (string * string) list =
     ("alloc.vec.Vec.len", ".vecLen");
     ("alloc.vec.Vec.push", ".vecPush");
     ("alloc.vec.Vec.new", ".vecNew");
+    ("alloc.vec.Vec.index", ".vecIndex");
+    ("alloc.vec.Vec.index_mut", ".vecIndexMut");
+  ]
+
+(** The trait instance at which a primitive with a trait clause is modelled
+    ([Vec::index] at a [usize] index), keyed by the extraction name of the
+    builtin: a call at another instance stays a leaf *)
+let prim_required_impl : (string * string) list =
+  [
+    ("alloc.vec.Vec.index", "core.slice.index.SliceIndexUsizeSlice");
+    ("alloc.vec.Vec.index_mut", "core.slice.index.SliceIndexUsizeSlice");
   ]
 
 (** The name of the generated enumerations of the function and global names *)
@@ -216,6 +227,9 @@ type closed_fun_info = {
       (** The function as an [Aeneas.Deep.FunRef]: [(.crate FunName.f)] or
           [(.prim .vecLen)] *)
   is_prim : bool;
+  prim_impl : string option;
+      (** The trait instance the primitive requires (see {!prim_required_impl})
+      *)
   keep_fun_types : bool list option;
       (** The filter on the type arguments of the calls (builtin functions may
           drop some of their parameters) *)
@@ -227,6 +241,21 @@ type closed_fun_info = {
     information (see {!regular_fun_id}), computed by {!extract_closed_world} *)
 let fun_world : (int * (int * bool) option, closed_fun_info) Hashtbl.t =
   Hashtbl.create 64
+
+(** Is a call at the trait instance its primitive requires (if any)? *)
+let prim_impl_matches (span : Meta.span) (ctx : extraction_ctx)
+    (info : closed_fun_info) (generics : generic_args) : bool =
+  match info.prim_impl with
+  | None -> true
+  | Some impl_name -> (
+      match generics.trait_refs with
+      | [ tr ] -> (
+          match tr.trait_id with
+          | TraitImpl (id, _) -> (
+              try ctx_get_trait_impl span id ctx = impl_name
+              with Errors.CFailure _ -> false)
+          | _ -> false)
+      | _ -> false)
 
 let fun_world_key (id : FunDeclId.id) (lp : (LoopId.id * bool) option) :
     int * (int * bool) option =
@@ -773,6 +802,11 @@ let extract_closed_world (ctx : extraction_ctx) (fmt : F.formatter) : unit =
                       fun_ctor;
                       fun_ref;
                       is_prim = prim <> None;
+                      prim_impl =
+                        (match decl.builtin_info with
+                        | Some bi ->
+                            List.assoc_opt bi.extract_name prim_required_impl
+                        | None -> None);
                       keep_fun_types =
                         FunDeclId.TreeMap.find_opt id
                           ctx.funs_filter_type_args_map;
@@ -1491,10 +1525,63 @@ let rec extract_deep_texpr (span : Meta.span) (ctx : extraction_ctx)
             | _ -> None)
         | _ -> None
       in
-      match full_ctor with
-      | Some (info, args) ->
+      (* A partial update of a structure of the closed world: a constructor
+         node whose other fields are projections of the initial value (what
+         the elaborator makes of [{ init with f := v }]) *)
+      let partial_ctor =
+        match (supd.struct_id, supd.init, ty) with
+        | TAdtId id, Some init, TAdt (TAdtId id', generics)
+          when TypeDeclId.to_int id = TypeDeclId.to_int id' -> (
+            match closed_type_info id with
+            | Some info when info.has_variants -> (
+                match info.decl.kind with
+                | Struct _ -> Some (info, generics, init)
+                | _ -> None)
+            | _ -> None)
+        | _ -> None
+      in
+      match (full_ctor, partial_ctor) with
+      | Some (info, args), _ ->
           extract_deep_ctor span ctx tenv fresh env fmt info None args
-      | None ->
+      | None, Some (info, generics, init) ->
+          let fields =
+            type_decl_get_instantiated_fields_types info.decl None generics
+          in
+          F.pp_open_hovbox fmt ctx.indent_incr;
+          F.pp_print_string fmt
+            ("(.ctor " ^ info.ref ^ " 0 "
+            ^ deep_adt_args span ctx tenv info generics
+            ^ " ["
+            ^ String.concat ", " (List.map (deep_ty_def span ctx tenv) fields)
+            ^ "] rfl");
+          F.pp_print_space fmt ();
+          List.iteri
+            (fun i field_ty ->
+              F.pp_print_string fmt "(.cons ";
+              (match List.assoc_opt (FieldId.of_int i) supd.updates with
+              | Some v ->
+                  extract_deep_texpr span ctx tenv fresh env fmt
+                    ~expected:field_ty v
+              | None ->
+                  F.pp_open_hovbox fmt ctx.indent_incr;
+                  F.pp_print_string fmt
+                    ("(.proj " ^ info.ref ^ " " ^ string_of_int i ^ " "
+                    ^ deep_adt_args span ctx tenv info generics
+                    ^ " "
+                    ^ deep_ty_def span ctx tenv field_ty
+                    ^ " rfl");
+                  F.pp_print_space fmt ();
+                  extract_deep_texpr span ctx tenv fresh env fmt ~expected:ty
+                    init;
+                  F.pp_print_string fmt ")";
+                  F.pp_close_box fmt ());
+              F.pp_print_space fmt ())
+            fields;
+          F.pp_print_string fmt ".nil";
+          List.iter (fun _ -> F.pp_print_string fmt ")") fields;
+          F.pp_print_string fmt ")";
+          F.pp_close_box fmt ()
+      | None, None ->
           (* We eta-expand the structure update over the initial value (if
              there is one) and the field values *)
           let args =
@@ -1834,8 +1921,7 @@ and extract_deep_app (span : Meta.span) (ctx : extraction_ctx)
         | _ -> (
             match expected with
             | Some (TAdt (TTuple, { types; _ }))
-              when List.length types = List.length args ->
-                types
+              when List.length types = List.length args -> types
             | _ -> List.map (fun (a : texpr) -> a.ty) args)
       in
       match (args, component_tys) with
@@ -1938,13 +2024,21 @@ and extract_deep_app (span : Meta.span) (ctx : extraction_ctx)
          instantiated with the generic arguments of the call. *)
       match closed_fun_info fid lp with
       | Some info
-        when List.length args = List.length info.fun_decl.signature.inputs ->
+        when List.length args = List.length info.fun_decl.signature.inputs
+             && prim_impl_matches span ctx info generics ->
           let subst =
             make_subst_from_generics info.fun_decl.signature.generics generics
           in
           let isig = fun_sig_substitute subst info.fun_decl.signature in
-          extract_deep_call span ctx tenv fresh env fmt info.fun_ref
-            (filter_type_args info.keep_fun_types generics.types)
+          let targs = filter_type_args info.keep_fun_types generics.types in
+          (* The primitives at a fixed trait instance have a single type
+             parameter, the element type *)
+          let targs =
+            match (info.prim_impl, targs) with
+            | Some _, t :: _ -> [ t ]
+            | _ -> targs
+          in
+          extract_deep_call span ctx tenv fresh env fmt info.fun_ref targs
             generics.const_generics isig.inputs isig.output args
       | _ -> eta_leaf q)
   | ( Qualif
