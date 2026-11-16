@@ -434,8 +434,7 @@ def call_fn_no_state.deep :
   Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩
     [(.scalar (.u .U32))] (.result (.scalar (.u .U32))) :=
   (.call (.crate FunName.call_fn_no_state_closure_Insts_CoreOpsFunctionFnTupleU32U32_call) [] [] [.unit, (.scalar (.u .U32))] (.result (.scalar (.u .U32))) rfl rfl
-    (.cons (.leaf (.ctor "closures::call_fn_no_state::{closure}") .unit
-             (() : call_fn_no_state.closure)) (.cons (.var .zero) .nil)))
+    (.cons .unitLit (.cons (.var .zero) .nil)))
 
 theorem call_fn_no_state.deep_eq (i : Std.U32) :
   call_fn_no_state i =
@@ -468,10 +467,7 @@ def call_fn_shared.deep :
     [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))]
     (.result (.scalar (.u .U8))) :=
   (.call (.crate FunName.call_fn_shared_closure_Insts_CoreOpsFunctionFnTupleUsizeU8_call) [] [] [(.slice (.scalar (.u .U8))), (.scalar (.u .Usize))] (.result (.scalar (.u .U8))) rfl rfl
-    (.cons (.app (.leaf (.ctor "closures::call_fn_shared::{closure}")
-                   (.arrow (.slice (.scalar (.u .U8))) (.slice (.scalar (.u .U8))))
-                   (fun (s : Slice Std.U8) => (s : call_fn_shared.closure)))
-             (.var .zero)) (.cons (.var (.succ .zero)) .nil)))
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil)))
 
 theorem call_fn_shared.deep_eq (a : Slice Std.U8) (i : Std.Usize) :
   call_fn_shared a i =
@@ -560,9 +556,7 @@ def call_closure1.deep :
           (.arrow .unit (.result (.scalar (.u .U32))))
           (fun (c : call_closure1.closure) =>
           (call_closure call_closure1.closure.Insts.CoreOpsFunctionFnTupleU32 c
-            : Result Std.U32)))
-    (.leaf (.ctor "closures::call_closure1::{closure}") .unit
-      (() : call_closure1.closure)))
+            : Result Std.U32))) .unitLit)
 
 theorem call_closure1.deep_eq :
   call_closure1 =
@@ -684,16 +678,12 @@ def call_closure2.deep :
             (.arrow .unit (.result (.scalar (.u .U32))))
             (fun (c : call_closure2.closure) =>
             (call_closure call_closure2.closure.Insts.CoreOpsFunctionFnTupleU32
-              c : Result Std.U32)))
-      (.leaf (.ctor "closures::call_closure2::{closure}") .unit
-        (() : call_closure2.closure))) .ignore
+              c : Result Std.U32))) .unitLit) .ignore
   (.app (.leaf (.fn "closures::call_closure")
           (.arrow .unit (.result (.scalar (.u .U32))))
           (fun (c : call_closure2.closure_1) =>
           (call_closure call_closure2.closure_1.Insts.CoreOpsFunctionFnTupleU32
-            c : Result Std.U32)))
-    (.leaf (.ctor "closures::call_closure2::{closure#1}") .unit
-      (() : call_closure2.closure_1))))
+            c : Result Std.U32))) .unitLit))
 
 theorem call_closure2.deep_eq :
   call_closure2 =

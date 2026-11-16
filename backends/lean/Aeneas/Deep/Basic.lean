@@ -76,10 +76,14 @@ First-order descriptions of the primitive operations, with a *fixed* denotation:
 case, the denotation is written with the very notation the shallow printer prints, so that
 the two elaborate to the same term. -/
 
+deriving instance DecidableEq, Repr for UScalarTy
+deriving instance DecidableEq, Repr for IScalarTy
+
 /-- Scalar types, as data -/
 inductive ScalarTy where
   | u (ty : UScalarTy)
   | i (ty : IScalarTy)
+  deriving DecidableEq, Repr
 
 @[reducible] def ScalarTy.denote : ScalarTy → Type
   | .u ty => UScalar ty
@@ -91,6 +95,7 @@ scalar type). They all return in `Result`. -/
 inductive ScalarBinop where
   | add | sub | mul | div | rem
   | shl (rhs : ScalarTy) | shr (rhs : ScalarTy)
+  deriving DecidableEq, Repr
 
 /-- The type of the right operand -/
 @[reducible] def ScalarBinop.rhsTy : ScalarBinop → ScalarTy → ScalarTy
@@ -182,12 +187,14 @@ inductive BuiltinTy where
 inductive TypeRef (N : Type) where
   | builtin (b : BuiltinTy)
   | crate (T : N)
+  deriving DecidableEq, Repr
 
 /-- A const-generic argument (`Usize`) -/
 inductive CArg where
   /-- The `i`-th const-generic binder of the enclosing definition -/
   | var (i : Nat)
   | lit (n : Nat) (h : n ≤ UScalar.cMax .Usize)
+  deriving DecidableEq, Repr
 
 /-- Type descriptors -/
 inductive Ty (N : Type) : Type where
@@ -208,6 +215,7 @@ inductive Ty (N : Type) : Type where
   | result (τ : Ty N)
   | controlFlow (a b : Ty N)
   | arrow (a b : Ty N)
+  deriving Repr
 
 /-- The interpretation of the type and const-generic binders of a definition (or of the
 parameters of a type declaration) -/
@@ -443,6 +451,7 @@ inductive Prim where
 inductive FunRef (F : Type) where
   | prim (p : Prim)
   | crate (f : F)
+  deriving DecidableEq, Repr
 
 @[reducible] def FunRef.def {F N : Type} [TypeNames N] [FunNames F N] : FunRef F → FunDef N
   | .prim p => p.def

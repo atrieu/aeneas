@@ -340,6 +340,27 @@ nodes is printed as a single shallow leaf (`.lit` when it is constant data,
 itself, so nothing is lost for the theorem, and the deep structure of constant data such
 as precomputed tables is of no interest while elaborating it is expensive.
 
+## The IR and the compiler
+
+`Aeneas/Deep/IR.lean` defines the C-shaped intermediate representation targeted by the
+verified compiler of `PLAN-compiler.md`: pure expressions (`IExpr`) and statements
+(`Stmt`: returns, failures, block-scoped bindings of pure values and of the results of
+fallible statements, calls, checked operations, `if`, `switch`, `loop`), with the typing
+discipline of the deep AST and an interpreter `Stmt.exec` into the same `Result` monad.
+`Aeneas/Deep/Compile.lean` compiles the first-order fragment of the deep terms to it
+(`Compile.compile`), reporting the unsupported nodes (`Unsupported`: shallow leaves with
+their tag, lambdas, applications, the escape hatch), and `CompileCorrect.lean` proves
+`compile e = .ok s → s.exec env = e.denote env`. `#deep_report` (`Report.lean`) runs the
+compiler on every deep term of the environment and lists the unsupported ones by reason:
+
+```lean
+import Aeneas.Deep.Report
+import MyCrate.Deep
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
+#deep_report
+```
+
 ## Performance
 
 The kernel check of a theorem is linear in the size of the body. The deep term itself is

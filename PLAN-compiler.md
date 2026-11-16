@@ -356,3 +356,90 @@ no error, no warning): 1,912 theorems; 6,697 `call` nodes (2,259 of them primiti
 `global`, 478 `ctor`, 348 `match_`, 979 `proj`; 1,404 function leaves left (8,101 before
 phase A), 5 escape hatches (unchanged), no escaped type. On the test suite: 15 modules,
 all green; the Loops module (109 theorems) builds in 16 s.
+
+## 9. Phase B log
+
+### B.1 The IR, its interpreter, the compiler and its proof (2026-11-16)
+
+Done, in `backends/lean/Aeneas/Deep/IR.lean` (the IR), `Compile.lean` (the compiler),
+`CompileCorrect.lean` (the correctness theorem, i.e. the core of phase D, which turned out
+to be within reach once the IR was fixed) and `Report.lean` (the coverage report).
+
+**The IR.** A first-order imperative language in A-normal form, with the typing discipline
+of the deep AST (descriptors over the closed world, store `Env N σ Γ`):
+
+- `IExpr`: the pure, C-expressible expressions (variables, literals, the pure scalar and
+  boolean operations, `c ? t : e`, tuples, constructors, projections, pure calls and
+  globals, the loop-control values `continue_`/`break_`);
+- `Stmt`: `pure e`, `ret e`, `fail`, the block-scoped bindings `letVal e p k` (pure
+  expression), `letStmt s p k` (the value of a statement computing a value: an `if` or a
+  `switch` whose branches return) and `bindStmt s p k` (the monadic bind of a fallible
+  statement), the fallible primitives `call`, `global`, `scalarBinop`, `neg`, `assert`,
+  `ite`, `switch` (one branch per variant, binding the fields), `loop p init body`.
+
+Two decisions differ from section 2 of the plan, both in favour of a smaller verified
+part:
+
+1. **No mutable typed store, no flattening.** Variables are bound once (block scoping,
+   as C locals), the only mutation a C realisation needs being the update of the loop
+   state at `continue`; tuples stay tuple values (the printer maps them to structs).
+   The IR is thus a *sublanguage* of the deep AST with an explicit separation of pure
+   expressions and effectful statements, which is exactly the contract the printer
+   needs, and the store invariant of the proof is trivial (same environments).
+2. **The semantics reuses `Std.loop`.** `Stmt.exec : Stmt N F G σ Γ τ → Env N σ Γ →
+   τ.denote σ` is structurally recursive; `loop` denotes `Std.loop` applied to the
+   interpretation of the body. The correctness theorem for loops is then a congruence,
+   not a fixpoint induction.
+3. **No monomorphization in the verified part.** The compiler and its proof are generic
+   in the type environment `σ` and the descriptors: the `call` nodes carry their
+   descriptor arguments, and instantiation is the printer's concern (it prints one C
+   function per reachable instance, with `Stmt.calls` listing the call sites).
+
+**The compiler** (`Compile.compile : Expr N F G σ Γ τ → Except Unsupported (Stmt N F G σ Γ τ)`)
+recognises the first-order fragment: `compileExpr` for the pure fragment, `compileStmt`
+for the monadic spine (a `bind`/`let` of an `if` or a `match` computing a value becomes a
+`bindStmt`/`letStmt`, `loop (lam …) init` becomes `loop`, `ok`/`fail` become returns).
+Shallow leaves, lambdas, applications and the escape hatch are reported as `Unsupported`
+with their reason (the tag of the leaf, so that the report lists the missing primitives).
+
+**The theorem** `compile_correct : compile e = .ok s → s.exec env = e.denote env`, by
+strong induction on `sizeOf e` (the structural recursion of theorems over the mutual
+inductive families is not accepted by Lean, nor is well-founded recursion on them inferred
+automatically; the generated `sizeOf_spec` lemmas plus `omega` make the size induction
+cheap). The proof is one tactic macro per node: unfold the compiler, case on the results
+of the recursive calls, unfold the two denotations, rewrite with the induction hypotheses.
+No `sorry`, no axiom beyond the standard ones.
+
+**Coverage.** `#deep_report` runs the compiler on every `f.deep` of the environment (by
+`whnf` under the binders of `f.deep`) and lists the unsupported terms by reason. On the
+test suite (the 15 deep-enabled modules, 460 deep terms, reported module by module since
+the modules cannot be imported together; the hand-written terms of `Aeneas/Deep/Tests.lean`,
+which every report also counts, are excluded from the numbers), 264 compile; the rest
+are the closures (`lambda`, 37), the `Vec` indexing through the `Index`/`IndexMut` impls
+(13), the escape hatches (`shallow`, 6), the calls through trait clauses and to trait
+impls (about 17), and a tail of standard-library leaves (`cast_signed`, `wrapping_sub`,
+`is_multiple_of`, `div_ceil`, `Result::is_ok`, the `u32::MAX`-style globals, literal
+leaves). On curve25519-dalek (1,912 deep terms), 1,132 compile after the tuple-struct fix
+below (1,007 before it), the blockers being the iterator adapters (`Range::next` 127,
+`Rev::next` 40, `StepBy::next` 20, `into_iter`/`next` through trait clauses about 120,
+`slice::Iter::next` 17), the `Array` literals (59), `Into::into` (32), the `subtle` trait
+methods (`conditional_negate` 18, `ct_eq` 7), `Clone for [T; N]` (17), `as_mut_slice`
+(17) and `@getTarget` (15).
+
+The constructors of tuple structs (`FieldElement51(…)`, `RistrettoPoint(…)`, …, about 100
+sites on dalek) were printed as leaves: fixed, they are tuples (a single field being the
+field itself), the component types being the instantiated field types of the declaration
+(a first version passed the struct type itself as the expected type of the array literals
+inside, which broke 16 functions of dalek with an internal error of the shallow printer;
+the final translation has no error and the 1,912 theorems build).
+
+Tests: `Aeneas/Deep/Tests.lean` compiles the hand-written terms (all but the two returning
+closures) and checks the interpreter against the shallow functions on sample inputs
+(`Result` is an interaction tree, observed with `Result.reducesTo` under `native_decide`).
+
+Found on the way: `Result` is `ITree RustEffect`, so results have no decidable equality
+and are compared by observation; `native_decide` and `#eval` on the deep terms need
+`public meta import` of the modules under the module system; the dalek trial moved from
+the session scratchpad (purged by the system after three days) to `build/dalek-trial/`
+(git-ignored), with the fork's Lean project now at `curve25519-dalek/lean` and its
+`lakefile.lean` pointing `aeneas` at this checkout.

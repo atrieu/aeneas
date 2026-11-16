@@ -1081,10 +1081,7 @@ def TestType.test.deep {T : Type _} (ToU64Inst : ToU64 T) :
             (ToU64Inst.to_u64 t : Result Std.U64))) (.var (.succ .zero))) .var
   (.ite (.gt (.var .zero) (.uscalarLit .U64 0 (by decide)))
   (.call (.crate FunName.TestType_test_TestType1_Insts_TraitsTestTypeTestTestTrait_test) [] [] [(.scalar (.u .U64))] (.result .bool) rfl rfl
-    (.cons (.app (.leaf (.ctor "traits::{traits::TestType<T>}::test::TestType1")
-                   (.arrow (.scalar (.u .U64)) (.scalar (.u .U64)))
-                   (fun (i : Std.U64) => (i : TestType.test.TestType1)))
-             (.uscalarLit .U64 0 (by decide))) .nil))
+    (.cons (.uscalarLit .U64 0 (by decide)) .nil))
   (.ok (.boolLit false))))
 
 theorem TestType.test.deep_eq {T : Type _} (ToU64Inst : ToU64 T)

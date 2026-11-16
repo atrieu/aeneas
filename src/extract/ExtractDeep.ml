@@ -1818,25 +1818,46 @@ and extract_deep_app (span : Meta.span) (ctx : extraction_ctx)
       F.pp_print_string fmt ("(.fail " ^ deep_ty_def span ctx tenv ty ^ " ");
       extract_texpr span ctx fmt ~inside:true ~inside_do:false err;
       F.pp_print_string fmt ")"
-  | Qualif { id = AdtCons { adt_id = TTuple; _ }; _ }, _ -> (
-      (* Tuples *)
-      match args with
-      | [] -> F.pp_print_string fmt ".unitLit"
-      | [ arg ] -> extract_deep_texpr span ctx tenv fresh env fmt ?expected arg
-      | _ ->
-          let expected =
+  | Qualif { id = AdtCons { adt_id; variant_id = None }; generics }, _
+    when type_is_tuple_like ctx (TAdt (adt_id, empty_generic_args)) -> (
+      (* Tuples, and the tuple structs (which are tuples, a single field being
+         the field itself). The expected types of the components are the
+         field types of the tuple struct, or the components of the expected
+         tuple type. *)
+      let component_tys =
+        match adt_id with
+        | TAdtId id -> (
+            match TypeDeclId.Map.find_opt id ctx.trans_types with
+            | Some decl ->
+                type_decl_get_instantiated_fields_types decl None generics
+            | None -> List.map (fun (a : texpr) -> a.ty) args)
+        | _ -> (
             match expected with
             | Some (TAdt (TTuple, { types; _ }))
-              when List.length types = List.length args -> types
-            | _ -> List.map (fun (a : texpr) -> a.ty) args
-          in
+              when List.length types = List.length args ->
+                types
+            | _ -> List.map (fun (a : texpr) -> a.ty) args)
+      in
+      match (args, component_tys) with
+      | [], _ -> F.pp_print_string fmt ".unitLit"
+      | [ arg ], [ ty ] ->
+          extract_deep_texpr span ctx tenv fresh env fmt ~expected:ty arg
+      | _ when List.length args = List.length component_tys ->
           F.pp_open_hovbox fmt ctx.indent_incr;
           F.pp_print_string fmt "(.tuple";
           F.pp_print_space fmt ();
           extract_deep_exprs span ctx tenv fresh env fmt
-            (List.combine args expected);
+            (List.combine args component_tys);
           F.pp_print_string fmt ")";
-          F.pp_close_box fmt ())
+          F.pp_close_box fmt ()
+      | _ ->
+          (* Partial application of the constructor *)
+          let q = { id = AdtCons { adt_id; variant_id = None }; generics } in
+          let mk_shallow (args : texpr list) : texpr =
+            [%add_loc] mk_apps span app args
+          in
+          extract_deep_eta_leaf span ctx tenv fresh env fmt (qualif_tag ctx q)
+            mk_shallow args expected)
   | ( Qualif
         {
           id = AdtCons { adt_id = TBuiltin TLoopResult; variant_id = Some vid };

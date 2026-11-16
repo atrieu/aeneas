@@ -1,7 +1,14 @@
 module
 public import Aeneas.Deep.Basic
 public import Aeneas.Deep.Tactic
+public import Aeneas.Deep.IR
+public import Aeneas.Deep.Compile
 public import Aeneas.Deep.Tests.Shallow
+public meta import Aeneas.Std
+public meta import Aeneas.Deep.Basic
+public meta import Aeneas.Deep.IR
+public meta import Aeneas.Deep.Compile
+public meta import Aeneas.Deep.Tests.Shallow
 public section
 
 /-! # Tests for the deep embedding
@@ -49,6 +56,7 @@ inductive FunName where
   | list_nth_mut
   | sum_loop_body
   | sum_loop
+  deriving DecidableEq, Repr
 
 instance : FunNames FunName TypeName where
   defs
@@ -309,6 +317,54 @@ def vec_len.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.adt (.builtin .vec) [.var
 
 theorem vec_len.deep_eq {T : Type} (v : alloc.vec.Vec T) :
     vec_len v = vec_len.deep.denote (v ::ₑ .nil) := by deep_rfl
+
+/-! ## Compilation to the IR
+
+The hand-written terms are all in the first-order fragment: they compile, and the
+interpreter of the IR agrees with the shallow functions on sample inputs. -/
+
+open Compile in
+/-- The result of running the compiled body of `e` on `env` -/
+def execOn {Γ : List (Ty TypeName)} {τ : Ty TypeName} (e : DeepExpr ⟨[], []⟩ Γ τ)
+    (env : Env TypeName ⟨[], []⟩ Γ) : Option (τ.denote ⟨[], []⟩) :=
+  (compile e).toOption.map (fun s => s.exec env)
+
+/-- Does the compiled body of `e` reduce to `expected` on `env` (`Result` is an interaction
+tree: we observe it with `Result.reducesTo`)? -/
+def reducesOn {Γ : List (Ty TypeName)} {ρ : Ty TypeName} [BEq (ρ.denote ⟨[], []⟩)]
+    (e : DeepExpr ⟨[], []⟩ Γ (.result ρ)) (env : Env TypeName ⟨[], []⟩ Γ)
+    (expected : ρ.denote ⟨[], []⟩) : Bool :=
+  match execOn e env with
+  | some r => Result.reducesTo r expected
+  | none => false
+
+example : (Compile.compile mul2_add1.deep).toBool = true := by decide
+example : (Compile.compile use_incr.deep).toBool = true := by decide
+/-- `choose` and `list_nth_mut` return closures: outside the first-order fragment -/
+example : (Compile.compile (choose.deep (T := Unit))).toBool = false := by decide
+example : (Compile.compile i32_id.deep).toBool = true := by decide
+example : (Compile.compile (list_nth.deep (T := Unit))).toBool = true := by decide
+example : (Compile.compile (list_nth_mut.deep (T := Unit))).toBool = false := by decide
+example : (Compile.compile sum_loop.body.deep).toBool = true := by decide
+example : (Compile.compile sum_loop.deep).toBool = true := by decide
+example : (Compile.compile sum.deep).toBool = true := by decide
+example : (Compile.compile pair_sum.deep).toBool = true := by decide
+example : (Compile.compile pair_fst.deep).toBool = true := by decide
+example : (Compile.compile mk_pair.deep).toBool = true := by decide
+example : (Compile.compile arr_get.deep).toBool = true := by decide
+example : (Compile.compile opt_or.deep).toBool = true := by decide
+example : (Compile.compile (vec_len.deep (T := Unit))).toBool = true := by decide
+
+example : reducesOn mul2_add1.deep (3#u32 ::ₑ .nil) 7#u32 := by native_decide
+example : reducesOn i32_id.deep (2#i32 ::ₑ .nil) 2#i32 := by native_decide
+example : reducesOn sum.deep (4#u32 ::ₑ .nil) 12#u32 := by native_decide
+example : reducesOn pair_sum.deep (⟨1#u32, 2#u32⟩ ::ₑ .nil) 3#u32 := by native_decide
+example : execOn opt_or.deep (none ::ₑ 5#u32 ::ₑ .nil) = some 5#u32 := by decide +kernel
+example : execOn opt_or.deep (some 1#u32 ::ₑ 5#u32 ::ₑ .nil) = some 1#u32 := by decide +kernel
+
+/-- The calls of a compiled body -/
+example : (Compile.compile sum.deep).toOption.map (fun s => s.calls.map (·.f)) =
+    some [.crate .sum_loop] := by decide
 
 /-! ## Deep terms are inspectable: a trivial structural function -/
 

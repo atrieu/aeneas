@@ -92,7 +92,10 @@ The `-deep` option makes the Lean backend print, for every function and global, 
 AST term (`f.deep : Aeneas.Deep.Expr …`) and a theorem `f.deep_eq` relating it to the
 definition, proved by the `deep_rfl` tactic (kernel reflexivity). The user-facing
 description is `documentation/deep-embedding.md`; the printer is
-`src/extract/ExtractDeep.ml`, the AST and tactics are in `backends/lean/Aeneas/Deep/`.
+`src/extract/ExtractDeep.ml`, the AST and tactics are in `backends/lean/Aeneas/Deep/`,
+together with the IR (`IR.lean`), the verified compiler to it (`Compile.lean`,
+`CompileCorrect.lean`) and the coverage report (`Report.lean`, `#deep_report`): a new AST
+node needs a case in the compiler and in its proof (one tactic macro per node).
 
 Rules when touching this mode:
 
