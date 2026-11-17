@@ -110,6 +110,10 @@ theorem pure_correct : ∀ n : Nat,
         rename_i tys es; simp only [Expr.tuple.sizeOf_spec] at hn
         deep_compile_cases h; rename_i x es' hes; deep_denote
         rw [ihEs es (by omega) es' hes env]
+      case array =>
+        rename_i τ n hb es; simp only [Expr.array.sizeOf_spec] at hn
+        deep_compile_cases h; rename_i x es' hes; deep_denote
+        rw [ihEs es (by omega) es' hes env]
       case ctor =>
         rename_i T v inst targs cargs fields hf args; simp only [Expr.ctor.sizeOf_spec] at hn
         deep_compile_cases h; rename_i x args' hargs; deep_denote

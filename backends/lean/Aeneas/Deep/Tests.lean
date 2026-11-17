@@ -57,6 +57,7 @@ inductive FunName where
   | list_nth_mut
   | sum_loop_body
   | sum_loop
+  | pair_swap
   deriving DecidableEq, Repr
 
 instance : FunNames FunName TypeName where
@@ -74,6 +75,9 @@ instance : FunNames FunName TypeName where
     | .sum_loop_body =>
       ⟨⟨[U32T, U32T, U32T], .result (.controlFlow (.tuple [U32T, U32T]) U32T)⟩, fun _ => sum_loop.body⟩
     | .sum_loop => ⟨⟨[U32T, U32T, U32T], .result U32T⟩, fun _ => sum_loop⟩
+    | .pair_swap =>
+      ⟨⟨[.adt (.crate TypeName.Pair) [.var 0, .var 0] []], .adt (.crate TypeName.Pair) [.var 0, .var 0] []⟩,
+       fun ρ => @pair_swap (tyAt ρ.types 0)⟩
 
 inductive GlobalName where
   deriving Repr
@@ -320,6 +324,113 @@ def vec_len.deep {T : Type} : DeepExpr ⟨[T], []⟩ [.adt (.builtin .vec) [.var
 theorem vec_len.deep_eq {T : Type} (v : alloc.vec.Vec T) :
     vec_len v = vec_len.deep.denote (v ::ₑ .nil) := by deep_rfl
 
+/-! ## A generic function and its use at an instance -/
+
+def pair_swap.deep {T : Type} :
+    DeepExpr ⟨[T], []⟩ [.adt (.crate TypeName.Pair) [.var 0, .var 0] []]
+      (.adt (.crate TypeName.Pair) [.var 0, .var 0] []) :=
+  .ctor (.crate TypeName.Pair) 0 [.var 0, .var 0] [] [.var 0, .var 0] rfl
+    (.cons (.proj (.crate TypeName.Pair) 1 [.var 0, .var 0] [] (.var 0) rfl (.var .zero))
+      (.cons (.proj (.crate TypeName.Pair) 0 [.var 0, .var 0] [] (.var 0) rfl (.var .zero)) .nil))
+
+theorem pair_swap.deep_eq {T : Type} (p : Pair T T) :
+    pair_swap p = pair_swap.deep.denote (p ::ₑ .nil) := by deep_rfl
+
+def use_pair_swap.deep : DeepExpr ⟨[], []⟩ [.adt (.crate TypeName.Pair) [U32T, U32T] []] U32T :=
+  .proj (.crate TypeName.Pair) 0 [U32T, U32T] [] U32T rfl
+    (.call (.crate FunName.pair_swap) [U32T] [] [.adt (.crate TypeName.Pair) [U32T, U32T] []]
+      (.adt (.crate TypeName.Pair) [U32T, U32T] []) rfl rfl (.cons (.var .zero) .nil))
+
+theorem use_pair_swap.deep_eq (p : Pair Std.U32 Std.U32) :
+    use_pair_swap p = use_pair_swap.deep.denote (p ::ₑ .nil) := by deep_rfl
+
+/-! ## Array literals -/
+
+def arr_lit.deep : DeepExpr ⟨[], []⟩ [U32T, U32T] (.array U32T (.lit 2 (by decide))) :=
+  .array U32T 2 (by decide) (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem arr_lit.deep_eq (x y : Std.U32) :
+    arr_lit x y = arr_lit.deep.denote (x ::ₑ y ::ₑ .nil) := by deep_rfl
+
+/-! ## The iterators over ranges -/
+
+local notation "RangeU" =>
+  Ty.adt (TypeRef.builtin BuiltinTy.range) [Ty.scalar (ScalarTy.u UScalarTy.Usize)] []
+local notation "OptionU" =>
+  Ty.adt (TypeRef.builtin BuiltinTy.option) [Ty.scalar (ScalarTy.u UScalarTy.Usize)] []
+local notation "RevU" => Ty.adt (TypeRef.builtin BuiltinTy.rev) [RangeU] []
+local notation "StepByU" => Ty.adt (TypeRef.builtin BuiltinTy.stepBy) [RangeU] []
+
+def range_next.deep : DeepExpr ⟨[], []⟩ [RangeU] (.result (.tuple [OptionU, RangeU])) :=
+  .call (.prim .rangeNextUsize) [] [] [RangeU] (.result (.tuple [OptionU, RangeU])) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem range_next.deep_eq (r : core.ops.range.Range Std.Usize) :
+    range_next r = range_next.deep.denote (r ::ₑ .nil) := by deep_rfl
+
+def range_rev.deep : DeepExpr ⟨[], []⟩ [RangeU] (.result RevU) :=
+  .call (.prim .rangeRevUsize) [] [] [RangeU] (.result RevU) rfl rfl (.cons (.var .zero) .nil)
+
+theorem range_rev.deep_eq (r : core.ops.range.Range Std.Usize) :
+    range_rev r = range_rev.deep.denote (r ::ₑ .nil) := by deep_rfl
+
+def rev_next.deep : DeepExpr ⟨[], []⟩ [RevU] (.result (.tuple [OptionU, RevU])) :=
+  .call (.prim .revRangeNextUsize) [] [] [RevU] (.result (.tuple [OptionU, RevU])) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem rev_next.deep_eq (r : core.iter.adapters.rev.Rev (core.ops.range.Range Std.Usize)) :
+    rev_next r = rev_next.deep.denote (r ::ₑ .nil) := by deep_rfl
+
+def range_step_by.deep : DeepExpr ⟨[], []⟩ [RangeU, .scalar (.u .Usize)] (.result StepByU) :=
+  .call (.prim .rangeStepByUsize) [] [] [RangeU, .scalar (.u .Usize)] (.result StepByU) rfl rfl
+    (.cons (.var .zero) (.cons (.var (.succ .zero)) .nil))
+
+theorem range_step_by.deep_eq (r : core.ops.range.Range Std.Usize) (n : Std.Usize) :
+    range_step_by r n = range_step_by.deep.denote (r ::ₑ n ::ₑ .nil) := by deep_rfl
+
+def step_by_next.deep : DeepExpr ⟨[], []⟩ [StepByU] (.result (.tuple [OptionU, StepByU])) :=
+  .call (.prim .stepByRangeNextUsize) [] [] [StepByU] (.result (.tuple [OptionU, StepByU])) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem step_by_next.deep_eq
+    (s : core.iter.adapters.step_by.StepBy (core.ops.range.Range Std.Usize)) :
+    step_by_next s = step_by_next.deep.denote (s ::ₑ .nil) := by deep_rfl
+
+/-! ## The slice iterators -/
+
+local notation "SliceU32" => Ty.slice (Ty.scalar (ScalarTy.u UScalarTy.U32))
+local notation "IterU32" =>
+  Ty.adt (TypeRef.builtin BuiltinTy.sliceIter) [Ty.scalar (ScalarTy.u UScalarTy.U32)] []
+local notation "OptionU32" =>
+  Ty.adt (TypeRef.builtin BuiltinTy.option) [Ty.scalar (ScalarTy.u UScalarTy.U32)] []
+
+def slice_iter.deep : DeepExpr ⟨[], []⟩ [SliceU32] (.result IterU32) :=
+  .call (.prim .sliceIter) [U32T] [] [SliceU32] (.result IterU32) rfl rfl (.cons (.var .zero) .nil)
+
+theorem slice_iter.deep_eq (s : Slice Std.U32) :
+    slice_iter s = slice_iter.deep.denote (s ::ₑ .nil) := by deep_rfl
+
+def slice_into_iter.deep : DeepExpr ⟨[], []⟩ [SliceU32] (.result IterU32) :=
+  .call (.prim .sliceIntoIter) [U32T] [] [SliceU32] (.result IterU32) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem slice_into_iter.deep_eq (s : Slice Std.U32) :
+    slice_into_iter s = slice_into_iter.deep.denote (s ::ₑ .nil) := by deep_rfl
+
+def array_into_iter.deep : DeepExpr ⟨[], []⟩ [.array U32T (.lit 2 (by decide))] (.result IterU32) :=
+  .call (.prim .arrayIntoIter) [U32T] [.lit 2 (by decide)] [.array U32T (.lit 2 (by decide))]
+    (.result IterU32) rfl rfl (.cons (.var .zero) .nil)
+
+theorem array_into_iter.deep_eq (a : Array Std.U32 2#usize) :
+    array_into_iter a = array_into_iter.deep.denote (a ::ₑ .nil) := by deep_rfl
+
+def slice_iter_next.deep : DeepExpr ⟨[], []⟩ [IterU32] (.result (.tuple [OptionU32, IterU32])) :=
+  .call (.prim .sliceIterNext) [U32T] [] [IterU32] (.result (.tuple [OptionU32, IterU32])) rfl rfl
+    (.cons (.var .zero) .nil)
+
+theorem slice_iter_next.deep_eq (it : core.slice.iter.Iter Std.U32) :
+    slice_iter_next it = slice_iter_next.deep.denote (it ::ₑ .nil) := by deep_rfl
+
 /-! ## Mutable borrows: `let (x, back) ← index_mut v i; …; back x'` -/
 
 def arr_incr.deep : DeepExpr ⟨[], []⟩ [.array U32T (.lit 4 (by decide)), .scalar (.u .Usize)]
@@ -396,6 +507,18 @@ example : (Compile.compile arr_get.deep).toBool = true := by decide
 example : (Compile.compile opt_or.deep).toBool = true := by decide
 example : (Compile.compile (vec_len.deep (T := Unit))).toBool = true := by decide
 example : (Compile.compile arr_incr.deep).toBool = true := by decide
+example : (Compile.compile range_next.deep).toBool = true := by decide
+example : (Compile.compile arr_lit.deep).toBool = true := by decide
+example : (Compile.compile slice_iter.deep).toBool = true := by decide
+example : (Compile.compile slice_into_iter.deep).toBool = true := by decide
+example : (Compile.compile array_into_iter.deep).toBool = true := by decide
+example : (Compile.compile slice_iter_next.deep).toBool = true := by decide
+example : (Compile.compile range_rev.deep).toBool = true := by decide
+example : (Compile.compile rev_next.deep).toBool = true := by decide
+example : (Compile.compile range_step_by.deep).toBool = true := by decide
+example : (Compile.compile step_by_next.deep).toBool = true := by decide
+example : (Compile.compile (pair_swap.deep (T := Unit))).toBool = true := by decide
+example : (Compile.compile use_pair_swap.deep).toBool = true := by decide
 example : (Compile.compile vec_set.deep).toBool = true := by decide
 /-- The backward function of the borrow escapes: rejected by the closure check -/
 example : (match Compile.compile arr_borrow.deep with
@@ -410,6 +533,8 @@ example : execOn opt_or.deep (none ::ₑ 5#u32 ::ₑ .nil) = some 5#u32 := by de
 example : execOn opt_or.deep (some 1#u32 ::ₑ 5#u32 ::ₑ .nil) = some 1#u32 := by decide +kernel
 example : reducesOn arr_incr.deep (Array.repeat 4#usize 0#u32 ::ₑ 1#usize ::ₑ .nil)
     (Std.Array.set (Array.repeat 4#usize 0#u32) 1#usize 1#u32) := by native_decide
+example : (execOn arr_lit.deep (1#u32 ::ₑ 2#u32 ::ₑ .nil)).map (·.val) = some [1#u32, 2#u32] := by
+  decide +kernel
 
 /-- The calls of a compiled body -/
 example : (Compile.compile sum.deep).toOption.map (fun s => s.calls.map (·.f)) =

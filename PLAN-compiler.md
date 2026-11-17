@@ -623,3 +623,166 @@ recursive C functions (no tail-call promise); no memory management for vectors; 
 warnings `clang -Wall` emits on the output (`-Wparentheses-equality`, unused temporaries)
 are cosmetic and disabled by the harness scripts.
 
+### P.2 Instances, external types, the first iterator primitive (2026-11-16)
+
+**Instances.** The printer prints a generic function once per instance reachable from
+the closed functions (and from the `entries` the user asks for): the type and
+const-generic parameters (`Ty.var i`, `CArg.var i`) are resolved through the environment
+of the instance, every descriptor the printer reads going through `resolve`, and the
+instance is named after its arguments (`pair_swap__u32`). The worklist lives in Lean
+(`CPrint.program`): the driver packages every deep term of the crate as an `AnyDeep` (the
+generic ones instantiated with `Nat` and `0`, an interpretation the printer never reads)
+and the call sites of a printed body (`crateFun`, from the `call` nodes) feed the
+worklist. Checked by the harness: the generic `pair_swap` of the hand-written tests is
+printed at `u32` for its closed caller.
+
+**External types.** `externals := [(name, definition)]` on `#deep_c` gives the C
+definitions of the opaque types of the closed world; `subtle::Choice` is
+`struct subtle_Choice { uint8_t f0; };`.
+
+**`Range<usize>::next`.** The first iterator primitive, `rangeNextUsize` in `Basic.lean`
+(the `Iterator` impl of `Range` at the `Step` instance of `usize`, recognised by the
+printer of the deep terms through `prim_required_impl`, with no type argument), rendered
+by the C printer as the comparison of the bounds and the step of the start (the model
+only fails on a `Step` invariant, impossible for `usize`). The `for i in a..b` loops of
+dalek go through it.
+
+**Numbers.** Compiler coverage on dalek: 1,234 of the 1,912 deep terms (1,144 after
+phase C: the 122 `for` loops over ranges and their callers); the test suite is unchanged
+(276 of 460, its loops are `while` loops). C: the `loops` crate prints 59 instances of
+its 109 deep terms (the generic ones are now counted, and printed when reached) and the
+harness still passes; dalek prints 1,112 function instances (947 before): 31,000 lines of
+C compiled by `clang -std=c11 -Wall` without a warning, including the
+`conditional_assign`/`conditional_swap` family on `subtle::Choice`, the `for` loops of the
+field and scalar arithmetic (`add_assign`, `Scalar52::add`, `from_bytes`,
+`from_montgomery`) and the global constants. The remaining refusals of the printer are
+the iterator adapter types (`Rev<Range<usize>>` 36, `StepBy` 20, `RangeInclusive` 4,
+`Iter`/`IterMut` 6) and 6 closures in values; 27 deep terms have no compiled code (a
+noncomputable leaf) and are skipped by the driver.
+
+**Next.** The adapters `Rev` and `StepBy` over ranges (the next iterator primitives,
+which also need their types in the closed world as structures over a `Range`), the
+`Array` literals (59 terms), `Into::into` and the `subtle` trait methods.
+
+### P.3 The iterator adapters over ranges (2026-11-17)
+
+The next blockers of the plan: `Rev<Range<usize>>` and `StepBy<Range<usize>>`, used by
+the `for i in (a..b).rev()` and `step_by(k)` loops of dalek.
+
+**Types.** `Rev` and `StepBy` become builtin types of the library (`BuiltinTy.rev`,
+`.stepBy`), with the variants of their Lean models (`Rev I = { iter }`,
+`StepBy I = { iter, step_by }`) and the constructor, projector and eliminator instances,
+so that the C printer lays them out as structs over the range. The printer of the deep
+terms refers to them (`builtin_type_refs`) without building or inspecting their values
+(the deep terms only pass them through the primitives), as for `Vec`.
+
+**Primitives.** Four primitives at `usize` (`rangeRevUsize`, `revRangeNextUsize`,
+`rangeStepByUsize`, `stepByRangeNextUsize`), whose implementations are the
+standard-library models at the `Step` instance of `usize` (`Iterator::rev` is
+`Rev { iter }`, `Rev::next` is `next_back`, which steps the end down; `step_by` fails on a
+zero step; `StepBy::next` is `next` followed by `step - 1` skips, hence the start advanced
+by the step and bounded by the end). The C printer renders them accordingly. The printer
+of the deep terms recognises the calls through a table of specifications
+(`prim_required_impl`): the trait instances the call must be at (`IteratorRange
+StepUsize`, the `DoubleEndedIterator` of `Range`), and, for the primitives at a single
+instance, the instantiated signature it must have (as deep descriptors), which also
+fixes the imprecision of `Range::next` (a `Range<u8>` would have matched).
+
+**Checked** by the hand-written harness: the five range primitives as shallow one-liners
+(`range_next`, `range_rev`, `rev_next`, `range_step_by`, `step_by_next`, whose `deep_eq`
+are reflexivity) against values computed from the models (`rev_next (0..3)` is
+`some 2, 0..2`; `step_by (0..10) 3` yields `0, 3, 6, 9` then `none`; `step_by 0` panics).
+
+**Numbers.** On dalek all 36 `rev` and `Rev::next` sites and all 20 `step_by` and
+`StepBy::next` sites are primitives now; the compiler covers 1,270 of the 1,912 deep
+terms (1,234 before), and the C printer prints 1,204 function instances (1,112 before):
+34,000 lines, `clang -std=c11 -Wall` warning-free, with the reversed-range loops of the
+Pippenger multiscalar multiplication among them. The `step_by` loops (the `mul_base` of
+the basepoint tables) are still outside the fragment, blocked by `LookupTable::select`,
+a function with trait clauses: on dalek the `StepBy` rendering is exercised by the
+harness only. The printer refuses 26 terms for an
+opaque type (`RangeInclusive` 4, the slice iterators `Iter`/`IterMut` 22) and 6 for a
+closure in a value; the compiler's largest remaining blockers are the `Array` literals
+(59), `Into::into` (32), `into_iter`/`next` through trait clauses (about 80: the
+`for x in slice` loops), the `subtle` methods (`conditional_negate` 22), `Ord::cmp` on
+`i8` (20), `LookupTable::select` (18, a function with trait clauses), `Clone for [T; N]`
+and `as_mut_slice` (17 each) and `@getTarget` (15).
+
+**Next.** The `Array` literals (a node of the deep AST, with its compilation and the
+proof case) and the slice iterators (`Iter<T>::next`, `iter()`, `into_iter` on slices and
+arrays: a primitive over a slice and an index would cover the `for x in slice` loops).
+
+### A.5 Array literals (2026-11-17)
+
+The `Array` literals (59 terms on dalek, the constant tables of the field arithmetic and
+the lookup tables; `copy_carray` in the tests) were leaves. They are a node of the deep
+AST now: `array τ n h es` with `es : Exprs … (List.replicate n τ)`, denoting
+`Env.toArray h (es.denote env)`, that is `Array.make n [e₁, …, eₙ]` exactly as the shallow
+printer prints them (the `deep_eq` theorems stay reflexivity; the length proof of
+`Array.make` is hidden inside `Env.toArray`, so that the correctness proof rewrites the
+elements without a dependent-proof motive). The IR has the same node, the compiler maps
+one to the other, the proof case is the one of `tuple`, and the C printer prints a
+compound literal of the array struct. The printer of the deep terms finds the literals as
+structure updates of the builtin array type (`StructUpdate` with `TBuiltin TArray`, the
+elements by field index), which is how the pure AST represents array aggregates, not
+as constructor applications (a first attempt matched `AdtCons` and never fired).
+
+**Numbers.** All 59 array literals of dalek are nodes (100 in the deep file, counting
+the four target configurations): the compiler covers 1,329 of the 1,912 deep terms
+(1,270 before) and the C printer prints 1,263 function instances (1,204 before): 40,000
+lines, `clang -std=c11 -Wall` warning-free, the constant tables of the field and scalar
+arithmetic among them (nullary functions returning the array compound literal). The test
+suite gains the two `copy_carray` constants (278 of 460), the loops harness exercises the
+printed constant and no longer needs its stub, and the hand-written `arr_lit` is checked
+by the harness.
+
+**Next.** The slice iterators (`Iter<T>::next`, `iter()`, `into_iter` on slices and
+arrays: about 25 concrete sites, plus the loops through trait clauses they would unblock),
+`Into::into` (32), the `subtle` methods, `Clone for [T; N]` and `as_mut_slice` (17 each).
+
+### A.6 The slice iterators (2026-11-17)
+
+`slice::Iter<T>` becomes a builtin type of the library (`BuiltinTy.sliceIter`, the slice
+and an index; the index of the Lean model is a `Nat`, described as a `usize` for the C
+layout, which nothing in the verified part depends on since the deep terms never build or
+inspect an iterator), with four primitives generic in the element type: `[T]::iter`,
+`into_iter` on `&[T]` and on `&[T; N]`, and `Iter<T>::next` (the element at the index if
+it is below the length, the index stepped). The C printer renders the iterator as the
+slice view and the index; the printer of the deep terms maps the four standard-library
+functions through `prim_table` (no trait instance to check). Checked by the hand-written
+harness (`slice_iter`, `slice_into_iter`, `array_into_iter`, `slice_iter_next`: the
+elements in order, then `none`). The test crates do not use slice iterators.
+
+**Numbers.** On dalek the 30 slice-iterator sites (5 `iter`, 8 `into_iter`, 17 `next`)
+are primitives; the compiler covers 1,341 of the 1,912 deep terms (1,329 before) and the
+C printer prints 1,291 function instances (1,263 before): 41,000 lines,
+`clang -std=c11 -Wall` warning-free. The printer refuses 16 terms (opaque
+`RangeInclusive`, `IterMut`, the Rust `Result` and `CtOption` types, and 6 closures in
+values). The compiler's remaining blockers are the calls through trait clauses
+(`into_iter`/`next` of generic iterators, about 80, in functions outside the closed
+world), `Into::into` (32), the `subtle` methods (`conditional_negate` 22), `Ord::cmp`
+on `i8` (20), `LookupTable::select` (18), `as_mut_slice` and `Clone for [T; N]` (17 each)
+and `@getTarget` (15).
+
+**Next.** `Into::into` at concrete instances (`u64::from(u32)`-style conversions), the
+Rust `Result` as a builtin type with variants (for the printer), `as_mut_slice` and
+`Clone for [T; N]` as primitives (an identity and a copy), and the `subtle` methods on
+`u64` as primitives of their models.
+
+## 12. A complete example: modular inversion (2026-11-17)
+
+`tests/src/modinv.rs` (the test crate `Modinv`) computes `a⁻¹ = a^(P-2) mod P` for the
+prime `P` below `2^32` by square-and-multiply; everything is first-order checked
+arithmetic, a `while` loop and calls. `tests/lean/Modinv/Example.lean` walks through the
+pipeline: the generated deep terms and their reflexive `deep_eq` theorems, `#deep_report`
+(the five functions and the constant compile), the end-to-end theorems
+`inv_mod_ir_correct`/`pow_mod_ir_correct` (`compile_correct` composed with `deep_eq`: the
+IR program computes the translated function), and the sample values by `native_decide`
+(`3⁻¹ = 1431655764`, on the translated function and on the IR interpreter).
+`Modinv/GenC.lean` prints the C (six functions, 130 lines: the constant as a nullary
+function, `mul_mod` with its overflow and division checks, the loop body returning the
+`ControlFlow` union, the loop threading its tuple state), and `Modinv/C/run.sh` compiles
+it with `Modinv/C/harness.c` and checks the same values, the inverses of `2` and
+`123456789`, `pow_mod 2 10`, `inv_mod 0`, and the overflow of `mul_mod` on operands above
+`P`, which the C reports as the model does.
+

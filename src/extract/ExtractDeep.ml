@@ -172,6 +172,9 @@ let builtin_type_refs : (string * string * bool) list =
     ("alloc.vec.Vec", ".vec", false);
     ("core.ops.range.Range", ".range", true);
     ("Ordering", ".ordering", true);
+    ("core.iter.adapters.rev.Rev", ".rev", false);
+    ("core.iter.adapters.step_by.StepBy", ".stepBy", false);
+    ("core.slice.iter.Iter", ".sliceIter", false);
   ]
 
 (** The builtin functions the library describes ([Aeneas.Deep.Prim]), identified
@@ -187,15 +190,98 @@ let prim_table : (string * string) list =
     ("alloc.vec.Vec.new", ".vecNew");
     ("alloc.vec.Vec.index", ".vecIndex");
     ("alloc.vec.Vec.index_mut", ".vecIndexMut");
+    ("core.iter.range.IteratorRange.next", ".rangeNextUsize");
+    ("core.iter.traits.iterator.Iterator.rev.trait_default", ".rangeRevUsize");
+    ( "core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next",
+      ".revRangeNextUsize" );
+    ( "core.iter.traits.iterator.Iterator.step_by.trait_default",
+      ".rangeStepByUsize" );
+    ("core.iter.adapters.step_by.IteratorStepBy.next", ".stepByRangeNextUsize");
+    ("core.slice.Slice.iter", ".sliceIter");
+    ( "SharedSlice.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter",
+      ".sliceIntoIter" );
+    ( "SharedArray.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter",
+      ".arrayIntoIter" );
+    ("core.slice.iter.IteratorSliceIter.next", ".sliceIterNext");
   ]
 
-(** The trait instance at which a primitive with a trait clause is modelled
-    ([Vec::index] at a [usize] index), keyed by the extraction name of the
-    builtin: a call at another instance stays a leaf *)
-let prim_required_impl : (string * string) list =
+(** A primitive modelled at fixed trait instances ([Vec::index] at a [usize]
+    index, the iterators over [Range<usize>]): a call at another instance stays
+    a leaf *)
+type prim_spec = {
+  impls : string list;
+      (** The trait instances the call must be at, in the order of the trait
+          clauses of the builtin *)
+  keep_targs : int;
+      (** The number of type arguments the primitive keeps (the others are fixed
+          by the instances) *)
+  signature : (string list * string) option;
+      (** For a primitive at a single instance, the instantiated signature the
+          call must have, as deep descriptors *)
+}
+
+let d_usize = "(.scalar (.u .Usize))"
+let d_range_usize = "(.adt (.builtin .range) [" ^ d_usize ^ "] [])"
+let d_option_usize = "(.adt (.builtin .option) [" ^ d_usize ^ "] [])"
+let d_rev_range = "(.adt (.builtin .rev) [" ^ d_range_usize ^ "] [])"
+let d_step_by_range = "(.adt (.builtin .stepBy) [" ^ d_range_usize ^ "] [])"
+let d_result t = "(.result " ^ t ^ ")"
+let d_pair a b = "(.tuple [" ^ a ^ ", " ^ b ^ "])"
+let impl_range = "core.iter.traits.iterator.IteratorRange"
+let impl_range_de = "core.ops.range.Range.Insts.DoubleEndedIterator"
+
+(** The primitives at fixed trait instances, keyed by the extraction name of the
+    builtin *)
+let prim_required_impl : (string * prim_spec) list =
   [
-    ("alloc.vec.Vec.index", "core.slice.index.SliceIndexUsizeSlice");
-    ("alloc.vec.Vec.index_mut", "core.slice.index.SliceIndexUsizeSlice");
+    ( "alloc.vec.Vec.index",
+      {
+        impls = [ "core.slice.index.SliceIndexUsizeSlice" ];
+        keep_targs = 1;
+        signature = None;
+      } );
+    ( "alloc.vec.Vec.index_mut",
+      {
+        impls = [ "core.slice.index.SliceIndexUsizeSlice" ];
+        keep_targs = 1;
+        signature = None;
+      } );
+    ( "core.iter.range.IteratorRange.next",
+      {
+        impls = [ "core.iter.range.StepUsize" ];
+        keep_targs = 0;
+        signature =
+          Some
+            ([ d_range_usize ], d_result (d_pair d_option_usize d_range_usize));
+      } );
+    ( "core.iter.traits.iterator.Iterator.rev.trait_default",
+      {
+        impls = [ impl_range; impl_range_de ];
+        keep_targs = 0;
+        signature = Some ([ d_range_usize ], d_result d_rev_range);
+      } );
+    ( "core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next",
+      {
+        impls = [ impl_range_de ];
+        keep_targs = 0;
+        signature =
+          Some ([ d_rev_range ], d_result (d_pair d_option_usize d_rev_range));
+      } );
+    ( "core.iter.traits.iterator.Iterator.step_by.trait_default",
+      {
+        impls = [ impl_range ];
+        keep_targs = 0;
+        signature = Some ([ d_range_usize; d_usize ], d_result d_step_by_range);
+      } );
+    ( "core.iter.adapters.step_by.IteratorStepBy.next",
+      {
+        impls = [ impl_range ];
+        keep_targs = 0;
+        signature =
+          Some
+            ( [ d_step_by_range ],
+              d_result (d_pair d_option_usize d_step_by_range) );
+      } );
   ]
 
 (** The name of the generated enumerations of the function and global names *)
@@ -227,7 +313,7 @@ type closed_fun_info = {
       (** The function as an [Aeneas.Deep.FunRef]: [(.crate FunName.f)] or
           [(.prim .vecLen)] *)
   is_prim : bool;
-  prim_impl : string option;
+  prim_impl : prim_spec option;
       (** The trait instance the primitive requires (see {!prim_required_impl})
       *)
   keep_fun_types : bool list option;
@@ -242,20 +328,21 @@ type closed_fun_info = {
 let fun_world : (int * (int * bool) option, closed_fun_info) Hashtbl.t =
   Hashtbl.create 64
 
-(** Is a call at the trait instance its primitive requires (if any)? *)
+(** Is a call at the trait instances its primitive requires (if any)? *)
 let prim_impl_matches (span : Meta.span) (ctx : extraction_ctx)
     (info : closed_fun_info) (generics : generic_args) : bool =
   match info.prim_impl with
   | None -> true
-  | Some impl_name -> (
-      match generics.trait_refs with
-      | [ tr ] -> (
-          match tr.trait_id with
-          | TraitImpl (id, _) -> (
-              try ctx_get_trait_impl span id ctx = impl_name
-              with Errors.CFailure _ -> false)
-          | _ -> false)
-      | _ -> false)
+  | Some spec ->
+      List.length generics.trait_refs = List.length spec.impls
+      && List.for_all2
+           (fun (tr : trait_ref) impl_name ->
+             match tr.trait_id with
+             | TraitImpl (id, _) -> (
+                 try ctx_get_trait_impl span id ctx = impl_name
+                 with Errors.CFailure _ -> false)
+             | _ -> false)
+           generics.trait_refs spec.impls
 
 let fun_world_key (id : FunDeclId.id) (lp : (LoopId.id * bool) option) :
     int * (int * bool) option =
@@ -1503,6 +1590,33 @@ let rec extract_deep_texpr (span : Meta.span) (ctx : extraction_ctx)
             (Option.value expected ~default:e.ty)
             e)
   | App _ | Qualif _ -> extract_deep_app span ctx tenv fresh env fmt ?expected e
+  | StructUpdate { struct_id = TBuiltin TArray; init = None; updates }
+    when match e.ty with
+         | TAdt (TBuiltin TArray, { types = [ _ ]; _ }) -> true
+         | _ -> false ->
+      (* An array literal (a structure update of the builtin array type): an
+         [array] node, the elements in the order of their index *)
+      let elem =
+        match e.ty with
+        | TAdt (TBuiltin TArray, { types = [ elem ]; _ }) -> elem
+        | _ -> [%internal_error] span
+      in
+      let values =
+        List.map snd
+          (List.sort (fun (f1, _) (f2, _) -> FieldId.compare_id f1 f2) updates)
+      in
+      F.pp_open_hovbox fmt ctx.indent_incr;
+      F.pp_print_string fmt
+        ("(.array "
+        ^ deep_ty_def span ctx tenv elem
+        ^ " "
+        ^ string_of_int (List.length values)
+        ^ " (by decide)");
+      F.pp_print_space fmt ();
+      extract_deep_exprs span ctx tenv fresh env fmt
+        (List.map (fun v -> (v, elem)) values);
+      F.pp_print_string fmt ")";
+      F.pp_close_box fmt ()
   | StructUpdate supd -> (
       let ty = Option.value expected ~default:e.ty in
       (* A structure of the closed world with all its fields: a constructor
@@ -2037,16 +2151,25 @@ and extract_deep_app (span : Meta.span) (ctx : extraction_ctx)
             make_subst_from_generics info.fun_decl.signature.generics generics
           in
           let isig = fun_sig_substitute subst info.fun_decl.signature in
-          let targs = filter_type_args info.keep_fun_types generics.types in
-          (* The primitives at a fixed trait instance have a single type
-             parameter, the element type *)
-          let targs =
-            match (info.prim_impl, targs) with
-            | Some _, t :: _ -> [ t ]
-            | _ -> targs
+          let sig_ok =
+            match info.prim_impl with
+            | Some { signature = Some (inputs, output); _ } ->
+                List.map (deep_ty_def span ctx tenv) isig.inputs = inputs
+                && deep_ty_def span ctx tenv isig.output = output
+            | _ -> true
           in
-          extract_deep_call span ctx tenv fresh env fmt info.fun_ref targs
-            generics.const_generics isig.inputs isig.output args
+          if not sig_ok then eta_leaf q
+          else
+            let targs = filter_type_args info.keep_fun_types generics.types in
+            (* The primitives at fixed trait instances keep only the type
+               arguments the instances do not fix *)
+            let targs =
+              match info.prim_impl with
+              | Some spec -> List.filteri (fun i _ -> i < spec.keep_targs) targs
+              | None -> targs
+            in
+            extract_deep_call span ctx tenv fresh env fmt info.fun_ref targs
+              generics.const_generics isig.inputs isig.output args
       | _ -> eta_leaf q)
   | ( Qualif
         { id = FunOrOp (Fun (Pure ToResult)); generics = { types = [ t ]; _ } },

@@ -41,6 +41,45 @@ int main(void) {
   rc = vec_set(v, 2, 9, &w);          CHECK(rc == 0 && w.ptr[2] == 9 && w.len == 3, "vec_set in place");
   rc = vec_set(v, 3, 9, &w);          CHECK(rc == AENEAS_ARRAY_OUT_OF_BOUNDS, "vec_set out of bounds");
   rc = use_incr();                    CHECK(rc == 0, "use_incr");
+  CHECK(use_pair_swap(mk_pair(1, 2)) == 2, "use_pair_swap (1,2) = 2 (generic pair_swap at u32)");
+  CHECK(pair_swap__u32(mk_pair(1, 2)).f0 == 2, "pair_swap__u32 is the printed instance");
+  arr_u32_2 al = arr_lit(1, 2);
+  CHECK(al.data[0] == 1 && al.data[1] == 2, "arr_lit 1 2 = [1, 2]");
+  /* the slice iterators */
+  uint32_t sbuf[3] = { 7, 8, 9 };
+  slice_u32 sl = { sbuf, 3 };
+  sliceIter__u32 it;
+  rc = slice_iter(sl, &it);               CHECK(rc == 0 && it.f0.ptr == sbuf && it.f0.len == 3 && it.f1 == 0, "slice_iter");
+  rc = slice_into_iter(sl, &it);          CHECK(rc == 0 && it.f0.len == 3 && it.f1 == 0, "slice_into_iter");
+  tup2_option__u32_sliceIter__u32 sx;
+  rc = slice_iter_next(it, &sx);          CHECK(rc == 0 && sx.f0.tag == 1 && sx.f0.u.v1.f0 == 7 && sx.f1.f1 == 1, "slice_iter_next = some 7, index 1");
+  rc = slice_iter_next(sx.f1, &sx); rc = slice_iter_next(sx.f1, &sx);
+  CHECK(rc == 0 && sx.f0.tag == 1 && sx.f0.u.v1.f0 == 9 && sx.f1.f1 == 3, "slice_iter_next = some 9, index 3");
+  rc = slice_iter_next(sx.f1, &sx);       CHECK(rc == 0 && sx.f0.tag == 0, "slice_iter_next exhausted");
+  arr_u32_2 ai = arr_lit(5, 6);
+  rc = array_into_iter(ai, &it);          CHECK(rc == 0 && it.f0.len == 2 && it.f0.ptr[1] == 6 && it.f1 == 0, "array_into_iter");
+  /* the iterators over ranges */
+  range__usize r03 = { 0, 3 }, r11 = { 1, 1 }, r010 = { 0, 10 };
+  tup2_option__usize_range__usize nx;
+  rc = range_next(r03, &nx);
+  CHECK(rc == 0 && nx.f0.tag == 1 && nx.f0.u.v1.f0 == 0 && nx.f1.f0 == 1 && nx.f1.f1 == 3, "range_next (0..3) = some 0, 1..3");
+  rc = range_next(r11, &nx);              CHECK(rc == 0 && nx.f0.tag == 0, "range_next (1..1) = none");
+  rev__range__usize rv;
+  rc = range_rev(r03, &rv);               CHECK(rc == 0 && rv.f0.f0 == 0 && rv.f0.f1 == 3, "range_rev (0..3)");
+  tup2_option__usize_rev__range__usize rn;
+  rc = rev_next(rv, &rn);
+  CHECK(rc == 0 && rn.f0.tag == 1 && rn.f0.u.v1.f0 == 2 && rn.f1.f0.f0 == 0 && rn.f1.f0.f1 == 2, "rev_next (0..3) = some 2, 0..2");
+  rev__range__usize rv0 = { { 1, 1 } };
+  rc = rev_next(rv0, &rn);                CHECK(rc == 0 && rn.f0.tag == 0, "rev_next (1..1) = none");
+  stepBy__range__usize sb;
+  rc = range_step_by(r03, 0, &sb);        CHECK(rc == AENEAS_PANIC, "step_by 0 panics");
+  rc = range_step_by(r010, 3, &sb);       CHECK(rc == 0 && sb.f0.f0 == 0 && sb.f0.f1 == 10 && sb.f1 == 3, "range_step_by (0..10) 3");
+  tup2_option__usize_stepBy__range__usize sn;
+  rc = step_by_next(sb, &sn);
+  CHECK(rc == 0 && sn.f0.tag == 1 && sn.f0.u.v1.f0 == 0 && sn.f1.f0.f0 == 3, "step_by_next = some 0, start 3");
+  rc = step_by_next(sn.f1, &sn); rc = step_by_next(sn.f1, &sn); rc = step_by_next(sn.f1, &sn);
+  CHECK(rc == 0 && sn.f0.tag == 1 && sn.f0.u.v1.f0 == 9 && sn.f1.f0.f0 == 10, "step_by_next = some 9, start bounded by the end");
+  rc = step_by_next(sn.f1, &sn);          CHECK(rc == 0 && sn.f0.tag == 0, "step_by_next exhausted");
   printf("%d failure(s)\n", failures);
   return failures;
 }

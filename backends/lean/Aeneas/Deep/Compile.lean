@@ -72,6 +72,7 @@ mutual
     | .decide c => do pure (.decide (← compileCond c))
     | .ite c t e => do pure (.ite (← compileCond c) (← compileExpr t) (← compileExpr e))
     | .tuple es => do pure (.tuple (← compileExprs es))
+    | .array τ n h es => do pure (.array τ n h (← compileExprs es))
     | @Expr.ctor _ _ _ _ _ _ _ _ T v inst targs cargs fields h args => do
       pure (@IExpr.ctor _ _ _ _ _ _ _ _ T v inst targs cargs fields h (← compileExprs args))
     | @Expr.proj _ _ _ _ _ _ _ _ T f inst targs cargs τ h e => do

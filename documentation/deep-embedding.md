@@ -88,9 +88,12 @@ projector (`ProjFn`, one per field of a structure) and eliminator (`ElimFn`, `T.
 with a constant motive) instances are generated: they are what the `ctor`, `proj` and
 `match_` nodes denote to. The variants are described for the local inductive types; the
 library provides them, with the instances, for the builtin `Option`, `Range` and
-`Ordering`. The other builtin and opaque types (`Vec`, `String`, …) are in the closed
-world without variants (their values can only flow through the deep terms, not be built
-or inspected).
+`Ordering`, and for the iterators `Rev`, `StepBy` and `slice::Iter` (as their Lean
+models, structures over the inner iterator or the slice, so that the C printer can lay
+them out; the printer of the deep terms does not build or inspect their values, which
+flow through the primitives `rev`, `step_by`, `iter`, `into_iter` and `next`). The other builtin and opaque types
+(`Vec`, `String`, …) are in the closed world without variants (their values can only
+flow through the deep terms, not be built or inspected).
 
 Tuple structs are tuples, and type declarations with trait clauses are not in the closed
 world (their instantiations become type variables of the terms which use them, see
@@ -207,6 +210,7 @@ the values of the variables (`x ::ₑ y ::ₑ .nil`).
 | `assert c` | `massert c` | `massert` |
 | `ok e`, `fail τ err` | `ok e`, `fail err` | `Result.ok`, `Result.fail` |
 | `tuple es` | a tuple | right-nested pairs |
+| `array τ n h es` | an array literal `[e₁, …, eₙ]` (`Array.make n [e₁, …, eₙ]`), `es` the `n` elements | `Env.toArray` |
 | `ctor T v targs cargs fields h args` | the constructor of variant `v` of the type `T : TypeRef N` applied to `args` | the `CtorFn` instance |
 | `proj T f targs cargs τ h e` | the projection of field `f` of the structure `T` | the `ProjFn` instance |
 | `match_ T targs cargs shape h s brs` | `match s with …`, one branch per variant | the `ElimFn` instance |
@@ -382,21 +386,30 @@ set_option maxHeartbeats 0 in
 
 `Aeneas/Deep/CPrint.lean` is the *trusted* printer from the IR to C (phase P of
 `PLAN-compiler.md`): a plain function `printFunction` over `Stmt`, with no proof, kept
-small enough to review. `#deep_c "file.c"` (`CDriver.lean`) compiles every closed deep
-term of the environment (the functions and globals without type or const-generic
-parameters), prints the ones in the fragment and writes the translation unit:
+small enough to review. `#deep_c "file.c" crate` (`CDriver.lean`) compiles the deep terms
+of the crate (the namespace of its generated enumerations), prints the function
+instances reachable from the closed functions (those without type or const-generic
+parameters; a generic function is printed once per instance it is called at, named after
+its arguments, `list_nth__u32`) and writes the translation unit:
 
 ```lean
 import Aeneas.Deep.CDriver
 import MyCrate.Deep
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
-#deep_c "mycrate.c"
+#deep_c "mycrate.c" MyCrate
+  externals := [("subtle_Choice", "struct subtle_Choice { uint8_t f0; };")]
+  entries := [("list_nth", [.scalar (.u .U32)], [])]
 ```
 
-The command evaluates the printer with the Lean interpreter (`evalExpr`), which needs the
-generated enumerations to derive `Repr` (the printer derives the C names of the functions,
-globals and types from the names of their constructors; `-deep` emits the `deriving`).
+`externals` gives the C definitions of the opaque types of the closed world (external
+types, by C name), `entries` asks for instances of generic functions which no closed
+function reaches. The command evaluates the printer with the Lean interpreter
+(`evalExpr`), which needs the generated enumerations to derive `Repr` (the printer
+derives the C names of the functions, globals and types from the names of their
+constructors; `-deep` emits the `deriving`); the tables of the crate (`FunNames`,
+`GlobalNames`), which may be noncomputable, are never consulted by the printer and are
+replaced by stand-ins.
 What the C realisation decides, and is trusted for, is listed at the top of `CPrint.lean`:
 the C types (scalars to `<stdint.h>`, tuples and ADTs to structs and tagged unions,
 arrays to structs holding a C array, slices and vectors to pointer-and-length *views*
@@ -407,6 +420,12 @@ read, then stores through the recorded container and index). A function outside 
 fragment, or using a type the printer does not support (type variables, recursive or opaque
 types, strings, closures as values), is printed as a comment and reported; its callers
 get a prototype.
+
+A complete example, from the Rust source to the C run against Lean's values, is the test
+crate `Modinv` (`tests/src/modinv.rs`, a modular inversion by Fermat's little theorem):
+`tests/lean/Modinv/Example.lean` walks through the deep terms, the compilation, the
+end-to-end theorem and the sample values, `Modinv/GenC.lean` prints the C and
+`Modinv/C/run.sh` runs it against the harness.
 
 The printer is checked by differential testing: `Aeneas/Deep/Tests/C/run.sh` generates
 the C of the hand-written terms of `Tests.lean`, compiles it with `harness.c` and runs the

@@ -181,6 +181,12 @@ inductive BuiltinTy where
   | vec
   | range
   | ordering
+  /-- `core::iter::adapters::rev::Rev` (modelled as a structure over the inner iterator) -/
+  | rev
+  /-- `core::iter::adapters::step_by::StepBy` (modelled as the inner iterator and the step) -/
+  | stepBy
+  /-- `core::slice::iter::Iter` (modelled as the slice and an index) -/
+  | sliceIter
   deriving DecidableEq, Repr
 
 /-- A type name: a builtin type, or a type of the crate -/
@@ -249,6 +255,9 @@ def CArg.denote (κ : List Usize) : CArg → Usize
   | .vec, ρ => alloc.vec.Vec (tyAt ρ.types 0)
   | .range, ρ => core.ops.range.Range (tyAt ρ.types 0)
   | .ordering, _ => Ordering
+  | .rev, ρ => core.iter.adapters.rev.Rev (tyAt ρ.types 0)
+  | .stepBy, ρ => core.iter.adapters.step_by.StepBy (tyAt ρ.types 0)
+  | .sliceIter, ρ => core.slice.iter.Iter (tyAt ρ.types 0)
 
 /-- The field types of the variants of the builtin types, over their parameters -/
 @[reducible] def BuiltinTy.variants {N : Type} : BuiltinTy → List (List (Ty N))
@@ -256,6 +265,12 @@ def CArg.denote (κ : List Usize) : CArg → Usize
   | .vec => []
   | .range => [[.var 0, .var 0]]
   | .ordering => [[], [], []]
+  | .rev => [[.var 0]]
+  | .stepBy => [[.var 0, .scalar (.u .Usize)]]
+  -- The index of the model is a `Nat`, described as a `usize` for the layout of a C
+  -- realisation; the deep terms never build or inspect a slice iterator (there are no
+  -- `CtorFn`/`ProjFn`/`ElimFn` instances), they go through the primitives
+  | .sliceIter => [[.slice (.var 0), .scalar (.u .Usize)]]
 
 @[reducible] def TypeRef.denote {N : Type} [TypeNames N] : TypeRef N → TyEnv → Type
   | .builtin b, ρ => b.denote ρ
@@ -340,6 +355,18 @@ instance : CtorFn N (.builtin .ordering) 2 := ⟨fun _ => Ordering.gt⟩
 instance : ElimFn N (.builtin .ordering) :=
   ⟨fun _ => fun x alts => Ordering.casesOn x alts.1 alts.2.1 alts.2.2.1⟩
 
+instance : CtorFn N (.builtin .rev) 0 := ⟨fun _ => fun it => core.iter.adapters.rev.Rev.mk it⟩
+instance : ProjFn N (.builtin .rev) 0 := ⟨fun _ => fun r => r.iter⟩
+instance : ElimFn N (.builtin .rev) :=
+  ⟨fun _ => fun x alts => core.iter.adapters.rev.Rev.casesOn x alts.1⟩
+
+instance : CtorFn N (.builtin .stepBy) 0 :=
+  ⟨fun _ => fun it n => core.iter.adapters.step_by.StepBy.mk it n⟩
+instance : ProjFn N (.builtin .stepBy) 0 := ⟨fun _ => fun s => s.iter⟩
+instance : ProjFn N (.builtin .stepBy) 1 := ⟨fun _ => fun s => s.step_by⟩
+instance : ElimFn N (.builtin .stepBy) :=
+  ⟨fun _ => fun x alts => core.iter.adapters.step_by.StepBy.casesOn x alts.1⟩
+
 end
 
 /-- The signature of a function, over its type and const-generic parameters -/
@@ -410,6 +437,25 @@ inductive Prim where
   | vecIndex
   /-- `Vec::index_mut` at a `usize` index -/
   | vecIndexMut
+  /-- `Range<usize>::next` (the `Iterator` impl of `Range` at the `Step` instance of
+  `usize`) -/
+  | rangeNextUsize
+  /-- `Iterator::rev` on `Range<usize>` -/
+  | rangeRevUsize
+  /-- `Rev<Range<usize>>::next` -/
+  | revRangeNextUsize
+  /-- `Iterator::step_by` on `Range<usize>` (fails on a zero step) -/
+  | rangeStepByUsize
+  /-- `StepBy<Range<usize>>::next` -/
+  | stepByRangeNextUsize
+  /-- `[T]::iter` -/
+  | sliceIter
+  /-- `IntoIterator::into_iter` on `&[T]` -/
+  | sliceIntoIter
+  /-- `IntoIterator::into_iter` on `&[T; N]` -/
+  | arrayIntoIter
+  /-- `slice::Iter<T>::next` -/
+  | sliceIterNext
   deriving DecidableEq, Repr
 
 /-- The signature and the implementation of each primitive: `.var 0` is the element type,
@@ -460,6 +506,49 @@ inductive Prim where
       .result (.tuple [.var 0, .arrow (.var 0) (.adt (.builtin .vec) [.var 0] [])])⟩,
      fun ρ => @alloc.vec.Vec.index_mut (tyAt ρ.types 0) Usize (tyAt ρ.types 0)
        (core.slice.index.SliceIndexUsizeSlice (tyAt ρ.types 0))⟩
+  | .rangeNextUsize =>
+    ⟨⟨[.adt (.builtin .range) [.scalar (.u .Usize)] []],
+      .result (.tuple [.adt (.builtin .option) [.scalar (.u .Usize)] [],
+        .adt (.builtin .range) [.scalar (.u .Usize)] []])⟩,
+     fun _ => core.iter.range.IteratorRange.next core.iter.range.StepUsize⟩
+  | .rangeRevUsize =>
+    ⟨⟨[.adt (.builtin .range) [.scalar (.u .Usize)] []],
+      .result (.adt (.builtin .rev) [.adt (.builtin .range) [.scalar (.u .Usize)] []] [])⟩,
+     fun _ => core.iter.traits.iterator.Iterator.rev.trait_default
+       (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize)
+       (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize)⟩
+  | .revRangeNextUsize =>
+    ⟨⟨[.adt (.builtin .rev) [.adt (.builtin .range) [.scalar (.u .Usize)] []] []],
+      .result (.tuple [.adt (.builtin .option) [.scalar (.u .Usize)] [],
+        .adt (.builtin .rev) [.adt (.builtin .range) [.scalar (.u .Usize)] []] []])⟩,
+     fun _ => core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
+       (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize)⟩
+  | .rangeStepByUsize =>
+    ⟨⟨[.adt (.builtin .range) [.scalar (.u .Usize)] [], .scalar (.u .Usize)],
+      .result (.adt (.builtin .stepBy) [.adt (.builtin .range) [.scalar (.u .Usize)] []] [])⟩,
+     fun _ => core.iter.traits.iterator.Iterator.step_by.trait_default
+       (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize)⟩
+  | .stepByRangeNextUsize =>
+    ⟨⟨[.adt (.builtin .stepBy) [.adt (.builtin .range) [.scalar (.u .Usize)] []] []],
+      .result (.tuple [.adt (.builtin .option) [.scalar (.u .Usize)] [],
+        .adt (.builtin .stepBy) [.adt (.builtin .range) [.scalar (.u .Usize)] []] []])⟩,
+     fun _ => core.iter.adapters.step_by.IteratorStepBy.next
+       (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize)⟩
+  | .sliceIter =>
+    ⟨⟨[.slice (.var 0)], .result (.adt (.builtin .sliceIter) [.var 0] [])⟩,
+     fun ρ => @core.slice.Slice.iter (tyAt ρ.types 0)⟩
+  | .sliceIntoIter =>
+    ⟨⟨[.slice (.var 0)], .result (.adt (.builtin .sliceIter) [.var 0] [])⟩,
+     fun ρ => @SharedSlice.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter
+       (tyAt ρ.types 0)⟩
+  | .arrayIntoIter =>
+    ⟨⟨[.array (.var 0) (.var 0)], .result (.adt (.builtin .sliceIter) [.var 0] [])⟩,
+     fun ρ => @SharedArray.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter
+       (tyAt ρ.types 0) (ρ.consts.getD 0 (Usize.ofNat 0))⟩
+  | .sliceIterNext =>
+    ⟨⟨[.adt (.builtin .sliceIter) [.var 0] []],
+      .result (.tuple [.adt (.builtin .option) [.var 0] [], .adt (.builtin .sliceIter) [.var 0] []])⟩,
+     fun ρ => @core.slice.iter.IteratorSliceIter.next (tyAt ρ.types 0)⟩
 
 /-- A function name: a primitive, or a function of the crate -/
 inductive FunRef (F : Type) where
@@ -509,6 +598,25 @@ def Env.toTuple {N : Type} [TypeNames N] {σ : TyEnv} :
   | [], .nil => ()
   | [_], .cons x .nil => x
   | _ :: _ :: _, .cons x xs => (x, xs.toTuple)
+
+/-- The list of the values of an environment of `n` values of the same type -/
+def Env.ofReplicate {N : Type} [TypeNames N] {σ : TyEnv} {τ : Ty N} :
+    {n : Nat} → Env N σ (List.replicate n τ) → List (τ.denote σ)
+  | 0, .nil => []
+  | _ + 1, .cons x xs => x :: Env.ofReplicate xs
+
+theorem Env.ofReplicate_length {N : Type} [TypeNames N] {σ : TyEnv} {τ : Ty N} :
+    {n : Nat} → (e : Env N σ (List.replicate n τ)) → (Env.ofReplicate e).length = n
+  | 0, .nil => rfl
+  | _ + 1, .cons _ xs => by simp [Env.ofReplicate, Env.ofReplicate_length xs]
+
+/-- The array of the values of an environment of `n` values (`Array.make`, as the shallow
+printer prints array literals) -/
+def Env.toArray {N : Type} [TypeNames N] {σ : TyEnv} {τ : Ty N} {n : Nat}
+    (h : n ≤ UScalar.cMax .Usize) (e : Env N σ (List.replicate n τ)) :
+    Array (τ.denote σ) (Usize.ofNat n h) :=
+  Array.make (Usize.ofNat n h) (Env.ofReplicate e)
+    (by rw [Env.ofReplicate_length]; exact (UScalar.ofNatCore_val_eq _).symm)
 
 /-- Typed de Bruijn indices. -/
 inductive Var (N : Type) : List (Ty N) → Ty N → Type where
@@ -640,6 +748,9 @@ mutual
     /-- A tuple (two components at least) -/
     | tuple {Γ : List (Ty N)} {tys : List (Ty N)} (es : Exprs N F G σ Γ tys) :
         Expr N F G σ Γ (.tuple tys)
+    /-- An array literal `[e₁, …, eₙ]` (`Array.make n [e₁, …, eₙ]`) -/
+    | array {Γ : List (Ty N)} (τ : Ty N) (n : Nat) (h : n ≤ UScalar.cMax .Usize)
+        (es : Exprs N F G σ Γ (List.replicate n τ)) : Expr N F G σ Γ (.array τ (.lit n h))
     /-- The constructor of variant `v` of `T`, applied to the field values. `fields` are
     the types of the fields at the type arguments: `h` states that they agree with the
     declaration (`rfl` in generated terms). -/
@@ -760,6 +871,7 @@ mutual
     | _, _, .ok e, env => Result.ok (e.denote env)
     | _, _, .fail _ err, _ => Result.fail err
     | _, _, .tuple es, env => (es.denote env).toTuple
+    | _, _, .array _ _ h es, env => Env.toArray h (es.denote env)
     | _, _, .ctor _ _ (inst := inst) targs cargs _ h args, env =>
       Fn.apply (inst.ctor (Ty.argEnv σ targs cargs)) (h ▸ (args.denote env).toHList)
     | _, _, .proj _ _ (inst := inst) targs cargs _ h e, env =>

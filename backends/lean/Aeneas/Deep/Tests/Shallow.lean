@@ -149,6 +149,57 @@ def vec_set (v : alloc.vec.Vec Std.U32) (i : Std.Usize) (x : Std.U32) :
     alloc.vec.Vec.index_mut (core.slice.index.SliceIndexUsizeSlice Std.U32) v i
   ok (index_mut_back x)
 
+/-- A generic function, printed by the C printer at the instances reachable from the
+closed functions (`use_pair_swap`) -/
+def pair_swap {T : Type _} (p : Pair T T) : Pair T T := { x := p.y, y := p.x }
+
+def use_pair_swap (p : Pair Std.U32 Std.U32) : Std.U32 := (pair_swap p).x
+
+/-- An array literal, as the shallow printer prints it -/
+def arr_lit (x y : Std.U32) : Array Std.U32 2#usize := Array.make 2#usize [ x, y ]
+
+/-! The iterators over ranges: the primitives, as the shallow printer calls them -/
+
+def range_next (r : core.ops.range.Range Std.Usize) :
+    Result (Option Std.Usize × core.ops.range.Range Std.Usize) :=
+  core.iter.range.IteratorRange.next core.iter.range.StepUsize r
+
+def range_rev (r : core.ops.range.Range Std.Usize) :
+    Result (core.iter.adapters.rev.Rev (core.ops.range.Range Std.Usize)) :=
+  core.iter.traits.iterator.Iterator.rev.trait_default
+    (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize)
+    (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize) r
+
+def rev_next (r : core.iter.adapters.rev.Rev (core.ops.range.Range Std.Usize)) :
+    Result (Option Std.Usize × core.iter.adapters.rev.Rev (core.ops.range.Range Std.Usize)) :=
+  core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
+    (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize) r
+
+def range_step_by (r : core.ops.range.Range Std.Usize) (n : Std.Usize) :
+    Result (core.iter.adapters.step_by.StepBy (core.ops.range.Range Std.Usize)) :=
+  core.iter.traits.iterator.Iterator.step_by.trait_default
+    (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) r n
+
+def step_by_next (s : core.iter.adapters.step_by.StepBy (core.ops.range.Range Std.Usize)) :
+    Result (Option Std.Usize × core.iter.adapters.step_by.StepBy (core.ops.range.Range Std.Usize)) :=
+  core.iter.adapters.step_by.IteratorStepBy.next
+    (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) s
+
+/-! The slice iterators: the primitives, as the shallow printer calls them -/
+
+def slice_iter (s : Slice Std.U32) : Result (core.slice.iter.Iter Std.U32) :=
+  core.slice.Slice.iter s
+
+def slice_into_iter (s : Slice Std.U32) : Result (core.slice.iter.Iter Std.U32) :=
+  SharedSlice.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter s
+
+def array_into_iter (a : Array Std.U32 2#usize) : Result (core.slice.iter.Iter Std.U32) :=
+  SharedArray.Insts.CoreIterTraitsCollectIntoIteratorSharedIter.into_iter a
+
+def slice_iter_next (it : core.slice.iter.Iter Std.U32) :
+    Result (Option Std.U32 × core.slice.iter.Iter Std.U32) :=
+  core.slice.iter.IteratorSliceIter.next it
+
 /-- A borrow whose backward function escapes: not in the fragment of the compiler -/
 def arr_borrow (a : Array Std.U32 4#usize) (i : Std.Usize) :
     Result (Std.U32 × (Std.U32 → Array Std.U32 4#usize)) :=

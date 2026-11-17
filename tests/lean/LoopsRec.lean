@@ -3244,11 +3244,9 @@ theorem issue400_2.deep_eq (a : Std.I32) (b : Std.I32) (c : Std.I32)
 def copy_carray.CARRAY.deep :
   Aeneas.Deep.Expr TypeName FunName GlobalName ⟨[], []⟩ []
     (.array (.scalar (.u .U32)) (.lit 2 (by decide))) :=
-  (.app (.app (.leaf (.ctor "Array")
-                (.arrow (.scalar (.u .U32)) (.arrow (.scalar (.u .U32)) (.array (.scalar (.u .U32)) (.lit 2 (by decide)))))
-                (fun (i : Std.U32) (i1 : Std.U32) =>
-                (Array.make 2#usize [ i, i1 ] : Array Std.U32 2#usize)))
-    (.uscalarLit .U32 0 (by decide))) (.uscalarLit .U32 1 (by decide)))
+  (.array (.scalar (.u .U32)) 2 (by decide)
+    (.cons (.uscalarLit .U32 0 (by decide))
+      (.cons (.uscalarLit .U32 1 (by decide)) .nil)))
 
 theorem copy_carray.CARRAY.deep_eq :
   copy_carray.CARRAY =

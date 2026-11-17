@@ -17,9 +17,13 @@ testing. What it decides, and is trusted for:
   union of field structs for the types with several variants); `Array α n` to a struct
   holding a C array (so that assignment copies); `Slice α` and `Vec α` to a pointer and a
   length (and a capacity): **views**, updated in place; `ControlFlow` to a tagged union.
-  The target is assumed 64-bit (`size_t` is 64 bits). Recursive and opaque types, type
-  variables (the printer handles monomorphic terms only), strings and closures as values
-  are not supported.
+  The target is assumed 64-bit (`size_t` is 64 bits). The opaque types of the closed
+  world (external types) are defined by the table `externals` given to the printer, or
+  refused. Recursive types, strings and closures as values are not supported.
+- **Instances.** A generic function is printed once per instance reachable from the
+  closed functions (and the requested entries): the type and const-generic parameters
+  (`Ty.var i`, `CArg.var i`) are resolved through the environment of the instance, and the
+  instance is named after its arguments (`list_nth__u32`).
 - **Calling convention.** A function returning `Result τ` returns an error code (`int`,
   `AENEAS_OK` is `0`) and writes its value to an out-parameter (none for `Result Unit`); a
   pure function returns its value. `fail` returns the code; `assert` checks and returns.
@@ -27,7 +31,10 @@ testing. What it decides, and is trusted for:
 - **Primitives.** The checked arithmetic uses `__builtin_*_overflow`; division and
   remainder check the divisor (and `MIN / -1`); shifts check the amount and are computed
   in the unsigned type; casts are C casts (two's complement); `index`/`update`/`push`
-  check the bounds and copy the container (arrays) or write in place (slices, vectors).
+  check the bounds and copy the container (arrays) or write in place (slices, vectors);
+  the iterators over ranges (`Range<usize>::next`, `rev`, `Rev::next`, `step_by`,
+  `StepBy::next`) compare the bounds and step the start or the end; the slice iterators
+  (`iter`, `into_iter`, `Iter::next`) are the slice view and an index.
 - **Borrows.** A `borrow` reads the element (with its bounds check) and records the
   container and the index; the application of the backward function (`appVar`) copies
   the container (arrays) and stores the new element, or stores in place (slices and
@@ -35,8 +42,9 @@ testing. What it decides, and is trusted for:
   that the old value is dead).
 - **Memory.** Vectors grow with `realloc` and are never freed.
 
-The driver (`#deep_c`, `Aeneas.Deep.CDriver`) runs `printFunction` on the closed deep terms
-of a crate and assembles the translation unit. -/
+The driver (`#deep_c`, `Aeneas.Deep.CDriver`) packages the deep terms of a crate
+(`AnyDeep`) and runs `program`, which prints the reachable instances and assembles the
+translation unit. -/
 
 namespace Aeneas.Deep.CPrint
 
@@ -67,6 +75,7 @@ def mangleScalar : ScalarTy → String
 
 def mangleBuiltin : BuiltinTy → String
   | .option => "option" | .vec => "vec" | .range => "range" | .ordering => "ordering"
+  | .rev => "rev" | .stepBy => "stepBy" | .sliceIter => "sliceIter"
 
 def mangleCArg : CArg → String
   | .lit n _ => toString n
@@ -239,8 +248,19 @@ structure Ctx where
 
 def Ctx.extend (ctx : Ctx) (vs : List VarInfo) : Ctx := { vars := vs ++ ctx.vars }
 
-structure PState where
+/-- A function instance: the base name and the arguments -/
+structure Instance (N : Type) where
+  base : String
+  targs : List (Ty N)
+  cargs : List CArg
+
+structure PState (N : Type) where
   fresh : Nat := 0
+  /-- The instance being printed: the interpretation of `Ty.var i` and `CArg.var i` -/
+  tenv : List (Ty N) := []
+  cenv : List CArg := []
+  /-- The C definitions of the opaque types (by C name) -/
+  externals : List (String × String) := []
   /-- The type definitions needed so far, in dependency order (C name, definition) -/
   types : Array (String × String) := #[]
   /-- The names of the types defined so far, and of those being defined -/
@@ -248,26 +268,31 @@ structure PState where
   inProgress : List String := []
   /-- The prototypes of the callees (C name, prototype) -/
   protos : Array (String × String) := #[]
+  /-- The instances of the functions of the crate called by the body -/
+  instances : Array (Instance N) := #[]
   /-- The lines of the body being printed -/
   lines : Array String := #[]
   indent : Nat := 1
 
-abbrev M := StateT PState (Except String)
+abbrev M (N : Type) := StateT (PState N) (Except String)
 
-def fresh (base : String) : M String :=
+section
+variable {N : Type}
+
+def fresh (base : String) : M N String :=
   modifyGet fun s => (s!"{base}{s.fresh}", { s with fresh := s.fresh + 1 })
 
-def emit (l : String) : M Unit :=
+def emit (l : String) : M N Unit :=
   modify fun s => { s with lines := s.lines.push ("".pushn ' ' (2 * s.indent) ++ l) }
 
-def indented {α : Type} (x : M α) : M α := do
+def indented {α : Type} (x : M N α) : M N α := do
   modify fun s => { s with indent := s.indent + 1 }
   let r ← x
   modify fun s => { s with indent := s.indent - 1 }
   pure r
 
 /-- Run `x`, returning the lines it emits instead of emitting them -/
-def capture {α : Type} (x : M α) : M (Array String × α) := do
+def capture {α : Type} (x : M N α) : M N (Array String × α) := do
   let saved := (← get).lines
   modify fun s => { s with lines := #[] }
   let r ← x
@@ -275,8 +300,18 @@ def capture {α : Type} (x : M α) : M (Array String × α) := do
   modify fun s => { s with lines := saved }
   pure (ls, r)
 
-def replay (ls : Array String) : M Unit :=
+def replay (ls : Array String) : M N Unit :=
   modify fun s => { s with lines := s.lines ++ ls }
+
+/-- A descriptor at the instance being printed -/
+def resolve (t : Ty N) : M N (Ty N) := do
+  let s ← get
+  pure (subst s.tenv s.cenv t)
+
+def resolveCArg (c : CArg) : M N CArg := do
+  pure (substCArg (← get).cenv c)
+
+end
 
 /-- Is this C expression a plain identifier (safe to duplicate)? -/
 def isIdent (e : String) : Bool :=
@@ -288,21 +323,23 @@ section
 variable {N : Type} [TypeNames N] [Repr N]
 
 mutual
-  /-- The C type of a descriptor; the struct types are defined on demand -/
-  partial def cType (t : Ty N) : M String :=
-    match t with
+  /-- The C type of a descriptor (resolved at the instance); the struct types are defined
+  on demand -/
+  partial def cType (t : Ty N) : M N String := do
+    match ← resolve t with
     | .scalar s => pure (cNameScalar s)
     | .bool => pure "bool"
     | .unit => pure "unit_t"
     | .char => pure "uint32_t"
-    | .var i => throw s!"type variable T{i} (the printer handles monomorphic terms only)"
+    | .var i => throw s!"unresolved type variable T{i}"
     | .str => throw "strings are not supported"
     | .result _ => throw "a Result as a value is not supported"
     | .arrow _ _ => throw "a closure as a value is not supported"
     | t => do needType t; pure (mangle t)
 
-  /-- Define the struct of a composite type (after the types of its components) -/
-  partial def needType (t : Ty N) : M Unit := do
+  /-- Define the struct of a (resolved) composite type, after the types of its
+  components -/
+  partial def needType (t : Ty N) : M N Unit := do
     let m := mangle t
     if (← get).defined.contains m then return
     if (← get).inProgress.contains m then throw s!"recursive type {m} is not supported"
@@ -317,7 +354,10 @@ mutual
         | _ => do
           let variants := (TypeRef.variants T).map (·.map (subst targs cargs))
           match variants with
-          | [] => throw s!"opaque type {m} is not supported"
+          | [] =>
+            match (← get).externals.lookup m with
+            | some d => pure d
+            | none => throw s!"opaque type {m} is not supported (no external definition)"
           | [fs] => do pure s!"struct {m} \{ {← fields fs} };"
           | _ => do
             let mut vs := #[]
@@ -327,8 +367,8 @@ mutual
       | .array τ n => do
         let e ← cType τ
         match n with
-        | .lit k _ => pure s!"struct {m} \{ {e} data[{k}]; };"
-        | .var i => throw s!"const-generic variable N{i}"
+        | .lit k _ => pure s!"struct {m} \{ {e} data[{max k 1}]; };"
+        | .var i => throw s!"unresolved const-generic variable N{i}"
       | .slice τ => do
         let e ← cType τ
         pure s!"struct {m} \{ {e} *ptr; size_t len; };"
@@ -342,7 +382,7 @@ mutual
       types := s.types.push (m, s!"typedef struct {m} {m};\n{body}") }
 
   /-- The members `f0 …` of a struct (a dummy member for an empty one) -/
-  partial def fields (tys : List (Ty N)) : M String := do
+  partial def fields (tys : List (Ty N)) : M N String := do
     if tys.isEmpty then return "unit_t _dummy;"
     let mut out := #[]
     for h : i in [0:tys.length] do
@@ -359,68 +399,86 @@ variable {N F G : Type} [TypeNames N] [FunNames F N] [GlobalNames G N] {σ : TyE
   [Repr N] [Repr F] [Repr G]
 
 /-- The prototype of a function instance (registered for the translation unit) -/
-def protoOf (name : String) (inputs : List (Ty N)) (output : Ty N) : M String := do
+def protoOf (name : String) (inputs : List (Ty N)) (output : Ty N) : M N String := do
   let mut ps := #[]
   for h : i in [0:inputs.length] do
     ps := ps.push s!"{← cType inputs[i]} p{i}"
-  match output with
+  match ← resolve output with
   | .result .unit => pure s!"int {name}({if ps.isEmpty then "void" else ", ".intercalate ps.toList});"
   | .result ρ => do
     pure s!"int {name}({", ".intercalate (ps.push s!"{← cType ρ} *out").toList});"
   | ρ => do pure s!"{← cType ρ} {name}({if ps.isEmpty then "void" else ", ".intercalate ps.toList});"
 
-def needProto (name : String) (inputs : List (Ty N)) (output : Ty N) : M Unit := do
+def needProto (name : String) (inputs : List (Ty N)) (output : Ty N) : M N Unit := do
   if (← get).protos.any (·.1 == name) then return
   let p ← protoOf name inputs output
   modify fun s => { s with protos := s.protos.push (name, p) }
 
+/-- Record an instance of a function of the crate for the worklist of `program` -/
+def needInstance (base : String) (targs : List (Ty N)) (cargs : List CArg) : M N Unit := do
+  let name := funName base targs cargs
+  unless (← get).instances.any (fun i => funName i.base i.targs i.cargs == name) do
+    modify fun s => { s with instances := s.instances.push ⟨base, targs, cargs⟩ }
+
 /-- The C name of a function of the crate at an instance, with its prototype. The
 signature comes from the call node (the instantiated `inputs` and `output`), not from
 the `FunNames` table: the printer never evaluates the tables of the crate, whose
-implementations may be noncomputable (see `CDriver`). -/
+implementations may be noncomputable. -/
 def crateFun (f : F) (targs : List (Ty N)) (cargs : List CArg) (inputs : List (Ty N))
-    (output : Ty N) : M String := do
-  let name := funName (ctorName f) targs cargs
-  needProto name inputs output
-  pure name
+    (output : Ty N) : M N String := do
+  let targs ← targs.mapM resolve
+  let cargs ← cargs.mapM resolveCArg
+  let base := ctorName f
+  needProto (funName base targs cargs) inputs output
+  needInstance base targs cargs
+  pure (funName base targs cargs)
 
-def crateGlobal (g : G) (targs : List (Ty N)) (cargs : List CArg) (τ : Ty N) : M String := do
-  let name := funName (ctorName g) targs cargs
-  needProto name [] τ
-  pure name
+def crateGlobal (g : G) (targs : List (Ty N)) (cargs : List CArg) (τ : Ty N) : M N String := do
+  let targs ← targs.mapM resolve
+  let cargs ← cargs.mapM resolveCArg
+  let base := ctorName g
+  needProto (funName base targs cargs) [] τ
+  needInstance base targs cargs
+  pure (funName base targs cargs)
 
 /-- Bind a C expression to a fresh variable unless it is an identifier -/
-def atom (ty : Ty N) (e : String) : M String := do
+def atom (ty : Ty N) (e : String) : M N String := do
   if isIdent e then pure e
   else
     let x ← fresh "a"
     emit s!"{← cType ty} {x} = {e};"
     pure x
 
-def lookup (ctx : Ctx) {Γ : List (Ty N)} {τ : Ty N} (v : Var N Γ τ) : M VarInfo :=
+def lookup (ctx : Ctx) {Γ : List (Ty N)} {τ : Ty N} (v : Var N Γ τ) : M N VarInfo :=
   match ctx.vars[v.toNat]? with
   | some i => pure i
   | none => throw "unbound variable"
 
 /-- The element type of a container -/
-def elemOf (t : Ty N) : M (Ty N) :=
-  match t with
+def elemOf (t : Ty N) : M N (Ty N) := do
+  match ← resolve t with
   | .array e _ | .slice e | .adt (.builtin .vec) [e] [] => pure e
   | _ => throw "not a container"
 
+/-- The element type of a slice iterator -/
+def iterElemOf (t : Ty N) : M N (Ty N) := do
+  match ← resolve t with
+  | .adt (.builtin .sliceIter) [e] [] => pure e
+  | _ => throw "not a slice iterator"
+
 /-- The C expression of the length of a container held in `c` -/
-def lenOf (t : Ty N) (c : String) : M String :=
-  match t with
+def lenOf (t : Ty N) (c : String) : M N String := do
+  match ← resolve t with
   | .array _ (.lit n _) => pure (toString n)
-  | .array _ (.var i) => throw s!"const-generic variable N{i}"
+  | .array _ (.var i) => throw s!"unresolved const-generic variable N{i}"
   | .slice _ | .adt (.builtin .vec) _ _ => pure s!"{c}.len"
   | _ => throw "not a container"
 
 /-- The member holding the elements of a container -/
-def dataOf (t : Ty N) : String :=
-  match t with
-  | .array _ _ => "data"
-  | _ => "ptr"
+def dataOf (t : Ty N) : M N String := do
+  match ← resolve t with
+  | .array _ _ => pure "data"
+  | _ => pure "ptr"
 
 /-- The destination of the value of a statement -/
 inductive Dest where
@@ -431,7 +489,7 @@ inductive Dest where
   | assign (x : String)
   | discard
 
-def yield (d : Dest) (v : String) : M Unit :=
+def yield (d : Dest) (v : String) : M N Unit :=
   match d with
   | .retRes true => emit "return AENEAS_OK;"
   | .retRes false => do emit s!"*out = {v};"; emit "return AENEAS_OK;"
@@ -441,7 +499,7 @@ def yield (d : Dest) (v : String) : M Unit :=
 
 /-- A checked scalar operation: `r` receives the result, or the function returns the
 error -/
-def checkedOp (op : ScalarBinop) (ty : ScalarTy) (a b r : String) : M Unit := do
+def checkedOp (op : ScalarBinop) (ty : ScalarTy) (a b r : String) : M N Unit := do
   let T := cNameScalar ty
   let U := cNameU (unsignedOf ty)
   let signed := match ty with | .i _ => true | .u _ => false
@@ -469,7 +527,7 @@ def checkedOp (op : ScalarBinop) (ty : ScalarTy) (a b r : String) : M Unit := do
 
 mutual
   /-- The C expression of a pure expression; the statements it needs are emitted first -/
-  partial def expr {Γ : List (Ty N)} {τ : Ty N} (ctx : Ctx) : IExpr N F G σ Γ τ → M String
+  partial def expr {Γ : List (Ty N)} {τ : Ty N} (ctx : Ctx) : IExpr N F G σ Γ τ → M N String
     | .var v => do
       let i ← lookup ctx v
       if i.borrow.isSome then throw "a closure used as a value"
@@ -503,7 +561,7 @@ mutual
         | .xor => s!"({a} != {b})")
     | .boolNot a => do pure s!"(!{← expr ctx a})"
     | .bne (α := α) (inst := _) a b => do
-      unless isComparable α do throw "`!=` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`!=` on a non-scalar type"
       pure s!"({← expr ctx a} != {← expr ctx b})"
     | .decide c => cond ctx c
     | .ite (τ := τ) c t e => do
@@ -526,6 +584,10 @@ mutual
       let ty ← cType (.tuple tys)
       let as ← exprs ctx es
       pure s!"(({ty})\{ {if as.isEmpty then "0" else ", ".intercalate as} })"
+    | .array τ n h es => do
+      let ty ← cType (.array τ (.lit n h))
+      let as ← exprs ctx es
+      pure s!"(({ty})\{ \{ {if as.isEmpty then "0" else ", ".intercalate as} } })"
     | .ctor T v (inst := _) targs cargs _ _ args => do
       let ty ← cType (.adt T targs cargs)
       let as ← exprs ctx args
@@ -540,7 +602,7 @@ mutual
       match f with
       | .crate fn => do
         pure s!"{← crateFun fn targs cargs inputs output}({", ".intercalate as})"
-      | .prim p => purePrim p targs cargs inputs output as
+      | .prim p => purePrim p inputs output as
     | .continue_ α β e => do
       let ty ← cType (.controlFlow α β)
       pure s!"(({ty})\{ .tag = 0, .u.cont = {← expr ctx e} })"
@@ -549,35 +611,35 @@ mutual
       pure s!"(({ty})\{ .tag = 1, .u.done = {← expr ctx e} })"
 
   partial def exprs {Γ : List (Ty N)} {tys : List (Ty N)} (ctx : Ctx) :
-      IExprs N F G σ Γ tys → M (List String)
+      IExprs N F G σ Γ tys → M N (List String)
     | .nil => pure []
     | .cons e es => do
       let e ← expr ctx e
       let es ← exprs ctx es
       pure (e :: es)
 
-  partial def cond {Γ : List (Ty N)} (ctx : Ctx) : ICond N F G σ Γ → M String
+  partial def cond {Γ : List (Ty N)} (ctx : Ctx) : ICond N F G σ Γ → M N String
     | .bool b => expr ctx b
     | .not c => do pure s!"(!{← cond ctx c})"
     | .eq (α := α) (inst := _) a b => do
-      unless isComparable α do throw "`==` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`==` on a non-scalar type"
       pure s!"({← expr ctx a} == {← expr ctx b})"
     | .lt (α := α) (ord := _) (inst := _) a b => do
-      unless isComparable α do throw "`<` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`<` on a non-scalar type"
       pure s!"({← expr ctx a} < {← expr ctx b})"
     | .le (α := α) (ord := _) (inst := _) a b => do
-      unless isComparable α do throw "`<=` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`<=` on a non-scalar type"
       pure s!"({← expr ctx a} <= {← expr ctx b})"
     | .gt (α := α) (ord := _) (inst := _) a b => do
-      unless isComparable α do throw "`>` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`>` on a non-scalar type"
       pure s!"({← expr ctx a} > {← expr ctx b})"
     | .ge (α := α) (ord := _) (inst := _) a b => do
-      unless isComparable α do throw "`>=` on a non-scalar type"
+      unless isComparable (← resolve α) do throw "`>=` on a non-scalar type"
       pure s!"({← expr ctx a} >= {← expr ctx b})"
 
   /-- The pure primitives -/
-  partial def purePrim (p : Prim) (_targs : List (Ty N)) (_cargs : List CArg)
-      (inputs : List (Ty N)) (output : Ty N) (as : List String) : M String := do
+  partial def purePrim (p : Prim) (inputs : List (Ty N)) (output : Ty N) (as : List String) :
+      M N String := do
     match p, as with
     | .arrayRepeat, [x] => do
       let ty ← cType output
@@ -600,21 +662,21 @@ end
 
 /-- The fallible primitives, as statements -/
 def fallPrim (d : Dest) (p : Prim) (inputs : List (Ty N)) (τ : Ty N) (as : List String) :
-    M Unit := do
+    M N Unit := do
   match p, as, inputs with
   | .lift, [x], _ => yield d x
   | .arrayIndex, [c, i], [ct, _] | .sliceIndex, [c, i], [ct, _] | .vecIndex, [c, i], [ct, _] => do
     let c ← atom ct c
     let i ← atom (.scalar (.u .Usize) : Ty N) i
     emit s!"if ({i} >= {← lenOf ct c}) return AENEAS_ARRAY_OUT_OF_BOUNDS;"
-    yield d s!"{c}.{dataOf ct}[{i}]"
+    yield d s!"{c}.{← dataOf ct}[{i}]"
   | .arrayUpdate, [c, i, x], [ct, _, _] | .sliceUpdate, [c, i, x], [ct, _, _] => do
     let c ← atom ct c
     let i ← atom (.scalar (.u .Usize) : Ty N) i
     emit s!"if ({i} >= {← lenOf ct c}) return AENEAS_ARRAY_OUT_OF_BOUNDS;"
     let r ← fresh "r"
     emit s!"{← cType ct} {r} = {c};"
-    emit s!"{r}.{dataOf ct}[{i}] = {x};"
+    emit s!"{r}.{← dataOf ct}[{i}] = {x};"
     yield d r
   | .vecPush, [v, x], [vt, et] => do
     let r ← fresh "r"
@@ -622,13 +684,78 @@ def fallPrim (d : Dest) (p : Prim) (inputs : List (Ty N)) (τ : Ty N) (as : List
     emit s!"if ({r}.len == {r}.cap) \{ size_t ncap = {r}.cap ? 2 * {r}.cap : 8; void *np = realloc({r}.ptr, ncap * sizeof({← cType et})); if (!np) return AENEAS_MAXIMUM_SIZE_EXCEEDED; {r}.ptr = np; {r}.cap = ncap; }"
     emit s!"{r}.ptr[{r}.len++] = {x};"
     yield d r
+  | .rangeNextUsize, [r], [rt] => do
+    -- `Range<usize>::next`: the start if it is below the end, stepping the start (the
+    -- model only fails on a `Step` invariant, impossible for `usize`)
+    let r ← atom rt r
+    let rangeTy ← cType rt
+    let outTy ← cType τ
+    let optTy ← cType (.adt (.builtin .option) [.scalar (.u .Usize)] [] : Ty N)
+    let res ← fresh "r"
+    emit s!"{outTy} {res};"
+    emit s!"if ({r}.f0 < {r}.f1) \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 1, .u.v1 = \{ {r}.f0 } }), (({rangeTy})\{ {r}.f0 + 1, {r}.f1 }) }); }"
+    emit s!"else \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 0 }), {r} }); }"
+    yield d res
+  | .rangeRevUsize, [r], _ => do
+    -- `Iterator::rev`: `Rev { iter: r }` (the model never fails)
+    yield d s!"(({← cType τ})\{ {r} })"
+  | .revRangeNextUsize, [rv], [rt] => do
+    -- `Rev<Range<usize>>::next`: `next_back` of the range, the end stepped down
+    let rv ← atom rt rv
+    let revTy ← cType rt
+    let rangeTy ← cType (.adt (.builtin .range) [.scalar (.u .Usize)] [] : Ty N)
+    let outTy ← cType τ
+    let optTy ← cType (.adt (.builtin .option) [.scalar (.u .Usize)] [] : Ty N)
+    let res ← fresh "r"
+    emit s!"{outTy} {res};"
+    emit s!"if ({rv}.f0.f0 < {rv}.f0.f1) \{ size_t ae_e = {rv}.f0.f1 - 1; {res} = (({outTy})\{ (({optTy})\{ .tag = 1, .u.v1 = \{ ae_e } }), (({revTy})\{ (({rangeTy})\{ {rv}.f0.f0, ae_e }) }) }); }"
+    emit s!"else \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 0 }), {rv} }); }"
+    yield d res
+  | .rangeStepByUsize, [r, n], _ => do
+    -- `Iterator::step_by`: `StepBy { iter: r, step }`, a panic on a zero step
+    let n ← atom (.scalar (.u .Usize) : Ty N) n
+    emit s!"if ({n} == 0) return AENEAS_PANIC;"
+    yield d s!"(({← cType τ})\{ {r}, {n} })"
+  | .stepByRangeNextUsize, [sb], [st] => do
+    -- `StepBy<Range<usize>>::next`: the start, then the start advanced by the step
+    -- (bounded by the end, as the repeated `next` of the model)
+    let sb ← atom st sb
+    let sbTy ← cType st
+    let rangeTy ← cType (.adt (.builtin .range) [.scalar (.u .Usize)] [] : Ty N)
+    let outTy ← cType τ
+    let optTy ← cType (.adt (.builtin .option) [.scalar (.u .Usize)] [] : Ty N)
+    let res ← fresh "r"
+    emit s!"{outTy} {res};"
+    emit s!"if ({sb}.f0.f0 < {sb}.f0.f1) \{ size_t ae_s = {sb}.f0.f0; size_t ae_e = {sb}.f0.f1; size_t ae_n = ({sb}.f1 >= ae_e - ae_s) ? ae_e : ae_s + {sb}.f1; {res} = (({outTy})\{ (({optTy})\{ .tag = 1, .u.v1 = \{ ae_s } }), (({sbTy})\{ (({rangeTy})\{ ae_n, ae_e }), {sb}.f1 }) }); }"
+    emit s!"else \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 0 }), {sb} }); }"
+    yield d res
+  | .sliceIter, [s], _ | .sliceIntoIter, [s], _ => do
+    -- `[T]::iter` / `into_iter` on a slice: the slice and the index `0`
+    yield d s!"(({← cType τ})\{ {s}, 0 })"
+  | .arrayIntoIter, [a], [at_] => do
+    -- `into_iter` on an array: the array viewed as a slice, and the index `0`
+    let a ← atom at_ a
+    let n ← lenOf at_ a
+    let sliceTy ← cType (.slice (← elemOf at_))
+    yield d s!"(({← cType τ})\{ (({sliceTy})\{ {a}.data, {n} }), 0 })"
+  | .sliceIterNext, [it], [itTy] => do
+    -- `Iter<T>::next`: the element at the index if below the length, the index stepped
+    let it ← atom itTy it
+    let iterTy ← cType itTy
+    let outTy ← cType τ
+    let optTy ← cType (.adt (.builtin .option) [← iterElemOf itTy] [] : Ty N)
+    let res ← fresh "r"
+    emit s!"{outTy} {res};"
+    emit s!"if ({it}.f1 < {it}.f0.len) \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 1, .u.v1 = \{ {it}.f0.ptr[{it}.f1] } }), (({iterTy})\{ {it}.f0, {it}.f1 + 1 }) }); }"
+    emit s!"else \{ {res} = (({outTy})\{ (({optTy})\{ .tag = 0 }), {it} }); }"
+    yield d res
   | .arrayIndexMut, _, _ | .sliceIndexMut, _, _ | .vecIndexMut, _, _ =>
     throw "an `index_mut` primitive outside a borrow"
   | _, _, _ => throw s!"the primitive {reprStr p} is not a fallible statement (type {reprStr τ})"
 
 mutual
   /-- Bind the variables of a pattern to the components of the C value `v` -/
-  partial def bindPat : {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → String → M (List VarInfo)
+  partial def bindPat : {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → String → M N (List VarInfo)
     | α, _, .var, v => do
       let x ← fresh "x"
       emit s!"{← cType α} {x} = {v};"
@@ -637,7 +764,7 @@ mutual
     | _, _, .tuple ps, v => bindPats ps v 0
 
   partial def bindPats : {tys : List (Ty N)} → {Δ : List (Ty N)} →
-      Pats N tys Δ → String → Nat → M (List VarInfo)
+      Pats N tys Δ → String → Nat → M N (List VarInfo)
     | _, _, .nil, _, _ => pure []
     | _, _, .cons p ps, v, i => do
       let a ← bindPat p s!"{v}.f{i}"
@@ -646,7 +773,7 @@ mutual
 end
 
 /-- Bind the fields of a variant (`pre.f0 …`) to fresh variables -/
-def bindFields (tys : List (Ty N)) (pre : String) : M (List VarInfo) := do
+def bindFields (tys : List (Ty N)) (pre : String) : M N (List VarInfo) := do
   let mut out := []
   for h : i in [0:tys.length] do
     let x ← fresh "x"
@@ -663,7 +790,7 @@ def patIsVar : {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → Option Boo
 /-- Bind the pattern of a borrow: the element to `x`, the backward function to its
 borrow information -/
 def bindBorrowPat : {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → String → BorrowInfo →
-    M (List VarInfo)
+    M N (List VarInfo)
   | _, _, .tuple (.cons px (.cons pb .nil)), x, b => do
     let vs ← bindPat px x
     match patIsVar pb with
@@ -676,7 +803,7 @@ def bindBorrowPat : {α : Ty N} → {Δ : List (Ty N)} → Pat N α Δ → Strin
 mutual
   /-- Print a statement, its value going to `d` -/
   partial def stmt {Γ : List (Ty N)} {τ : Ty N} (ctx : Ctx) (d : Dest) :
-      Stmt N F G σ Γ τ → M Unit
+      Stmt N F G σ Γ τ → M N Unit
     | .pure e => do yield d (← expr ctx e)
     | .ret e => do yield d (← expr ctx e)
     | .fail _ err => emit s!"return {errCode err};"
@@ -763,16 +890,16 @@ mutual
         emit s!"size_t {iv} = {i};"
         emit s!"if ({iv} >= {← lenOf ct cv}) return AENEAS_ARRAY_OUT_OF_BOUNDS;"
         let x ← fresh "x"
-        emit s!"{← cType (← elemOf ct)} {x} = {cv}.{dataOf ct}[{iv}];"
+        emit s!"{← cType (← elemOf ct)} {x} = {cv}.{← dataOf ct}[{iv}];"
         let vs ← bindBorrowPat p x { kind := m, cont := cv, idx := iv, contTy }
         stmt (ctx.extend vs) d k
       | _, _ => throw "unexpected arguments of a borrow"
 
   /-- A call to a `Result` function: the error is propagated, the value goes to `d` -/
   partial def fallibleCall (d : Dest) (name : String) (τ : Ty N) (as : List String) :
-      M Unit := do
+      M N Unit := do
     let rc ← fresh "rc"
-    if isUnit τ then
+    if isUnit (← resolve τ) then
       emit s!"int {rc} = {name}({", ".intercalate as});"
       emit s!"if ({rc}) return {rc};"
       yield d "((unit_t)0)"
@@ -785,7 +912,7 @@ mutual
 
   partial def branches {Γ : List (Ty N)} {shape : List (List (Ty N))} {τ : Ty N}
       (ctx : Ctx) (d : Dest) (scrut : String) (tagged : Bool) (i : Nat) :
-      SBranches N F G σ Γ shape τ → M Unit
+      SBranches N F G σ Γ shape τ → M N Unit
     | .nil => pure ()
     | .cons (Δ := Δ) b bs => do
       if tagged then emit s!"case {i}: \{"
@@ -797,27 +924,29 @@ mutual
       branches ctx d scrut tagged (i + 1) bs
 end
 
-/-! ## Functions -/
+/-! ## Functions and programs -/
 
-/-- The output of the printer for one function -/
-structure FnOut where
+/-- The output of the printer for one function instance -/
+structure FnOut (N : Type) where
   name : String
   /-- The definition, or a comment when the function is not printed -/
   text : String
   proto : String := ""
   types : Array (String × String) := #[]
   protos : Array (String × String) := #[]
+  /-- The instances of the functions of the crate called by the body -/
+  instances : Array (Instance N) := #[]
   ok : Bool
 
 /-- The definition of the function `name` with the compiled body `s` -/
 def functionText {Γ : List (Ty N)} {τ : Ty N} (name : String) (s : Stmt N F G σ Γ τ) :
-    M (String × String) := do
+    M N (String × String) := do
   let mut ps := #[]
   let mut vars := []
   for h : i in [0:Γ.length] do
     ps := ps.push s!"{← cType Γ[i]} p{i}"
     vars := vars ++ [({ name := s!"p{i}" } : VarInfo)]
-  let (retTy, dest, ps') ← match τ with
+  let (retTy, dest, ps') ← match ← resolve τ with
     | .result .unit => pure ("int", Dest.retRes true, ps)
     | .result ρ => do pure ("int", Dest.retRes false, ps.push s!"{← cType ρ} *out")
     | ρ => do pure (← cType ρ, Dest.retPure, ps)
@@ -828,16 +957,83 @@ def functionText {Γ : List (Ty N)} {τ : Ty N} (name : String) (s : Stmt N F G 
   let body := (← get).lines
   pure (sig ++ " {\n" ++ "\n".intercalate body.toList ++ "\n}\n", sig ++ ";")
 
-/-- Compile and print one function -/
-def printFunction {Γ : List (Ty N)} {τ : Ty N} (name : String) (e : Expr N F G σ Γ τ) :
-    FnOut :=
+/-- Compile and print one function instance: `e` is the deep term, `tenv`/`cenv` the
+interpretation of its type and const-generic parameters, `externals` the C definitions
+of the opaque types -/
+def printFunction {Γ : List (Ty N)} {τ : Ty N} (tenv : List (Ty N)) (cenv : List CArg)
+    (externals : List (String × String)) (name : String) (e : Expr N F G σ Γ τ) : FnOut N :=
   match compile e with
   | .error u => { name, text := s!"/* {name}: not compiled ({reprStr u}) */", ok := false }
   | .ok s =>
-    match (functionText name s).run {} with
+    match (functionText name s).run { tenv, cenv, externals } with
     | .ok ((text, proto), st) =>
-      { name, text, proto, types := st.types, protos := st.protos, ok := true }
+      { name, text, proto, types := st.types, protos := st.protos, instances := st.instances,
+        ok := true }
     | .error msg => { name, text := s!"/* {name}: not printed ({msg}) */", ok := false }
+
+/-- A deep term of the crate, packaged for `program`: its C base name, the numbers of its
+type and const-generic parameters (the term is given at some interpretation of them,
+which the printer ignores), and the term -/
+structure AnyDeep (N F G : Type) [TypeNames N] [FunNames F N] [GlobalNames G N] where
+  name : String
+  nTypes : Nat
+  nConsts : Nat
+  σ : TyEnv
+  Γ : List (Ty N)
+  τ : Ty N
+  e : Expr N F G σ Γ τ
+
+/-- The output of `program` -/
+structure Report where
+  text : String
+  printed : Nat
+  total : Nat
+  failures : Array String
+
+/-- Print the instances of the functions of the crate reachable from the closed ones and
+from `entries` (base name, arguments), with the external types `externals`, and
+assemble the translation unit -/
+partial def program (fns : List (AnyDeep N F G)) (externals : List (String × String))
+    (entries : List (String × List (Ty N) × List CArg)) : Report := Id.run do
+  let closed := fns.filter fun f => f.nTypes == 0 && f.nConsts == 0
+  let mut work : List (Instance N) :=
+    closed.map (fun f => ⟨f.name, [], []⟩) ++ entries.map (fun (n, ts, cs) => ⟨n, ts, cs⟩)
+  let mut seen : List String := []
+  let mut outs : Array (FnOut N) := #[]
+  let mut failures : Array String := #[]
+  repeat
+    match work with
+    | [] => break
+    | inst :: rest =>
+      work := rest
+      let key := funName inst.base inst.targs inst.cargs
+      if seen.contains key then continue
+      seen := key :: seen
+      -- a callee outside the deep terms of the crate gets a prototype only
+      let some f := fns.find? (·.name == inst.base) | continue
+      if inst.targs.length != f.nTypes || inst.cargs.length != f.nConsts then
+        failures := failures.push s!"/* {key}: wrong number of arguments for {f.name} */"
+        continue
+      let o := printFunction inst.targs inst.cargs externals key f.e
+      outs := outs.push o
+      if o.ok then work := work ++ o.instances.toList
+      else failures := failures.push o.text
+  -- the translation unit
+  let mut types : Array (String × String) := #[]
+  let mut protos : Array (String × String) := #[]
+  for o in outs do
+    for t in o.types do
+      unless types.any (·.1 == t.1) do types := types.push t
+    for p in o.protos do
+      unless protos.any (·.1 == p.1) do protos := protos.push p
+  for o in outs do
+    if o.ok then
+      unless protos.any (·.1 == o.name) do protos := protos.push (o.name, o.proto)
+  let mut text := prelude
+  text := text ++ "\n/* Types */\n" ++ "\n".intercalate (types.map (·.2)).toList ++ "\n"
+  text := text ++ "\n/* Prototypes */\n" ++ "\n".intercalate (protos.map (·.2)).toList ++ "\n"
+  text := text ++ "\n/* Functions */\n" ++ "\n".intercalate (outs.map (·.text)).toList
+  pure { text, printed := (outs.filter (·.ok)).size, total := outs.size, failures }
 
 end
 
@@ -852,23 +1048,5 @@ def dummyFunNames (F N : Type) [TypeNames N] : FunNames F N :=
 set_option warn.classDefReducibility false in
 def dummyGlobalNames (G N : Type) [TypeNames N] : GlobalNames G N :=
   ⟨fun _ => ⟨.unit, fun _ => ()⟩⟩
-
-/-- Assemble a translation unit from the outputs of `printFunction` -/
-def assemble (outs : Array FnOut) : String := Id.run do
-  let mut types : Array (String × String) := #[]
-  let mut protos : Array (String × String) := #[]
-  for o in outs do
-    for t in o.types do
-      unless types.any (·.1 == t.1) do types := types.push t
-    for p in o.protos do
-      unless protos.any (·.1 == p.1) do protos := protos.push p
-  for o in outs do
-    if o.ok then
-      unless protos.any (·.1 == o.name) do protos := protos.push (o.name, o.proto)
-  let mut out := prelude
-  out := out ++ "\n/* Types */\n" ++ "\n".intercalate (types.map (·.2)).toList ++ "\n"
-  out := out ++ "\n/* Prototypes */\n" ++ "\n".intercalate (protos.map (·.2)).toList ++ "\n"
-  out := out ++ "\n/* Functions */\n" ++ "\n".intercalate (outs.map (·.text)).toList
-  pure out
 
 end Aeneas.Deep.CPrint

@@ -123,6 +123,9 @@ mutual
         IExpr N F G σ Γ τ
     | tuple {Γ : List (Ty N)} {tys : List (Ty N)} (es : IExprs N F G σ Γ tys) :
         IExpr N F G σ Γ (.tuple tys)
+    /-- An array literal -/
+    | array {Γ : List (Ty N)} (τ : Ty N) (n : Nat) (h : n ≤ UScalar.cMax .Usize)
+        (es : IExprs N F G σ Γ (List.replicate n τ)) : IExpr N F G σ Γ (.array τ (.lit n h))
     | ctor {Γ : List (Ty N)} (T : TypeRef N) (v : Nat) [inst : CtorFn N T v]
         (targs : List (Ty N)) (cargs : List CArg) (fields : List (Ty N))
         (h : Tys.denote σ fields = TypeNames.fieldTys T v (Ty.argEnv σ targs cargs))
@@ -277,6 +280,7 @@ mutual
     | _, _, .ite c t e, env =>
       @ite _ (c.denote env).prop (c.denote env).dec (t.denote env) (e.denote env)
     | _, _, .tuple es, env => (es.denote env).toTuple
+    | _, _, .array _ _ h es, env => Env.toArray h (es.denote env)
     | _, _, .ctor _ _ (inst := inst) targs cargs _ h args, env =>
       Fn.apply (inst.ctor (Ty.argEnv σ targs cargs)) (h ▸ (args.denote env).toHList)
     | _, _, .proj _ _ (inst := inst) targs cargs _ h e, env =>
@@ -375,6 +379,7 @@ mutual
     | .decide c => c.calls
     | .ite c t e => c.calls ++ t.calls ++ e.calls
     | .tuple es => es.calls
+    | .array _ _ _ es => es.calls
     | .ctor _ _ (inst := _) _ _ _ _ args => args.calls
     | .proj _ _ (inst := _) _ _ _ _ e => e.calls
     | .call f targs cargs _ _ _ _ args => ⟨f, targs, cargs⟩ :: args.calls
@@ -460,6 +465,7 @@ mutual
     | .decide c => c.borrowsOk bs
     | .ite c t e => c.borrowsOk bs && t.borrowsOk bs && e.borrowsOk bs
     | .tuple es => es.borrowsOk bs
+    | .array _ _ _ es => es.borrowsOk bs
     | .ctor _ _ (inst := _) _ _ _ _ args => args.borrowsOk bs
     | .proj _ _ (inst := _) _ _ _ _ e => e.borrowsOk bs
     | .call _ _ _ _ _ _ _ args => args.borrowsOk bs

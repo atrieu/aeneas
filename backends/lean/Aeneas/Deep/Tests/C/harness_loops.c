@@ -4,10 +4,6 @@
 #include <stdio.h>
 #include "loops.c"
 
-/* The constant `CARRAY` of `copy_carray` is an array literal, a leaf for the compiler:
-   the printer emits its prototype only, so the harness provides it */
-arr_u32_2 copy_carray_CARRAY(void) { return (arr_u32_2){ { 0, 1 } }; }
-
 static int failures = 0;
 #define CHECK(cond, name) \
   do { if (cond) printf("ok   %s\n", name); else { printf("FAIL %s\n", name); failures++; } } while (0)
